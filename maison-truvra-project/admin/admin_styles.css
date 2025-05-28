@@ -1,0 +1,215 @@
+/* admin_styles.css */
+/* Ensure Tailwind is loaded in HTML before this if you use @apply */
+
+/* Define brand colors as CSS variables for easier use if not using Tailwind @apply for everything */
+:root {
+    --brand-cream: #F5EEDE;
+    --brand-near-black: #11120D;
+    --brand-classic-gold: #D4AF37;
+    --brand-warm-taupe: #A28C6A;
+    --brand-earth-brown: #7D6A4F;
+    --brand-slate-blue-grey: #6E7582;
+    --brand-deep-sage-green: #4B5A59;
+    --brand-truffle-burgundy: #8A3E3E;
+}
+
+body.admin-body { /* Apply to body of admin pages if needed, or use Tailwind directly */
+    font-family: 'Inter', sans-serif;
+    background-color: var(--brand-cream);
+    color: var(--brand-earth-brown);
+}
+
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    width: 260px;
+    background-color: var(--brand-near-black);
+    color: var(--brand-cream);
+    display: flex;
+    flex-direction: column;
+    position: fixed; /* Fixed Sidebar */
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 50;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+.admin-sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.admin-nav-link {
+    display: block;
+    padding: 0.85rem 1.5rem;
+    color: var(--brand-warm-taupe);
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    border-left: 4px solid transparent;
+}
+
+.admin-nav-link:hover {
+    background-color: rgba(245, 238, 222, 0.05); /* Light cream tint */
+    color: var(--brand-cream);
+}
+
+.admin-nav-link.active {
+    background-color: var(--brand-earth-brown); /* Earth brown for active */
+    color: var(--brand-cream);
+    font-weight: 600;
+    border-left-color: var(--brand-classic-gold);
+}
+
+.admin-main-content {
+    flex-grow: 1;
+    margin-left: 260px; /* Same as sidebar width */
+    background-color: var(--brand-cream);
+    padding-bottom: 2rem; /* Footer space */
+}
+
+.admin-main-header {
+    background-color: #ffffff;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e0d8ce; /* Lighter cream border */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.admin-card {
+    background-color: #ffffff;
+    border-radius: 0.75rem; /* 12px */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    /* padding defined in HTML with Tailwind */
+}
+
+/* Buttons */
+.btn-admin-primary {
+    @apply bg-brand-earth-brown text-brand-cream hover:bg-brand-near-black px-5 py-2.5 rounded-md font-medium transition-colors duration-200 text-sm;
+}
+.btn-admin-secondary {
+     @apply bg-brand-warm-taupe text-brand-cream hover:bg-brand-earth-brown px-5 py-2.5 rounded-md font-medium transition-colors duration-200 text-sm;
+}
+.btn-admin-danger {
+    @apply bg-brand-truffle-burgundy text-brand-cream hover:bg-red-700 px-5 py-2.5 rounded-md font-medium transition-colors duration-200 text-sm;
+}
+.btn-admin-gold {
+    @apply bg-brand-classic-gold text-brand-near-black hover:opacity-80 px-5 py-2.5 rounded-md font-semibold transition-opacity duration-200 text-sm;
+}
+
+
+/* Form Inputs for Admin */
+.form-input-admin, .form-select-admin, .form-textarea-admin {
+    @apply w-full px-4 py-2.5 text-sm text-brand-near-black bg-white border border-brand-warm-taupe/60 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-classic-gold shadow-sm transition-shadow duration-200;
+}
+.form-input-admin:focus, .form-select-admin:focus, .form-textarea-admin:focus {
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3); /* brand-classic-gold focus ring */
+}
+.form-label-admin {
+    @apply block text-sm font-medium text-brand-near-black mb-1.5;
+}
+.form-checkbox-admin {
+    @apply h-4 w-4 text-brand-classic-gold border-brand-warm-taupe/70 rounded focus:ring-brand-classic-gold focus:ring-offset-0;
+}
+
+
+/* Table Styles */
+.admin-table {
+    @apply w-full text-sm text-left text-brand-earth-brown;
+}
+.admin-table thead {
+    @apply text-xs text-brand-near-black uppercase bg-brand-cream border-b border-brand-warm-taupe/50;
+}
+.admin-table th, .admin-table td {
+    @apply px-6 py-3;
+}
+.admin-table tbody tr {
+    @apply bg-white border-b border-brand-cream hover:bg-opacity-80;
+}
+.admin-table tbody tr:last-child {
+    @apply border-b-0;
+}
+
+
+/* Toast Messages */
+#admin-toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+#admin-message-toast {
+    display: none;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem; /* 8px */
+    color: white;
+    font-size: 0.9rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    min-width: 250px;
+    text-align: center;
+}
+#admin-message-toast.success { background-color: var(--brand-deep-sage-green); }
+#admin-message-toast.error { background-color: var(--brand-truffle-burgundy); }
+#admin-message-toast.info { background-color: var(--brand-slate-blue-grey); }
+
+
+/* Responsive adjustments for sidebar */
+@media (max-width: 768px) {
+    .admin-sidebar {
+        width: 100%;
+        height: auto;
+        position: static; /* Stack on top */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .admin-sidebar nav ul {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .admin-nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        border-left: none;
+        border-bottom: 2px solid transparent;
+    }
+    .admin-nav-link.active {
+        border-left: none;
+        border-bottom-color: var(--brand-classic-gold);
+    }
+    .admin-main-content {
+        margin-left: 0;
+    }
+    .admin-main-header {
+        padding: 1rem;
+    }
+    .admin-main-header h1 {
+        font-size: 1.5rem; /* text-2xl */
+    }
+}
+
+/* Modal Styles (Basic) */
+.admin-modal-overlay {
+    @apply fixed inset-0 bg-brand-near-black bg-opacity-60 flex items-center justify-center z-[990] transition-opacity duration-300 opacity-0 pointer-events-none;
+}
+.admin-modal-overlay.active {
+    @apply opacity-100 pointer-events-auto;
+}
+.admin-modal-content {
+    @apply bg-white p-6 sm:p-8 rounded-lg shadow-2xl w-11/12 max-w-lg transform scale-95 transition-transform duration-300;
+}
+.admin-modal-overlay.active .admin-modal-content {
+    @apply scale-100;
+}
+.admin-modal-header {
+    @apply text-xl font-serif text-brand-near-black mb-4 pb-3 border-b border-brand-cream;
+}
+.admin-modal-footer {
+    @apply mt-6 pt-4 border-t border-brand-cream flex justify-end space-x-3;
+}
