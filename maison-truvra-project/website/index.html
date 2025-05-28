@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maison Trüvra - Producteur de Truffes d'Exception</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-cream': '#F5EEDE',
+                        'brand-near-black': '#11120D',
+                        'brand-classic-gold': '#D4AF37',
+                        'brand-warm-taupe': '#A28C6A',
+                        'brand-earth-brown': '#7D6A4F',
+                        'brand-slate-blue-grey': '#6E7582',
+                        'brand-deep-sage-green': '#4B5A59',
+                        'brand-truffle-burgundy': '#8A3E3E',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5EEDE;
+            color: #7D6A4F;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        /* .nav-link.active est géré par JS après chargement du header */
+        .hero-image-container { 
+            background-image: url('https://placehold.co/1920x800/A28C6A/F5EEDE?text=Image+Hero+Maison+Trüvra'); 
+            background-size: cover;
+            background-position: center;
+            height: 70vh; 
+            max-height: 600px; 
+        }
+        .btn-primary {
+            background-color: #7D6A4F; color: #F5EEDE; padding: 0.85rem 1.75rem; 
+            border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: 500; letter-spacing: 0.025em; display: inline-block;
+        }
+        .btn-primary:hover { background-color: #11120D; transform: translateY(-2px); }
+        .btn-secondary { 
+            background-color: #A28C6A; color: #F5EEDE; padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: 500; display: inline-block; cursor: pointer;
+        }
+        .btn-secondary:hover { background-color: #7D6A4F; transform: translateY(-1px); }
+        .btn-gold { 
+            background-color: #D4AF37; color: #11120D; padding: 0.85rem 1.75rem;
+            border-radius: 0.375rem; transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.2s ease;
+            font-weight: 600; display: inline-block; cursor: pointer;
+        }
+        .btn-gold:hover { background-color: #D4AF37; opacity: 0.85; transform: translateY(-2px); }
+        .section-title { @apply text-3xl md:text-4xl lg:text-5xl font-serif text-brand-earth-brown mb-12 text-center; }
+        .styled-subtitle { @apply font-serif italic text-brand-earth-brown mb-8 text-center; } /* Taille gérée inline si besoin spécifique */
+        .card { @apply bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden; }
+        /* Styles pour .footer-bg, .footer-text etc. sont dans footer.html via le chargement JS */
+        .pattern-background-story { background-color: #F5EEDE; }
+        /* Styles pour #newsletter-confirmation, .form-input sont dans footer.html via le chargement JS */
+        .modal-message { @apply fixed bottom-5 right-5 bg-brand-deep-sage-green text-brand-cream p-4 rounded-lg shadow-xl z-[100] transition-all duration-500 ease-out opacity-0 translate-y-10; }
+        .modal-message.show { @apply opacity-100 translate-y-0; }
+        .modal-overlay { @apply fixed inset-0 bg-brand-near-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 pointer-events-none; }
+        .modal-overlay.active { @apply opacity-100 pointer-events-auto; }
+        .modal-content { @apply bg-brand-cream p-6 sm:p-8 rounded-lg shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300; }
+        .modal-overlay.active .modal-content { @apply scale-100; }
+    </style>
+</head>
+<body id="page-index" class="antialiased">
+
+    <div id="header-placeholder"></div>
+
+    <main>
+        <div class="hero-image-container"></div>
+        <section class="py-16 bg-brand-cream">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h1 class="text-4xl sm:text-5xl font-bold font-serif mb-6 leading-tight text-brand-near-black">Maison Trüvra</h1>
+                <p class="text-xl sm:text-2xl font-serif italic text-brand-earth-brown mb-8">Producteur - récolteur de truffes de qualité</p>
+                <p class="text-md sm:text-lg mb-10 max-w-3xl mx-auto text-brand-earth-brown leading-relaxed">
+                    Entrez dans un monde où le luxe rencontre le trésor le plus exquis de la nature. Chez Maison Trüvra, nous nous engageons à vous offrir l'arôme incomparable et la saveur sublime des truffes les plus fines, méticuleusement obtenues et cultivées à partir de notre écrin de culture situé en Île-de-France. Nous nous engageons à produire des truffes d'une intensité aromatique inégalée afin que chaque truffe offre un voyage sensoriel inoubliable.
+                </p>
+                <a href="notre-histoire.html" class="btn-primary text-lg">Découvrez Notre Histoire</a>
+            </div>
+        </section>
+
+        <section class="py-20 bg-white"> 
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <p class="text-3xl sm:text-4xl font-serif italic text-brand-earth-brown mb-8 text-center">Découvrez nos produits</p> 
+                <p class="text-center text-brand-earth-brown mb-16 max-w-3xl mx-auto text-lg leading-relaxed">Découvrez l'apothéose de la fraîcheur avec des truffes sélectionnées à la main pour leur parfum intense et leur texture parfaite, préparées le jour même de leur récolte.</p>
+                <div class="grid md:grid-cols-2 gap-10">
+                    <div class="card">
+                        <img src="https://placehold.co/600x400/7D6A4F/F5EEDE?text=Truffe+Noire+du+Périgord" alt="Image de Truffe noire du Périgord" class="w-full h-72 object-cover rounded-t-lg mb-6" onerror="this.onerror=null;this.src='https://placehold.co/600x400/EEE/CCC?text=Image+Error';">
+                        <h3 class="text-2xl font-serif font-semibold text-brand-near-black mb-3 px-2">Truffe Noire du Périgord (Tuber melanosporum)</h3>
+                        <p class="text-brand-earth-brown mb-2 px-2"><strong class="text-brand-near-black">Arôme :</strong> Intensément terreux avec des notes de sol forestier humide, de cacao et de fruits secs.</p>
+                        <p class="text-brand-earth-brown px-2"><strong class="text-brand-near-black">Saveur :</strong> Riche, complexe et profonde, parfaite pour rehausser les plats classiques.</p>
+                    </div>
+                    <div class="card">
+                        <img src="https://placehold.co/600x400/D4AF37/11120D?text=Truffe+Blanche+d'Alba" alt="Image de Truffe blanche d'Alba" class="w-full h-72 object-cover rounded-t-lg mb-6" onerror="this.onerror=null;this.src='https://placehold.co/600x400/EEE/CCC?text=Image+Error';">
+                        <h3 class="text-2xl font-serif font-semibold text-brand-near-black mb-3 px-2">Truffe Blanche d'Alba (Tuber magnatum pico)</h3>
+                        <p class="text-brand-earth-brown mb-2 px-2"><strong class="text-brand-near-black">Arôme :</strong> Piquant incomparable avec des notes d'ail, de miel et de foin.</p>
+                        <p class="text-brand-earth-brown px-2"><strong class="text-brand-near-black">Saveur :</strong> Exquise, délicate et très aromatique, elle se déguste de préférence râpée à l'état frais.</p>
+                    </div>
+                </div>
+                 <div class="text-center mt-16">
+                    <a href="nos-produits.html" class="btn-primary">Voir tous nos produits</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-20 pattern-background-story"> 
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                 <p class="text-3xl sm:text-4xl font-serif italic text-brand-earth-brown mb-8 text-center">Notre histoire : passion, innovation et sensorialité</p> 
+                <p class="text-lg text-brand-earth-brown max-w-3xl mx-auto mb-10 leading-relaxed">
+                    Chez Maison Trüvra, nous redéfinissons l'art de la culture de la truffe. Tout en honorant l'attrait intemporel de ce joyau culinaire, nous sommes fiers de produire nos truffes en utilisant des techniques hydroponiques développées par nos soins. Cette approche innovante nous permet de gérer avec précision chaque élément, de l'apport en nutriments aux conditions atmosphériques en passant par l'écosystème microbien, afin de garantir une pureté inégalée, une qualité constante et un caractère exceptionnel pour chaque truffe. Nous sommes des pionniers de l'avenir de la production de truffes.
+                </p>
+                <a href="notre-histoire.html" class="btn-primary">En savoir plus sur notre histoire</a>
+            </div>
+        </section>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <div id="global-message-toast" class="modal-message" style="display:none;">
+        <p id="global-message-text"></p>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/product.js"></script>
+    <script src="js/checkout.js"></script>
+    <script src="js/newsletter.js"></script>
+    <script src="js/main.js"></script> 
+</body>
+</html>
+

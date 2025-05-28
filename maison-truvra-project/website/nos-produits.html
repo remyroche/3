@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nos Produits - Maison Trüvra</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-cream': '#F5EEDE',
+                        'brand-near-black': '#11120D',
+                        'brand-classic-gold': '#D4AF37',
+                        'brand-warm-taupe': '#A28C6A',
+                        'brand-earth-brown': '#7D6A4F',
+                        'brand-slate-blue-grey': '#6E7582',
+                        'brand-deep-sage-green': '#4B5A59',
+                        'brand-truffle-burgundy': '#8A3E3E',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5EEDE; 
+            color: #7D6A4F; 
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .btn-primary {
+            background-color: #7D6A4F; color: #F5EEDE; padding: 0.85rem 1.75rem; 
+            border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: 500; letter-spacing: 0.025em; display: inline-block; cursor: pointer;
+        }
+        .btn-primary:hover { background-color: #11120D; transform: translateY(-2px); }
+        .btn-secondary {
+            background-color: #A28C6A; color: #F5EEDE; padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: 500; display: inline-block; cursor: pointer;
+        }
+        .btn-secondary:hover { background-color: #7D6A4F; transform: translateY(-1px); }
+        .btn-secondary.filter-active { 
+            background-color: #7D6A4F; 
+            color: #F5EEDE; 
+        }
+         .btn-gold {
+            background-color: #D4AF37; color: #11120D; padding: 0.85rem 1.75rem;
+            border-radius: 0.375rem; transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.2s ease;
+            font-weight: 600; display: inline-block; cursor: pointer;
+        }
+        .btn-gold:hover { background-color: #D4AF37; opacity: 0.85; transform: translateY(-2px); }
+        .product-card { @apply bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden flex flex-col; }
+        .product-card img { @apply w-full h-64 object-cover; }
+        .product-card-content { @apply p-6 flex flex-col flex-grow; }
+        .product-card-content h3 { @apply text-xl font-serif font-semibold text-brand-near-black mb-3; }
+        .product-card-content p { @apply text-brand-earth-brown text-sm mb-4; }
+        .product-card-footer { @apply mt-auto pt-4 border-t border-brand-cream; }
+        .page-header { @apply text-3xl md:text-4xl font-serif text-brand-near-black mb-8 text-center py-8 bg-white shadow-sm; }
+        .modal-overlay { @apply fixed inset-0 bg-brand-near-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 pointer-events-none; }
+        .modal-overlay.active { @apply opacity-100 pointer-events-auto; }
+        .modal-content { @apply bg-brand-cream p-6 sm:p-8 rounded-lg shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300; }
+        .modal-overlay.active .modal-content { @apply scale-100; }
+        .modal-message { @apply fixed bottom-5 right-5 bg-brand-deep-sage-green text-brand-cream p-4 rounded-lg shadow-xl z-[100] transition-all duration-500 ease-out opacity-0 translate-y-10; }
+        .modal-message.show { @apply opacity-100 translate-y-0; }
+    </style>
+</head>
+<body id="page-nos-produits" class="antialiased">
+
+    <div id="header-placeholder"></div>
+
+    <main class="bg-brand-cream">
+        <section id="products-list-section" class="py-12 bg-brand-cream">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h1 class="page-header">Nos Produits d'Exception</h1>
+                <div class="mb-8 text-center">
+                    <p class="text-lg text-brand-earth-brown">Découvrez notre sélection de truffes fraîches et produits truffés, cultivés avec passion.</p>
+                </div>
+
+                <div class="mb-10 flex flex-wrap justify-center gap-4" id="product-categories-filter">
+                    <button data-category="all" class="btn-secondary text-sm filter-active">Tous les produits</button>
+                    <button data-category="Fresh Truffles" class="btn-secondary text-sm">Truffes Fraîches</button>
+                    <button data-category="Truffle Oils" class="btn-secondary text-sm">Huiles Truffées</button>
+                    <button data-category="Truffle Sauces" class="btn-secondary text-sm">Sauces Truffées</button>
+                    <button data-category="Gift Sets" class="btn-secondary text-sm">Coffrets Cadeaux</button>
+                </div>
+
+                <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    <p id="products-loading-message" class="col-span-full text-center text-brand-earth-brown py-8">Chargement des produits...</p>
+                    </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <div id="global-message-toast" class="modal-message">
+        <p id="global-message-text"></p>
+    </div>
+
+    <div id="add-to-cart-modal" class="modal-overlay">
+        <div class="modal-content text-center">
+            <h3 id="modal-product-name" class="text-xl font-serif text-brand-near-black mb-4">Produit ajouté au panier !</h3>
+            <p class="text-brand-earth-brown mb-6">Votre sélection a bien été ajoutée.</p>
+            <div class="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4 justify-center mt-2">
+                <button onclick="closeModal('add-to-cart-modal');" class="btn-secondary w-full sm:w-auto">Continuer mes achats</button>
+                <button onclick="closeModal('add-to-cart-modal'); window.location.href='panier.html';" class="btn-gold w-full sm:w-auto">Voir le panier</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/product.js"></script>
+    <script src="js/checkout.js"></script>
+    <script src="js/newsletter.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+# Script Python pour générer des QR codes et des données de traçabilité pour Maison Trüvra
+# Important : Pour utiliser ce script, vous devrez installer les bibliothèques qrcode et Pillow :
+# pip install qrcode Pillow tkcalendar
+
+import qrcode
+import datetime
+import uuid # Pour générer des numéros de lot uniques
+import json # Pour exporter les données facilement
+import os
+import tkinter as tk
+from tkinter import ttk, messagebox
+from tkcalendar import DateEntry # Pour un sélecteur de date convivial: pip install tkcalendar
+
+# --- Configuration ---
+# Formes de produits disponibles
+FORMES_PRODUITS_FRAIS = [
+    "Truffe Entière fraîche" # Correspond à "Truffe Entière Extra" dans la table pour les produits frais
+]
+
+FORMES_PRODUITS_CONSERVE = [
+    "Truffe Entière Extra (conserve)",
+    "Truffe Entière 1er choix (conserve)",
+    "Brisures de (conserve)",
+    "Pelures de (conserve)", 
+    "Huile infusée à la",
+    "Jus de"
+]
+
+ESPECES_DISPONIBLES = [
+    "Tuber melanosporum",
+    "Tuber borchii",
+    "Tuber magnatum",
+]
+
+# Dictionnaire des pots disponibles et leur poids net en grammes
+POTS_DISPONIBLES_MAP = {
+    "Grand 200mL": 200,
+    "Carré 150mL": 150,
+    "Petit 100mL": 100,
+    "Sachet plastique": None, # None indique un poids variable/manuel
+    # Ajoutez d'autres pots et leurs poids ici
+}
+
+# Table de nommage des produits (basée sur votre tableau rempli)
+PRODUCT_NAME_MAPPING = {
+    # --- PRODUITS FRAIS ---
+    ("Truffe Entière fraîche", "Tuber melanosporum"): "Truffe Noire du Périgord Entière fraîche",
+    ("Truffe Entière fraîche", "Tuber borchii"): "Truffe Bianchetto Entière fraîche",
+    ("Truffe Entière fraîche", "Tuber magnatum"): "Truffe Blanche d'Alba Entière fraîche",
+
+    # --- CONSERVES ---
+    ("Truffe Entière Extra (conserve)", "Tuber melanosporum"): "Truffe Noire du Périgord Entière Extra",
+    ("Truffe Entière Extra (conserve)", "Tuber borchii"): "Truffe Bianchetto Entière Extra",
+    ("Truffe Entière Extra (conserve)", "Tuber magnatum"): "Truffle d'Alba Entière Extra",
+    ("Truffe Entière 1er choix (conserve)", "Tuber melanosporum"): "Truffe Noire du Périgord Entière 1er choix",
+    ("Truffe Entière 1er choix (conserve)", "Tuber borchii"): "Truffe Bianchetto Entière 1er choix",
+    ("Truffe Entière 1er choix (conserve)", "Tuber magnatum"): "Truffle d'Alba Entière 1er choix",
+    ("Brisures de (conserve)", "Tuber melanosporum"): "Brisures de Truffe Noire du Périgord",
+    ("Brisures de (conserve)", "Tuber borchii"): "Brisures de Truffe Bianchetto",
+    ("Brisures de (conserve)", "Tuber magnatum"): "Brisures de Truffle d'Alba",
+    ("Pelures de (conserve)", "Tuber melanosporum"): "Pelures de Truffe Noire du Périgord",
+    ("Pelures de (conserve)", "Tuber borchii"): "Pelures de Truffe Bianchetto",
+    ("Pelures de (conserve)", "Tuber magnatum"): "Pelures de Truffle d'Alba",
+    ("Huile infusée à la", "Tuber melanosporum"): "Huile infusée à la Truffe Noire du Périgord",
+    ("Huile infusée à la", "Tuber borchii"): "Huile infusée à la Truffe Bianchetto",
+    ("Huile infusée à la", "Tuber magnatum"): "Huile infusée à la Truffle d'Alba",
+    ("Jus de", "Tuber melanosporum"): "Jus de Truffe Noire du Périgord",
+    ("Jus de", "Tuber borchii"): "Jus de Truffe Bianchetto",
+    ("Jus de", "Tuber magnatum"): "Jus de Truffle d'Alba",
+}
+
+
+NOM_ENTREPRISE = "Maison Trüvra"
+CONTACT_ENTREPRISE = "contact@maisontruvra.com"
+SITE_WEB_BASE_URL = "https://www.maisontruvra.com/passport" # Adaptez cette URL
+
+DOSSIER_SORTIE = "qrcodes_production/"
+
+if not os.path.exists(DOSSIER_SORTIE):
+    os.makedirs(DOSSIER_SORTIE)
+
+# --- Fonctions Logiques ---
+
+def generer_numero_lot():
+    date_str = datetime.datetime.now().strftime("%Y%m%d")
+    uuid_court = str(uuid.uuid4()).split('-')[0][:4].upper()
+    return f"MT-{date_str}-{uuid_court}"
+
+def creer_url_passeport(numero_lot):
+    return f"{SITE_WEB_BASE_URL}?lot={numero_lot}"
+
+def generer_qr_code_et_donnees(donnees_produit):
+    url_passeport = donnees_produit["url_passeport"]
+    numero_lot = donnees_produit["numero_lot"]
+
+    nom_fichier_qr = f"QR_{numero_lot}.png"
+    chemin_fichier_qr = os.path.join(DOSSIER_SORTIE, nom_fichier_qr)
+    img_qr = qrcode.make(url_passeport)
+    img_qr.save(chemin_fichier_qr)
+    
+    nom_fichier_data = f"DATA_{numero_lot}.json"
+    chemin_fichier_data = os.path.join(DOSSIER_SORTIE, nom_fichier_data)
+    with open(chemin_fichier_data, 'w', encoding='utf-8') as f:
+        json.dump(donnees_produit, f, ensure_ascii=False, indent=4)
+    
+    return chemin_fichier_qr, chemin_fichier_data
+
+# --- Interface Graphique (GUI) avec Tkinter ---
+
+class QRCodeApp:
+    def __init__(self, master):
+        self.master = master
+        master.title(f"Générateur QR Code - {NOM_ENTREPRISE}")
+        master.geometry("700x750") 
+
+        self.style = ttk.Style()
+        self.style.theme_use('clam')
+        self.style.configure("TLabel", padding=5, font=('Helvetica', 10))
+        self.style.configure("TButton", padding=5, font=('Helvetica', 10, 'bold'))
+        self.style.configure("TEntry", padding=5, font=('Helvetica', 10))
+        self.style.configure("TCombobox", padding=5, font=('Helvetica', 10))
+        self.style.configure("Header.TLabel", font=('Helvetica', 14, 'bold'))
+        self.style.configure("Frame.TFrame", padding=5)
+
+
+        # Variables Tkinter
+        self.espece_var = tk.StringVar()
+        self.type_produit_var = tk.StringVar(value="frais")
+        self.forme_produit_var = tk.StringVar()
+        self.pot_var = tk.StringVar() 
+        
+        self.quantite_var = tk.StringVar() 
+        self.date_cueillette_var = tk.StringVar(value=datetime.date.today().strftime("%Y-%m-%d"))
+        
+        self.poids_net_conserve_var = tk.StringVar() 
+        self.ingredients_var = tk.StringVar()
+        self.ddm_var = tk.StringVar(value=(datetime.date.today() + datetime.timedelta(days=365*2)).strftime("%Y-%m-%d"))
+
+        # Layout principal
+        main_frame = ttk.Frame(master, padding="10 10 10 10", style="Frame.TFrame")
+        main_frame.pack(expand=True, fill=tk.BOTH)
+
+        ttk.Label(main_frame, text="Générateur de QR Code et Fiche Produit", style="Header.TLabel").pack(pady=10)
+
+        # 1. Choix de l'espèce
+        espece_frame = ttk.LabelFrame(main_frame, text="Étape 1: Espèce de Truffe", padding="10")
+        espece_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(espece_frame, text="Choisir l'espèce:").pack(side=tk.LEFT, padx=5)
+        self.espece_combo = ttk.Combobox(espece_frame, textvariable=self.espece_var, values=ESPECES_DISPONIBLES, state="readonly", width=30)
+        self.espece_combo.pack(side=tk.LEFT, padx=5)
+        if ESPECES_DISPONIBLES:
+            self.espece_combo.set(ESPECES_DISPONIBLES[0])
+        self.espece_var.trace_add("write", self.update_ui_for_selection)
+
+        # 2. Choix du type de produit
+        type_produit_frame = ttk.LabelFrame(main_frame, text="Étape 2: Type de Produit", padding="10")
+        type_produit_frame.pack(fill=tk.X, pady=5)
+        ttk.Radiobutton(type_produit_frame, text="Produit Frais (sous vide)", variable=self.type_produit_var, value="frais", command=self.update_ui_for_selection).pack(side=tk.LEFT, padx=5)
+        ttk.Radiobutton(type_produit_frame, text="Conserve", variable=self.type_produit_var, value="conserve", command=self.update_ui_for_selection).pack(side=tk.LEFT, padx=5)
+
+        self.details_frame_container = ttk.Frame(main_frame, style="Frame.TFrame")
+        self.details_frame_container.pack(fill=tk.X, pady=5)
+
+        # --- Champs pour Produit Frais ---
+        self.frais_frame = ttk.LabelFrame(self.details_frame_container, text="Informations Produit Frais", padding="10")
+        ttk.Label(self.frais_frame, text="Forme du Produit:").grid(row=0, column=0, sticky=tk.W, pady=3)
+        self.forme_produit_frais_combo = ttk.Combobox(self.frais_frame, textvariable=self.forme_produit_var, width=38, state="readonly")
+        self.forme_produit_frais_combo.grid(row=0, column=1, sticky=tk.EW, pady=3, columnspan=2)
+        ttk.Label(self.frais_frame, text="Quantité (grammes):").grid(row=1, column=0, sticky=tk.W, pady=3)
+        ttk.Entry(self.frais_frame, textvariable=self.quantite_var, width=15).grid(row=1, column=1, sticky=tk.W, pady=3)
+        ttk.Label(self.frais_frame, text="Date de Cueillette:").grid(row=2, column=0, sticky=tk.W, pady=3)
+        self.date_cueillette_entry = DateEntry(self.frais_frame, textvariable=self.date_cueillette_var, date_pattern='yyyy-mm-dd', width=12, background='darkblue', foreground='white', borderwidth=2)
+        self.date_cueillette_entry.grid(row=2, column=1, sticky=tk.W, pady=3)
+
+        # --- Champs pour Conserve ---
+        self.conserve_frame = ttk.LabelFrame(self.details_frame_container, text="Informations Conserve", padding="10")
+        ttk.Label(self.conserve_frame, text="Forme du Produit:").grid(row=0, column=0, sticky=tk.W, pady=3)
+        self.forme_produit_conserve_combo = ttk.Combobox(self.conserve_frame, textvariable=self.forme_produit_var, width=38, state="readonly")
+        self.forme_produit_conserve_combo.grid(row=0, column=1, sticky=tk.EW, pady=3, columnspan=2)
+        
+        ttk.Label(self.conserve_frame, text="Type de Pot:").grid(row=1, column=0, sticky=tk.W, pady=3)
+        self.pot_combo = ttk.Combobox(self.conserve_frame, textvariable=self.pot_var, values=list(POTS_DISPONIBLES_MAP.keys()), state="readonly", width=20)
+        self.pot_combo.grid(row=1, column=1, sticky=tk.W, pady=3)
+        self.pot_var.trace_add("write", self.update_poids_net_conserve) 
+
+        ttk.Label(self.conserve_frame, text="Poids Net Conserve (g):").grid(row=2, column=0, sticky=tk.W, pady=3) # Libellé mis à jour
+        self.poids_net_conserve_entry = ttk.Entry(self.conserve_frame, textvariable=self.poids_net_conserve_var, width=15, state="readonly")
+        self.poids_net_conserve_entry.grid(row=2, column=1, sticky=tk.W, pady=3)
+
+        ttk.Label(self.conserve_frame, text="Ingrédients:").grid(row=3, column=0, sticky=tk.W, pady=3)
+        self.ingredients_entry = ttk.Entry(self.conserve_frame, textvariable=self.ingredients_var, width=40)
+        self.ingredients_entry.grid(row=3, column=1, sticky=tk.EW, pady=3, columnspan=2)
+        
+        ttk.Label(self.conserve_frame, text="DDM (À consommer avant):").grid(row=4, column=0, sticky=tk.W, pady=3)
+        self.ddm_entry = DateEntry(self.conserve_frame, textvariable=self.ddm_var, date_pattern='yyyy-mm-dd', width=12, background='darkblue', foreground='white', borderwidth=2)
+        self.ddm_entry.grid(row=4, column=1, sticky=tk.W, pady=3)
+
+        ttk.Button(main_frame, text="Générer QR Code et Fiche", command=self.generer).pack(pady=20)
+        self.status_var = tk.StringVar()
+        ttk.Label(main_frame, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W, padding=5).pack(fill=tk.X, pady=5, side=tk.BOTTOM)
+
+        self.update_ui_for_selection()
+
+    def update_poids_net_conserve(self, *args):
+        """Met à jour le champ poids net en fonction du pot sélectionné."""
+        selected_pot_nom = self.pot_var.get()
+        if selected_pot_nom in POTS_DISPONIBLES_MAP:
+            poids = POTS_DISPONIBLES_MAP[selected_pot_nom]
+            if poids is None:  # Cas pour "Sachet plastique" ou autre poids variable
+                self.poids_net_conserve_entry.config(state="normal")
+                self.poids_net_conserve_var.set("") 
+                self.poids_net_conserve_entry.focus() # Optionnel: mettre le focus
+            else:
+                self.poids_net_conserve_entry.config(state="readonly")
+                self.poids_net_conserve_var.set(str(poids))
+        else:
+            self.poids_net_conserve_entry.config(state="readonly") # Par défaut à readonly si pot non trouvé
+            self.poids_net_conserve_var.set("")
+
+
+    def update_ui_for_selection(self, *args):
+        selected_espece = self.espece_var.get()
+        product_type = self.type_produit_var.get()
+        
+        self.forme_produit_var.set("")
+        self.pot_var.set("") 
+        self.poids_net_conserve_var.set("")
+
+        if product_type == "frais":
+            self.frais_frame.pack(in_=self.details_frame_container, fill=tk.X, pady=5, padx=5)
+            self.conserve_frame.pack_forget()
+            self.forme_produit_frais_combo['values'] = FORMES_PRODUITS_FRAIS
+            if FORMES_PRODUITS_FRAIS:
+                self.forme_produit_var.set(FORMES_PRODUITS_FRAIS[0])
+        elif product_type == "conserve":
+            self.conserve_frame.pack(in_=self.details_frame_container, fill=tk.X, pady=5, padx=5)
+            self.frais_frame.pack_forget()
+            self.forme_produit_conserve_combo['values'] = FORMES_PRODUITS_CONSERVE
+            if FORMES_PRODUITS_CONSERVE:
+                self.forme_produit_var.set(FORMES_PRODUITS_CONSERVE[0])
+            
+            active_pots = list(POTS_DISPONIBLES_MAP.keys())
+            self.pot_combo['values'] = active_pots # Mettre à jour la liste des pots
+            if active_pots: 
+                self.pot_var.set(active_pots[0]) 
+                self.update_poids_net_conserve() 
+            
+            if selected_espece:
+                self.ingredients_var.set(f"100% {selected_espece}") 
+            else:
+                self.ingredients_var.set("100% Truffes")
+        self.status_var.set("")
+
+    def construire_nom_produit_final(self, forme_produit, espece):
+        key = (forme_produit, espece)
+        nom_mappe = PRODUCT_NAME_MAPPING.get(key)
+        
+        if nom_mappe:
+            return nom_mappe
+        else: 
+            print(f"Attention: Combinaison ('{forme_produit}', '{espece}') non trouvée dans PRODUCT_NAME_MAPPING. Utilisation de la concaténation.")
+            if forme_produit.endswith("à la") or forme_produit.endswith("de"):
+                return f"{forme_produit} {espece}"
+            elif "(conserve)" in forme_produit:
+                base_forme = forme_produit.replace(" (conserve)", "").strip()
+                return f"{base_forme} {espece} (Conserve)"
+            else:
+                return f"{forme_produit} {espece}"
+
+    def generer(self):
+        self.status_var.set("Génération en cours...")
+        self.master.update_idletasks()
+
+        selected_espece = self.espece_var.get()
+        type_produit = self.type_produit_var.get()
+        selected_forme_produit = self.forme_produit_var.get()
+        selected_pot_nom = self.pot_var.get() if type_produit == "conserve" else None
+        
+        if not selected_espece:
+            messagebox.showerror("Erreur", "Veuillez sélectionner une espèce de truffe.")
+            self.status_var.set("Erreur: Espèce manquante.")
+            return
+        if not selected_forme_produit:
+            messagebox.showerror("Erreur", "Veuillez sélectionner une forme de produit.")
+            self.status_var.set("Erreur: Forme du produit manquante.")
+            return
+        if type_produit == "conserve" and not selected_pot_nom:
+            messagebox.showerror("Erreur", "Veuillez sélectionner un type de pot pour la conserve.")
+            self.status_var.set("Erreur: Type de pot manquant.")
+            return
+
+        nom_produit_pour_etiquette = self.construire_nom_produit_final(selected_forme_produit, selected_espece)
+        numero_lot = generer_numero_lot()
+        url_passeport = creer_url_passeport(numero_lot)
+        date_conditionnement_iso = datetime.date.today().isoformat()
+        
+        donnees_produit = {
+            "numero_lot": numero_lot,
+            "nom_produit_affiche": nom_produit_pour_etiquette, 
+            "espece_truffe": selected_espece,
+            "forme_produit_base": selected_forme_produit,
+            "url_passeport": url_passeport,
+            "date_conditionnement": date_conditionnement_iso,
+        }
+
+        label_face_avant = f"Maison Trüvra\nPropriétaire récoltant\n\n{nom_produit_pour_etiquette}"
+        label_face_arriere = ""
+        
+        poids_net_final = 0 # Sera utilisé pour le JSON et potentiellement l'étiquette
+
+        if type_produit == "frais":
+            try:
+                quantite = float(self.quantite_var.get())
+                if quantite <= 0: raise ValueError("La quantité doit être positive.")
+                poids_net_final = quantite
+            except ValueError as e:
+                messagebox.showerror("Erreur de Saisie", f"Quantité invalide pour produit frais: {e}")
+                self.status_var.set("Erreur: Quantité invalide.")
+                return
+            
+            try:
+                date_cueillette_str = self.date_cueillette_var.get()
+                date_cueillette = datetime.datetime.strptime(date_cueillette_str, "%Y-%m-%d").date()
+            except ValueError:
+                messagebox.showerror("Erreur de Saisie", "Format de date de cueillette invalide (AAAA-MM-JJ).")
+                self.status_var.set("Erreur: Date de cueillette invalide.")
+                return
+
+            donnees_produit.update({
+                "type_produit_detail": "frais",
+                "quantite_g": quantite, # Spécifique aux frais si différent de poids_net_final
+                "date_cueillette": date_cueillette.isoformat(),
+                "texte_origine": "Cultivée en France dans le terroir contrôlé Maison Trüvra."
+            })
+            
+            label_face_arriere = (
+                f"Ingrédients : 100% {selected_espece}\n"
+                f"Produit cultivé, récolté et conditionné en France par Maison Trüvra\n"
+                f"Poids net : {poids_net_final} g\n" 
+                f"Lot : {numero_lot}\n"
+                f"A consommer de préférence avant le [DDM pour frais]\n" 
+                f"Produit récolté le {date_cueillette.strftime('%d/%m/%Y')}.\n"
+                f"www.maisontruvra.com\n"
+                f"Retrouvez plus d'informations sur nos truffes et la traçabilité de votre produit avec ce QR Code :"
+            )
+
+        elif type_produit == "conserve":
+            poids_net_conserve_str = self.poids_net_conserve_var.get() # Sera manuel si "Sachet plastique"
+            try:
+                poids_net_conserve = float(poids_net_conserve_str)
+                if poids_net_conserve <=0: raise ValueError("Poids net doit être positif.")
+                poids_net_final = poids_net_conserve
+            except ValueError:
+                messagebox.showerror("Erreur", f"Poids net de la conserve invalide: {poids_net_conserve_str}")
+                self.status_var.set("Erreur: Poids net conserve.")
+                return
+            
+            date_recolte_conserve = datetime.date.today() # Pour conserves, date récolte = date production
+            
+            try:
+                ddm_str = self.ddm_var.get()
+                ddm = datetime.datetime.strptime(ddm_str, "%Y-%m-%d").date()
+            except ValueError:
+                messagebox.showerror("Erreur de Saisie", "Format de DDM invalide (AAAA-MM-JJ).")
+                self.status_var.set("Erreur: DDM invalide.")
+                return
+
+            donnees_produit.update({
+                "type_produit_detail": "conserve",
+                "date_production": date_conditionnement_iso, 
+                "date_cueillette": date_recolte_conserve.isoformat(), 
+                "ddm": ddm.isoformat(),
+                "poids_net_g": poids_net_conserve, # Spécifique aux conserves
+                "ingredients_liste": f"100% {selected_espece}", 
+                "pot_selectionne": selected_pot_nom,
+                "texte_carte_accroche": "Vous tenez entre vos mains un concentré de l'excellence Maison Trüvra. Scannez ce QR code pour découvrir l'histoire unique de votre produit."
+            })
+            
+            label_face_arriere = (
+                f"Ingrédients : 100% {selected_espece}\n"
+                f"Produit cultivé, récolté et conditionné en France par Maison Trüvra\n"
+                f"Poids net : {poids_net_final} g\n"
+                f"Lot : {numero_lot}\n"
+                f"A consommer de préférence avant le {ddm.strftime('%d/%m/%Y')}. Produit récolté le {date_recolte_conserve.strftime('%d/%m/%Y')}.\n"
+                f"www.maisontruvra.com\n"
+                f"Retrouvez plus d'informations sur nos truffes et la traçabilité de votre produit avec ce QR Code :"
+            )
+        
+        donnees_produit["poids_net_final_g"] = poids_net_final # Poids net commun pour JSON
+
+        try:
+            qr_path, data_path = generer_qr_code_et_donnees(donnees_produit)
+            self.status_var.set(f"Succès ! QR: {os.path.basename(qr_path)}, Data: {os.path.basename(data_path)}")
+            
+            recap_title = "Informations d'Étiquette Générées"
+            recap_message = (
+                f"--- FACE AVANT ---\n{label_face_avant}\n\n"
+                f"--- FACE ARRIÈRE ---\n{label_face_arriere} [QR CODE ICI]\n\n"
+                f"URL du QR Code: {url_passeport}\n"
+                f"Fichiers générés dans: {DOSSIER_SORTIE}"
+            )
+            messagebox.showinfo(recap_title, recap_message)
+
+        except Exception as e:
+            messagebox.showerror("Erreur de Génération", f"Une erreur est survenue lors de la génération: {e}")
+            self.status_var.set(f"Erreur: {e}")
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = QRCodeApp(root)
+    root.mainloop()
