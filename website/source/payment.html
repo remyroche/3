@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement - Maison Trüvra</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    </head>
+<body class="bg-gray-50">
+    <div id="header-placeholder"></div>
+
+    <main class="container mx-auto mt-28 mb-16 px-4 min-h-screen">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-2xl mx-auto">
+            <h1 class="text-3xl font-semibold text-gray-800 mb-8 text-center">Finaliser le Paiement</h1>
+
+            <div id="checkout-summary-container" class="mb-8 p-4 border rounded-md bg-gray-50">
+                <h2 class="text-xl font-medium text-gray-700 mb-3">Récapitulatif de la Commande</h2>
+                <div id="checkout-summary-items" class="space-y-2">
+                    <p class="text-gray-600">Chargement du récapitulatif...</p>
+                </div>
+                <div class="mt-4 pt-4 border-t">
+                    <p class="flex justify-between text-lg font-semibold text-gray-800">
+                        <span>Total:</span>
+                        <span id="checkout-summary-total">0.00 €</span>
+                    </p>
+                </div>
+            </div>
+            
+            <form id="payment-form" class="space-y-6">
+                <div>
+                    <h2 class="text-xl font-medium text-gray-700 mb-3">Informations de Paiement</h2>
+                     <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
+                        <p class="font-bold">Note de Développement</p>
+                        <p>L'intégration réelle du paiement (ex: Stripe Elements) est requise ici. Les champs ci-dessous sont des placeholders.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="card-name" class="block text-sm font-medium text-gray-700">Nom sur la carte</label>
+                        <input type="text" id="card-name" name="card-name" placeholder="Jean Dupont" required
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+                    
+                    <div class="form-group mt-4">
+                        <label for="card-element-placeholder" class="block text-sm font-medium text-gray-700">Informations de la Carte (Via Stripe Elements)</label>
+                        <div id="card-element-placeholder" class="mt-1 p-3 border border-gray-300 rounded-md bg-gray-50">
+                            <p class="text-gray-400 text-sm">L'élément sécurisé Stripe pour la saisie de la carte apparaîtra ici.</p>
+                        </div>
+                        <div id="card-errors" role="alert" class="text-red-500 text-sm mt-1"></div>
+                    </div>
+
+                </div>
+
+                <div class="mt-8">
+                    <button type="submit" id="submit-payment-button"
+                            class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out">
+                        <i class="fas fa-lock mr-2"></i>Payer <span id="payment-amount-button"></span> €
+                    </button>
+                </div>
+                 <div id="payment-message" class="mt-4 text-center"></div>
+            </form>
+
+            <div class="mt-8 text-center">
+                <i class="fas fa-shield-alt text-green-500 mr-2"></i> Paiement sécurisé par Stripe (simulation)
+            </p>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+    <div id="global-message-container"></div>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script> <script src="js/ui.js"></script>
+    <script src="js/checkout.js"></script> <script src="js/main.js"></script>
+</body>
