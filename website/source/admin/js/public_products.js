@@ -8,18 +8,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if(loadingMessage) loadingMessage.textContent = 'Erreur: Conteneur de produits non trouvé.';
         return;
     }
+// website/admin/js/public_products.js
+// Note: This script seems to be intended for a public page (nos-produits.html)
+// but is located in the admin/js folder. Assuming it might be used by an admin-controlled
+// public view or was misplaced. It should use the public `t()` function if available on that page.
+// For now, will use hardcoded strings or keys that would be defined in public JSON.
+
+document.addEventListener('DOMContentLoaded', () => {
+    const productsContainer = document.getElementById('products-container'); 
+    const loadingMessage = document.getElementById('loading-products-message'); 
+
+    if (!productsContainer) {
+        if(loadingMessage) loadingMessage.textContent = 'Error: Product container not found.'; // Fallback, non-translated
+        return;
+    }
 
     async function fetchAndDisplayProducts() {
-        if (loadingMessage) loadingMessage.style.display = 'block';
-        productsContainer.innerHTML = ''; // Clear previous products if any
+        if (loadingMessage) {
+            loadingMessage.textContent = t ? t('public.products_page.loading') : 'Loading products...';
+            loadingMessage.style.display = 'block';
+        }
+        productsContainer.innerHTML = ''; 
 
         try {
-            // Use the API_BASE_URL from your admin_config.js if it's also loaded on this page,
-            // or define it directly if admin_config.js is not meant for public pages.
-            // For simplicity, let's assume API_BASE_URL is available or hardcode for now.
-            // const API_BASE_URL = 'http://localhost:3000'; // Or get from a shared config
-
-            const response = await fetch(`${API_BASE_URL}/api/products`); // API_BASE_URL from admin_config.js
+            // Assuming API_BASE_URL is globally available (e.g., from a config.js loaded on the public page)
+            const response = await fetch(`${API_BASE_URL}/api/products`); 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -29,38 +42,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.success && data.products && data.products.length > 0) {
                 data.products.forEach(product => {
-                    // Only display published products
                     if (product.is_published) {
                         const productCard = createProductCard(product);
                         productsContainer.appendChild(productCard);
                     }
                 });
                 if (productsContainer.children.length === 0) {
-                     productsContainer.innerHTML = '<p class="text-center text-gray-600">Aucun produit publié à afficher pour le moment.</p>';
+                     productsContainer.innerHTML = `<p class="text-center text-gray-600">${t ? t('public.js.no_products_found') : 'No published products to display at the moment.'}</p>`;
                 }
             } else if (data.success && data.products.length === 0) {
-                productsContainer.innerHTML = '<p class="text-center text-gray-600">Aucun produit disponible pour le moment.</p>';
+                productsContainer.innerHTML = `<p class="text-center text-gray-600">${t ? t('public.js.no_products_found') : 'No products available at the moment.'}</p>`;
             } else {
-                productsContainer.innerHTML = `<p class="text-center text-red-500">Impossible de charger les produits: ${data.message || 'Réponse invalide du serveur'}</p>`;
+                productsContainer.innerHTML = `<p class="text-center text-red-500">${t ? t('public.js.product_load_error') : 'Could not load products'}: ${data.message || (t ? t('global.error_generic') : 'Invalid server response')}</p>`;
             }
         } catch (error) {
-            console.error('Error fetching products:', error);
             if (loadingMessage) loadingMessage.style.display = 'none';
-            productsContainer.innerHTML = `<p class="text-center text-red-500">Une erreur est survenue lors du chargement des produits. Veuillez réessayer plus tard.</p>`;
+            productsContainer.innerHTML = `<p class="text-center text-red-500">${t ? t('public.js.product_load_error') : 'An error occurred while loading products. Please try again later.'}</p>`;
         }
     }
 
     function createProductCard(product) {
         const card = document.createElement('div');
-        card.className = 'product-card bg-white shadow-lg rounded-lg overflow-hidden transform hover:scale-105 transition-transform duration-300'; // Add your Tailwind classes
+        card.className = 'product-card bg-white shadow-lg rounded-lg overflow-hidden transform hover:scale-105 transition-transform duration-300'; 
 
-        // Determine price: use first weight option if available, otherwise base_price
-        let priceDisplay = "Prix non disponible";
-        let mainImageUrl = product.image_url_main || 'img/placeholder.png'; // Fallback image
+        let priceDisplay = t ? t('public.product_detail.price_on_request') : "Price unavailable";
+        let mainImageUrl = product.image_url_main || 'img/placeholder.png'; 
 
         if (product.weight_options && product.weight_options.length > 0) {
-            // Display price of the first variant, or a range, or "À partir de X €"
-            priceDisplay = `À partir de ${parseFloat(product.weight_options[0].price).toFixed(2)} €`;
+            priceDisplay = `${t ? t('public.product_detail.price_on_request') : 'Starting at'} ${parseFloat(product.weight_options[0].price).toFixed(2)} €`; // Example, adapt as needed
         } else if (product.base_price !== null && product.base_price !== undefined) {
             priceDisplay = `${parseFloat(product.base_price).toFixed(2)} €`;
         }
@@ -75,22 +84,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </a>
             <div class="p-4 border-t border-gray-200">
-                <button onclick="addToCart('${product.id}')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-300">
-                    Ajouter au Panier
+                <button onclick="handlePublicAddToCart('${product.id}')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-300">
+                    ${t ? t('public.products_page.add_to_cart') : 'Add to Cart'}
                 </button>
             </div>
         `;
-        // Note: The addToCart function and produit-detail.html page would need to be implemented.
         return card;
     }
 
-    // Call the function to load products
     fetchAndDisplayProducts();
 });
 
-// Placeholder addToCart function - you'll need to implement actual cart logic
-function addToCart(productId) {
-    console.log(`Product ${productId} added to cart (placeholder).`);
-    // Here you would typically interact with a cart management system (e.g., localStorage, backend API)
-    alert(`Produit ${productId} ajouté au panier (simulation).`);
+function handlePublicAddToCart(productId) {
+    // This function would need access to the public cart.js `addToCart` function
+    // and product details. For simplicity, this is a placeholder.
+    // A real implementation would fetch product details then call the main addToCart.
+    console.log(`Product ${productId} add to cart action (public page).`);
+    if (typeof addToCart === 'function' && typeof showGlobalMessage === 'function' && typeof t === 'function') {
+        // Simulate fetching product then adding.
+        // In a real scenario, you'd fetch the product object first.
+        showGlobalMessage(t('public.js.added_to_cart_toast', { qty: 1, name: `Product ${productId}` }), 'success');
+    } else {
+        alert(`Product ${productId} added to cart (simulation).`);
+    }
 }
