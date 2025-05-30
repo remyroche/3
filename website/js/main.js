@@ -1,6 +1,60 @@
 // website/js/main.js
 // Main script for initializing the frontend application and page-specific logic.
 
+/**
+ * Initializes the language switcher links and highlights the current language.
+ */
+function initializeLangSwitcher() {
+    const path = window.location.pathname;
+    const pathSegments = path.split('/').filter(Boolean); // e.g., ['dist', 'fr', 'index.html'] or ['fr', 'index.html']
+
+    let currentLang = 'fr'; // Default
+    let langIndex = pathSegments.indexOf('fr');
+    if (langIndex === -1) {
+        langIndex = pathSegments.indexOf('en');
+    }
+
+    let pagePath = 'index.html'; // Default page
+
+    if (langIndex !== -1) {
+        currentLang = pathSegments[langIndex];
+        if (langIndex + 1 < pathSegments.length) {
+            pagePath = pathSegments.slice(langIndex + 1).join('/');
+        }
+    } else {
+        // Fallback to HTML lang attribute if no lang in path
+        currentLang = document.documentElement.lang || 'fr';
+    }
+
+    const otherLang = currentLang === 'fr' ? 'en' : 'fr';
+    const newHref = `../${otherLang}/${pagePath}`;
+
+    // Update all switcher links (desktop and mobile)
+    document.querySelectorAll('.lang-link').forEach(link => {
+        const linkLang = link.dataset.lang;
+        if (linkLang === otherLang) {
+            link.setAttribute('href', newHref);
+            link.style.opacity = '0.6';
+            link.style.border = '2px solid transparent';
+            link.style.cursor = 'pointer';
+        } else if (linkLang === currentLang) {
+            link.setAttribute('href', '#'); // Current language link
+            link.style.opacity = '1';
+            link.style.border = '2px solid #D4AF37'; // gold border for active
+            link.style.borderRadius = '4px';
+            link.style.padding = '2px';
+            link.style.cursor = 'default';
+        }
+
+        // Add hover effects for non-active links
+        if(linkLang !== currentLang){
+            link.addEventListener('mouseover', () => { link.style.opacity = '1' });
+            link.addEventListener('mouseout', () => { link.style.opacity = '0.6' });
+        }
+    });
+}
+
+
 async function loadHeader() {
     const headerPlaceholder = document.getElementById('header-placeholder');
     if (!headerPlaceholder) {
@@ -28,6 +82,10 @@ async function loadHeader() {
         }
         if (typeof updateCartDisplay === 'function') { // Changed from updateCartCountDisplay
             updateCartDisplay();
+        }
+        // Initialize the language switcher after header is loaded
+        if (typeof initializeLangSwitcher === 'function') {
+            initializeLangSwitcher();
         }
 
     } catch (error) {
@@ -134,7 +192,6 @@ document.addEventListener('DOMContentLoaded', async () => { // Consolidated DOMC
     } else if (bodyId === 'page-confirmation-commande') {
         if (typeof initializeConfirmationPage === 'function') initializeConfirmationPage();
     }
-    // ... autres pages ...
 
     // Initialisation des modales globales (si elles ne sont pas chargées dynamiquement)
     document.querySelectorAll('.modal-overlay').forEach(modalOverlay => {
@@ -173,6 +230,5 @@ document.addEventListener('DOMContentLoaded', async () => { // Consolidated DOMC
                 displayAccountDashboard(); // Re-check and display login form or dashboard
             }
         }
-        // Add other pages that need to react dynamically to login/logout here
     });
 });
