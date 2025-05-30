@@ -1,27 +1,57 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paiement - Maison Trüvra</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    </head>
-<body class="bg-gray-50">
+    <meta charset="{{global.charset}}">
+    <meta name="viewport" content="{{global.viewport}}">
+    <title>{{public.checkout.title}}</title>
+    <link rel="stylesheet" href="css/style.css"> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-cream': '#F5EEDE',
+                        'brand-near-black': '#11120D',
+                        'brand-classic-gold': '#D4AF37',
+                        'brand-warm-taupe': '#A28C6A',
+                        'brand-earth-brown': '#7D6A4F',
+                        'brand-slate-blue-grey': '#6E7582',
+                        'brand-deep-sage-green': '#4B5A59',
+                        'brand-truffle-burgundy': '#8A3E3E',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {font-family: 'Inter', sans-serif; background-color: #F5EEDE; color: #7D6A4F;}
+        h1, h2, h3, .font-serif {font-family: 'Playfair Display', serif;}
+        .btn-primary {background-color: #7D6A4F; color: #F5EEDE; padding: 0.85rem 1.75rem; border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease; font-weight: 500;}
+        .btn-primary:hover {background-color: #11120D; transform: translateY(-2px);}
+        .form-input-checkout { @apply w-full px-4 py-3 text-brand-near-black bg-white border border-brand-warm-taupe/50 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-classic-gold shadow-sm; }
+        .modal-message { @apply fixed bottom-5 right-5 bg-brand-deep-sage-green text-brand-cream p-4 rounded-lg shadow-xl z-[100] transition-all duration-500 ease-out opacity-0 translate-y-10; }
+        .modal-message.show { @apply opacity-100 translate-y-0; }
+    </style>
+</head>
+<body id="page-paiement" class="bg-gray-50 antialiased">
     <div id="header-placeholder"></div>
 
-    <main class="container mx-auto mt-28 mb-16 px-4 min-h-screen">
-        <div class="bg-white p-8 rounded-lg shadow-lg max-w-2xl mx-auto">
-            <h1 class="text-3xl font-semibold text-gray-800 mb-8 text-center">Finaliser le Paiement</h1>
+    <main class="container mx-auto mt-10 mb-16 px-4 min-h-screen">
+        <div class="bg-white p-6 md:p-8 rounded-lg shadow-xl max-w-2xl mx-auto">
+            <h1 class="text-3xl font-serif text-brand-near-black mb-8 text-center">{{public.checkout.header}}</h1>
 
-            <div id="checkout-summary-container" class="mb-8 p-4 border rounded-md bg-gray-50">
-                <h2 class="text-xl font-medium text-gray-700 mb-3">Récapitulatif de la Commande</h2>
-                <div id="checkout-summary-items" class="space-y-2">
-                    <p class="text-gray-600">Chargement du récapitulatif...</p>
+            <div id="checkout-summary-container" class="mb-8 p-4 border border-brand-warm-taupe/30 rounded-md bg-brand-cream/50">
+                <h2 class="text-xl font-serif text-brand-earth-brown mb-3">{{public.checkout.summary_header}}</h2>
+                <div id="checkout-summary-items" class="space-y-2 text-brand-earth-brown">
+                    <p class="text-sm">{{public.checkout.loading_summary}}</p>
                 </div>
-                <div class="mt-4 pt-4 border-t">
-                    <p class="flex justify-between text-lg font-semibold text-gray-800">
-                        <span>Total:</span>
+                <div class="mt-4 pt-4 border-t border-brand-warm-taupe/30">
+                    <p class="flex justify-between text-lg font-semibold text-brand-near-black">
+                        <span>{{public.checkout.total}}</span>
                         <span id="checkout-summary-total">0.00 €</span>
                     </p>
                 </div>
@@ -29,49 +59,55 @@
             
             <form id="payment-form" class="space-y-6">
                 <div>
-                    <h2 class="text-xl font-medium text-gray-700 mb-3">Informations de Paiement</h2>
-                     <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
-                        <p class="font-bold">Note de Développement</p>
-                        <p>L'intégration réelle du paiement (ex: Stripe Elements) est requise ici. Les champs ci-dessous sont des placeholders.</p>
+                    <h2 class="text-xl font-serif text-brand-earth-brown mb-4">{{public.checkout.payment_info_header}}</h2>
+                     <div class="bg-brand-warm-taupe/10 border-l-4 border-brand-warm-taupe text-brand-earth-brown p-4 mb-6 rounded-md" role="alert">
+                        <p class="font-bold text-brand-near-black">{{public.checkout.dev_note_title}}</p>
+                        <p class="text-sm">{{public.checkout.dev_note_body}}</p>
                     </div>
 
                     <div class="form-group">
-                        <label for="card-name" class="block text-sm font-medium text-gray-700">Nom sur la carte</label>
-                        <input type="text" id="card-name" name="card-name" placeholder="Jean Dupont" required
-                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <label for="card-name" class="block text-sm font-medium text-brand-near-black mb-1">{{public.checkout.card_name_label}}</label>
+                        <input type="text" id="card-name" name="card-name" placeholder="{{public.checkout.card_name_placeholder}}" required
+                               class="form-input-checkout">
                     </div>
                     
                     <div class="form-group mt-4">
-                        <label for="card-element-placeholder" class="block text-sm font-medium text-gray-700">Informations de la Carte (Via Stripe Elements)</label>
-                        <div id="card-element-placeholder" class="mt-1 p-3 border border-gray-300 rounded-md bg-gray-50">
-                            <p class="text-gray-400 text-sm">L'élément sécurisé Stripe pour la saisie de la carte apparaîtra ici.</p>
+                        <label for="card-element-placeholder" class="block text-sm font-medium text-brand-near-black mb-1">{{public.checkout.card_info_label}}</label>
+                        <div id="card-element-placeholder" class="mt-1 p-3 border border-brand-warm-taupe/50 rounded-md bg-brand-cream/30">
+                            <p class="text-brand-warm-taupe text-sm">{{public.checkout.stripe_placeholder}}</p>
                         </div>
-                        <div id="card-errors" role="alert" class="text-red-500 text-sm mt-1"></div>
+                        <div id="card-errors" role="alert" class="text-brand-truffle-burgundy text-xs mt-1"></div>
                     </div>
-
                 </div>
 
                 <div class="mt-8">
                     <button type="submit" id="submit-payment-button"
-                            class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out">
-                        <i class="fas fa-lock mr-2"></i>Payer <span id="payment-amount-button"></span> €
+                            class="w-full bg-brand-deep-sage-green hover:bg-brand-near-black text-brand-cream font-bold py-3 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-classic-gold transition duration-150 ease-in-out flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
+                        {{public.checkout.pay_btn}} <span id="payment-amount-button" class="ml-1"></span> €
                     </button>
                 </div>
-                 <div id="payment-message" class="mt-4 text-center"></div>
+                 <div id="payment-message" class="mt-4 text-center text-sm"></div>
             </form>
 
-            <div class="mt-8 text-center">
-                <i class="fas fa-shield-alt text-green-500 mr-2"></i> Paiement sécurisé par Stripe (simulation)
-            </p>
+            <div class="mt-8 text-center text-xs text-brand-deep-sage-green">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 inline-block mr-1 align-middle"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622A11.99 11.99 0 0018.402 6a11.959 11.959 0 01-1.536-1.036A11.975 11.975 0 0012 3c-2.115 0-4.079.593-5.668 1.633z" /></svg>
+                {{public.checkout.secure_payment_info}}
+            </div>
         </div>
     </main>
 
     <div id="footer-placeholder"></div>
-    <div id="global-message-container"></div>
+    <div id="global-message-toast" class="modal-message" style="display:none;">
+        <p id="global-message-text"></p>
+    </div>
 
     <script src="js/config.js"></script>
+    <script src="js/ui.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/cart.js"></script> <script src="js/ui.js"></script>
-    <script src="js/checkout.js"></script> <script src="js/main.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/checkout.js"></script>
+    <script src="js/main.js"></script>
 </body>
+</html>
