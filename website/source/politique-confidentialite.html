@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Politique de Confidentialité - Maison Trüvra</title>
+    <meta charset="{{global.charset}}">
+    <meta name="viewport" content="{{global.viewport}}">
+    <title>{{public.privacy.title}}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,7 +30,7 @@
         body {font-family: 'Inter', sans-serif; background-color: #F5EEDE; color: #7D6A4F;}
         h1, h2, h3, .font-serif {font-family: 'Playfair Display', serif;}
         .section-title { @apply text-3xl md:text-4xl lg:text-5xl font-serif text-brand-earth-brown mb-12 text-center;}
-        .prose { @apply max-w-none; } /* Permet au contenu prose de prendre la largeur du conteneur max-w-3xl */
+        .prose { @apply max-w-none; }
         .prose h2 { @apply text-2xl font-serif text-brand-near-black mt-8 mb-4; }
         .prose p { @apply mb-4 leading-relaxed; }
         .prose a { @apply text-brand-classic-gold hover:text-brand-earth-brown; }
@@ -45,20 +45,20 @@
     <main class="bg-brand-cream">
         <section class="py-16">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 class="section-title">Politique de Confidentialité</h1>
+                <h1 class="section-title">{{public.privacy.title}}</h1>
                 <div class="max-w-3xl mx-auto text-brand-earth-brown space-y-6 leading-relaxed prose lg:prose-xl">
-                    <p>Chez Maison Trüvra, nous nous engageons à protéger la confidentialité de nos clients et visiteurs. Cette politique explique quelles informations nous collectons, comment nous les utilisons et les choix que vous avez concernant vos informations personnelles.</p>
-                    <h2>Collecte d'informations</h2>
-                    <p>Nous collectons des informations lorsque vous : vous inscrivez à notre newsletter, passez une commande (si la fonctionnalité e-commerce est active), créez un compte (si la fonctionnalité e-commerce est active), ou nous contactez. Ces informations peuvent inclure votre nom, prénom, adresse e-mail, adresse postale, numéro de téléphone et détails de paiement (traités de manière sécurisée par nos prestataires le cas échéant).</p>
-                    <h2>Utilisation des informations</h2>
-                    <p>Vos informations sont utilisées pour : traiter vos commandes (le cas échéant), communiquer avec vous concernant vos commandes ou demandes, vous envoyer notre newsletter (si vous y avez consenti), améliorer nos services et personnaliser votre expérience.</p>
-                    <h2>Partage d'informations</h2>
-                    <p>Nous ne vendons ni ne louons vos informations personnelles à des tiers. Nous pouvons partager vos informations avec des prestataires de services de confiance qui nous aident à exploiter notre site web et à mener nos activités (par exemple, traitement des paiements, services de livraison, envoi de newsletters), à condition qu'ils acceptent de garder ces informations confidentielles.</p>
-                    <h2>Sécurité</h2>
-                    <p>Nous prenons des mesures raisonnables pour protéger vos informations personnelles. Cependant, aucune méthode de transmission sur Internet ou de stockage électronique n'est sûre à 100%.</p>
-                    <h2>Vos droits</h2>
-                    <p>Vous avez le droit d'accéder, de corriger ou de supprimer vos informations personnelles. Vous pouvez également vous désinscrire de notre newsletter à tout moment en utilisant le lien de désinscription fourni dans chaque e-mail ou en nous contactant. Pour exercer ces droits, veuillez nous contacter à <a href="mailto:contact@maisontruvra.com">contact@maisontruvra.com</a>.</p>
-                    <p class="mt-4">Cette politique peut être mise à jour périodiquement. Dernière mise à jour : <span id="privacy-update-date">22 mai 2025</span>.</p>
+                    <p>{{public.privacy.p1}}</p>
+                    <h2>{{public.privacy.h2_collection}}</h2>
+                    <p>{{public.privacy.p2}}</p>
+                    <h2>{{public.privacy.h2_usage}}</h2>
+                    <p>{{public.privacy.p3}}</p>
+                    <h2>{{public.privacy.h2_sharing}}</h2>
+                    <p>{{public.privacy.p4}}</p>
+                    <h2>{{public.privacy.h2_security}}</h2>
+                    <p>{{public.privacy.p5}}</p>
+                    <h2>{{public.privacy.h2_rights}}</h2>
+                    <p>{{public.privacy.p6}} <a href="mailto:contact@maisontruvra.com">contact@maisontruvra.com</a>.</p>
+                    <p class="mt-4">{{public.privacy.p7}}</p>
                 </div>
             </div>
         </section>
@@ -75,7 +75,7 @@
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/cart.js"></script>
-    <script src="js/product.js"></script>
+    <script src="js/product.js"></script> <script src="js/products.js"></script>
     <script src="js/checkout.js"></script>
     <script src="js/newsletter.js"></script>
     <script src="js/main.js"></script>
