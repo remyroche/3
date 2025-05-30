@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gérer les Avis - Maison Trüvra Admin</title>
+    <link rel="stylesheet" href="css/admin_style.css"> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="flex h-screen">
+        <aside id="admin-sidebar-container" class="w-64 bg-gray-800 text-white p-4 space-y-4">
+            </aside>
+
+        <div class="flex-1 flex flex-col">
+            <header class="bg-white shadow p-4 flex justify-between items-center">
+                <h1 class="text-2xl font-semibold text-gray-700">Gestion des Avis Clients</h1>
+                <div class="admin-user-info space-x-2">
+                    <span id="admin-username" class="text-gray-600"></span>
+                    <button id="admin-logout-button" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                        Déconnexion
+                    </button>
+                </div>
+            </header>
+
+            <main class="flex-1 p-6 space-y-6">
+                <section class="bg-white p-6 rounded-lg shadow">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-4">Liste des Avis</h2>
+                    <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="filter-review-status" class="block text-sm font-medium text-gray-700">Statut:</label>
+                            <select id="filter-review-status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                <option value="">Tous</option>
+                                <option value="pending">En attente d'approbation</option>
+                                <option value="approved">Approuvé</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="filter-review-product" class="block text-sm font-medium text-gray-700">Produit (ID ou Nom):</label>
+                            <input type="text" id="filter-review-product" placeholder="ID ou Nom du produit..." class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label for="filter-review-user" class="block text-sm font-medium text-gray-700">Utilisateur (Email ou ID):</label>
+                            <input type="text" id="filter-review-user" placeholder="Email ou ID utilisateur..." class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Avis</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produit</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utilisateur</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Note</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commentaire</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reviews-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="8" class="text-center p-4">Chargement des avis...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div id="global-message" class="hidden fixed bottom-5 right-5 p-4 rounded-md text-white z-50">
+        <span id="global-message-text"></span>
+        <button id="global-message-close" class="ml-4 text-xl font-bold">&times;</button>
+    </div>
+
+    <script src="js/admin_api.js"></script>
+    <script src="js/admin_auth.js"></script>
+    <script src="js/admin_main.js"></script> 
+    <script src="js/admin_reviews.js"></script>
+</body>
+</html>
