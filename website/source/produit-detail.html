@@ -7,6 +7,15 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;60<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="{{global.charset}}">
+    <meta name="viewport" content="{{global.viewport}}">
+    <title>{{public.product_detail.title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -55,7 +64,6 @@
         .btn-gold:hover { background-color: #D4AF37; opacity: 0.85; transform: translateY(-2px); }
         .form-input-checkout { @apply w-full px-4 py-3 text-brand-near-black bg-white border border-brand-warm-taupe/50 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-classic-gold shadow-sm; }
         .quantity-input-controls button { @apply px-2 py-0.5 border border-brand-warm-taupe/50 text-brand-near-black hover:bg-brand-warm-taupe/20 text-sm; }
-        /* Removed appearance-none to show native number input spinners */
         .quantity-input { @apply w-16 sm:w-20 text-center border border-brand-warm-taupe/50 rounded-md py-1 text-sm focus:ring-1 focus:ring-brand-classic-gold focus:border-brand-classic-gold; }
         .page-header { @apply text-3xl md:text-4xl font-serif text-brand-near-black mb-8 text-center py-8 bg-white shadow-sm; }
         .modal-overlay { @apply fixed inset-0 bg-brand-near-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 pointer-events-none; }
@@ -74,17 +82,17 @@
         <section id="product-detail-section" class="py-12">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="mb-6">
-                    <a href="nos-produits.html" class="text-brand-warm-taupe hover:text-brand-near-black text-sm">&larr; Retour au catalogue</a>
+                    <a href="nos-produits.html" class="text-brand-warm-taupe hover:text-brand-near-black text-sm">&larr; {{public.product_detail.back_to_catalog}}</a>
                 </div>
                 <div id="product-detail-content" class="grid grid-cols-1 md:grid-cols-2 gap-10 items-start" style="display:none;">
                     <div>
                         <img id="main-product-image" src="https://placehold.co/600x500/7D6A4F/F5EEDE?text=Produit" alt="Image produit principal" class="w-full h-auto object-cover rounded-lg shadow-lg mb-4">
                         <div id="product-thumbnail-gallery" class="grid grid-cols-4 gap-2">
-                            </div>
+                        </div>
                     </div>
 
                     <div class="text-brand-earth-brown">
-                        <h1 id="product-name" class="text-3xl md:text-4xl font-serif text-brand-near-black mb-3">Chargement...</h1>
+                        <h1 id="product-name" class="text-3xl md:text-4xl font-serif text-brand-near-black mb-3">{{global.loading}}</h1>
                         <p id="product-short-description" class="text-lg text-brand-deep-sage-green mb-6"></p>
                         
                         <div class="mb-6">
@@ -93,43 +101,44 @@
                         </div>
 
                         <div id="weight-options-container" class="mb-6 hidden">
-                            <label for="weight-options-select" class="block text-sm font-medium text-brand-near-black mb-1">Poids :</label>
+                            <label for="weight-options-select" class="block text-sm font-medium text-brand-near-black mb-1">{{public.product_detail.weight}}</label>
                             <select id="weight-options-select" name="weight-options" class="form-input-checkout w-full sm:w-1/2">
-                                </select>
+                            </select>
                         </div>
 
-                        <div class="mb-8" id="quantity-select-controls"> <label for="quantity-select" class="block text-sm font-medium text-brand-near-black mb-1">Quantité :</label>
+                        <div class="mb-8" id="quantity-select-controls">
+                            <label for="quantity-select" class="block text-sm font-medium text-brand-near-black mb-1">{{public.product_detail.quantity}}</label>
                             <div class="quantity-input-controls">
                                 <input type="number" id="quantity-select" name="quantity" value="1" min="1" max="10" class="quantity-input">
                             </div>
                         </div>
 
                         <button id="add-to-cart-button" class="btn-gold w-full text-lg py-3.5 mb-6">
-                            Ajouter au Panier
+                            {{public.products_page.add_to_cart}}
                         </button>
 
                         <div class="space-y-3 text-sm mb-6">
-                            <p><strong class="text-brand-near-black">Espèce :</strong> <span id="product-species">N/A</span></p>
-                            <p><strong class="text-brand-near-black">Utilisations idéales :</strong> <span id="product-uses">N/A</span></p>
+                            <p><strong class="text-brand-near-black">{{public.product_detail.species}}</strong> <span id="product-species">N/A</span></p>
+                            <p><strong class="text-brand-near-black">{{public.product_detail.ideal_uses}}</strong> <span id="product-uses">N/A</span></p>
                         </div>
                         
                         <div class="mt-8 pt-6 border-t border-brand-warm-taupe/30">
-                            <h3 class="text-xl font-serif text-brand-near-black mb-3">Description sensorielle</h3>
-                            <p id="product-sensory-description" class="leading-relaxed">Description sensorielle à venir...</p>
+                            <h3 class="text-xl font-serif text-brand-near-black mb-3">{{public.product_detail.sensory_description_title}}</h3>
+                            <p id="product-sensory-description" class="leading-relaxed">{{public.product_detail.no_description}}</p>
                         </div>
 
                         <div class="mt-8 pt-6 border-t border-brand-warm-taupe/30">
-                            <h3 class="text-xl font-serif text-brand-near-black mb-3">Suggestions d'accords</h3>
-                            <p id="product-pairing-suggestions" class="leading-relaxed">Suggestions d'accords à venir...</p>
+                            <h3 class="text-xl font-serif text-brand-near-black mb-3">{{public.product_detail.pairing_suggestions_title}}</h3>
+                            <p id="product-pairing-suggestions" class="leading-relaxed">{{public.product_detail.no_pairings}}</p>
                         </div>
 
                          <div class="mt-10 pt-6 border-t border-brand-warm-taupe/30">
-                            <h3 class="text-xl font-serif text-brand-near-black mb-4">Avis clients</h3>
-                            <p id="product-reviews" class="text-sm text-brand-warm-taupe italic">Aucun avis pour le moment. Soyez le premier à partager votre expérience !</p>
+                            <h3 class="text-xl font-serif text-brand-near-black mb-4">{{public.product_detail.customer_reviews_title}}</h3>
+                            <p id="product-reviews" class="text-sm text-brand-warm-taupe italic">{{public.product_detail.no_reviews}}</p>
                         </div>
                     </div>
                 </div>
-                <div id="product-detail-loading" class="text-center py-10 text-brand-earth-brown">Chargement des détails du produit...</div>
+                <div id="product-detail-loading" class="text-center py-10 text-brand-earth-brown">{{public.product_detail.loading}}</div>
             </div>
         </section>
     </main>
