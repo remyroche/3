@@ -8,6 +8,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script><!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="{{global.charset}}">
+    <meta name="viewport" content="{{global.viewport}}">
+    <title>{{public.confirmation.title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
@@ -49,16 +59,16 @@
         <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div class="bg-white shadow-lg rounded-lg p-8 md:p-12 max-w-2xl mx-auto">
                 <svg class="w-16 h-16 text-brand-deep-sage-green mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <h1 class="text-3xl md:text-4xl font-serif text-brand-near-black mb-4">Merci pour votre commande !</h1>
-                <p id="confirmation-message" class="text-brand-earth-brown mb-2">Votre commande a été passée avec succès.</p>
-                <p class="text-brand-earth-brown mb-2">Un e-mail de confirmation vous a été envoyé.</p>
+                <h1 class="text-3xl md:text-4xl font-serif text-brand-near-black mb-4">{{public.confirmation.thank_you}}</h1>
+                <p id="confirmation-message" class="text-brand-earth-brown mb-2">{{public.confirmation.success_message}}</p>
+                <p class="text-brand-earth-brown mb-2">{{public.confirmation.email_sent}}</p>
                 <div class="mt-6 text-brand-near-black">
-                    <p class="text-lg">Numéro de commande : <strong id="confirmation-order-id" class="text-brand-classic-gold">Chargement...</strong></p>
-                    <p class="text-lg">Montant total : <strong id="confirmation-total-amount" class="text-brand-classic-gold">Chargement...</strong> €</p>
+                    <p class="text-lg">{{public.confirmation.order_number_label}} <strong id="confirmation-order-id" class="text-brand-classic-gold">{{global.loading}}</strong></p>
+                    <p class="text-lg">{{public.confirmation.total_amount_label}} <strong id="confirmation-total-amount" class="text-brand-classic-gold">{{global.loading}}</strong> €</p>
                 </div>
                 <div class="mt-10 space-x-0 space-y-3 sm:space-y-0 sm:space-x-4">
-                    <a href="nos-produits.html" class="btn-primary w-full sm:w-auto">Continuer mes achats</a>
-                    <a href="compte.html" class="btn-secondary w-full sm:w-auto">Voir mon compte</a>
+                    <a href="nos-produits.html" class="btn-primary w-full sm:w-auto">{{public.confirmation.continue_shopping_btn}}</a>
+                    <a href="compte.html" class="btn-secondary w-full sm:w-auto">{{public.confirmation.view_account_btn}}</a>
                 </div>
             </div>
         </div>
@@ -75,8 +85,7 @@
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/cart.js"></script>
-    <script src="js/product.js"></script>
-    <script src="js/checkout.js"></script>
+    <script src="js/products.js"></script> <script src="js/checkout.js"></script>
     <script src="js/newsletter.js"></script>
     <script src="js/main.js"></script>
 </body>
