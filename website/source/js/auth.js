@@ -10,9 +10,13 @@ function getAuthToken() {
 }
 
 /**
- * Sets or removes the authentication token in session storage.
- * @param {string|null} token - The token to set, or null to remove.
- */
+ * Sets or removes the authentication token in session storage.// website/js/auth.js
+// Handles user authentication, session management, and account display.
+
+function getAuthToken() {
+    return sessionStorage.getItem('authToken');
+}
+
 function setAuthToken(token) {
     if (token) {
         sessionStorage.setItem('authToken', token);
@@ -21,30 +25,20 @@ function setAuthToken(token) {
     }
 }
 
-/**
- * Retrieves the current user data from session storage.
- * @returns {object|null} The user object or null if not found/invalid.
- */
 function getCurrentUser() {
     const userString = sessionStorage.getItem('currentUser');
     if (userString) {
         try {
             return JSON.parse(userString);
         } catch (e) {
-            console.error("Erreur lors du parsing des données utilisateur:", e);
             sessionStorage.removeItem('currentUser');
-            sessionStorage.removeItem('authToken'); // Also clear token if user data is corrupt
+            sessionStorage.removeItem('authToken');
             return null;
         }
     }
     return null;
 }
 
-/**
- * Sets the current user data in session storage and updates login state.
- * @param {object|null} userData - The user data object, or null to clear.
- * @param {string|null} [token=null] - The auth token, if setting a new user.
- */
 function setCurrentUser(userData, token = null) {
     if (userData) {
         sessionStorage.setItem('currentUser', JSON.stringify(userData));
@@ -54,34 +48,20 @@ function setCurrentUser(userData, token = null) {
         sessionStorage.removeItem('authToken');
     }
     updateLoginState();
-    updateCartCountDisplay(); // Cart display might depend on login state (e.g. merging carts)
+    updateCartDisplay(); // Changed from updateCartCountDisplay
     document.dispatchEvent(new CustomEvent('authStateChanged', { detail: { isLoggedIn: !!userData } }));
 }
 
-/**
- * Logs out the current user.
- * Clears user data and token from session storage, updates UI.
- */
 async function logoutUser() {
-    const currentUser = getCurrentUser();
-    // if (currentUser) {
-        // Optional: Call a backend logout endpoint if it exists and is necessary
-        // await makeApiRequest('/auth/logout', 'POST', null, true);
-    // }
-    setCurrentUser(null); // This will clear session storage and update UI
-    showGlobalMessage("Vous avez été déconnecté.", "info");
+    setCurrentUser(null); 
+    showGlobalMessage(t('public.js.logged_out'), "info");
 
-    // Redirect to account page if logout occurs on account or payment page.
-    // For other pages, the 'authStateChanged' event will trigger UI updates if needed.
     const bodyId = document.body.id;
     if (bodyId === 'page-compte' || bodyId === 'page-paiement') {
         window.location.href = 'compte.html';
     }
 }
 
-/**
- * Updates the UI elements (account links) based on the current login state.
- */
 function updateLoginState() {
     const currentUser = getCurrentUser();
     const accountLinkDesktop = document.querySelector('header nav a[href="compte.html"]');
@@ -90,25 +70,20 @@ function updateLoginState() {
     const cartIconMobile = document.querySelector('.md\\:hidden a[href="panier.html"]');
 
     if (currentUser) {
-        if (accountLinkDesktop) accountLinkDesktop.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-brand-classic-gold"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg> <span class="ml-1 text-xs">${currentUser.prenom || 'Compte'}</span>`;
-        if (accountLinkMobile) accountLinkMobile.textContent = `Mon Compte (${currentUser.prenom || ''})`;
+        if (accountLinkDesktop) accountLinkDesktop.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-brand-classic-gold"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg> <span class="ml-1 text-xs">${currentUser.prenom || t('public.nav.account')}</span>`;
+        if (accountLinkMobile) accountLinkMobile.textContent = `${t('public.nav.account')} (${currentUser.prenom || ''})`;
     } else {
         if (accountLinkDesktop) accountLinkDesktop.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>`;
-        if (accountLinkMobile) accountLinkMobile.textContent = 'Mon Compte';
+        if (accountLinkMobile) accountLinkMobile.textContent = t('public.nav.account');
     }
-    // Ensure cart icons are always visible (count will be updated by updateCartCountDisplay)
     if(cartIconDesktop) cartIconDesktop.style.display = 'inline-flex';
     if(cartIconMobile) cartIconMobile.style.display = 'inline-flex';
 }
 
-/**
- * Handles the login form submission.
- * @param {Event} event - The form submission event.
- */
 async function handleLogin(event) {
     event.preventDefault();
     const loginForm = event.target;
-    clearFormErrors(loginForm); // Assumes clearFormErrors is in ui.js
+    clearFormErrors(loginForm); 
     const emailField = loginForm.querySelector('#login-email');
     const passwordField = loginForm.querySelector('#login-password');
     const email = emailField.value;
@@ -118,64 +93,52 @@ async function handleLogin(event) {
     let isValid = true;
     if (loginMessageElement) loginMessageElement.textContent = '';
 
-    if (!email || !validateEmail(email)) { // Assumes validateEmail is in ui.js
-        setFieldError(emailField, "Veuillez entrer une adresse e-mail valide."); // Assumes setFieldError is in ui.js
+    if (!email || !validateEmail(email)) { 
+        setFieldError(emailField, t('public.js.newsletter_invalid_email')); 
         isValid = false;
     }
     if (!password) {
-        setFieldError(passwordField, "Veuillez entrer votre mot de passe.");
+        setFieldError(passwordField, t('public.account.password_label')); // Or a more specific "Password required"
         isValid = false;
     }
     if (!isValid) {
-        showGlobalMessage("Veuillez corriger les erreurs dans le formulaire.", "error"); // Assumes showGlobalMessage is in ui.js
+        showGlobalMessage(t('global.error_generic'), "error"); 
         return;
     }
 
-    showGlobalMessage("Connexion en cours...", "info", 60000); // Long timeout for login process
+    showGlobalMessage(t('public.js.logging_in'), "info", 60000); 
 
     try {
-        // Assumes makeApiRequest is in api.js and API_BASE_URL is in config.js
         const result = await makeApiRequest('/auth/login', 'POST', { email, password });
         if (result.success && result.user && result.token) {
             setCurrentUser(result.user, result.token);
-            showGlobalMessage(result.message || "Connexion réussie!", "success");
+            showGlobalMessage(result.message || t('public.js.login_success'), "success");
             loginForm.reset();
-
-            // The 'authStateChanged' event (dispatched by setCurrentUser)
-            // should trigger displayAccountDashboard() if on 'page-compte'
-            // or initCartPage() if on 'page-panier'.
-            // Handle explicit redirection if a redirect_url is present.
             const urlParams = new URLSearchParams(window.location.search);
             const redirectUrl = urlParams.get('redirect');
             if (redirectUrl) {
                 window.location.href = redirectUrl;
             }
         } else {
-            setCurrentUser(null); // Clear any partial login state
-            const generalErrorMessage = result.message || "Échec de la connexion. Vérifiez vos identifiants.";
+            setCurrentUser(null); 
+            const generalErrorMessage = result.message || t('public.js.login_failed');
             showGlobalMessage(generalErrorMessage, "error");
             if (loginMessageElement) loginMessageElement.textContent = generalErrorMessage;
-            setFieldError(emailField, " "); // Mark fields as potentially incorrect (empty message or specific)
+            setFieldError(emailField, " "); 
             setFieldError(passwordField, generalErrorMessage);
         }
     } catch (error) {
-        setCurrentUser(null); // Clear any partial login state on error
-        // Error message is already shown by makeApiRequest's catch block
-        if (loginMessageElement) loginMessageElement.textContent = error.message || "Erreur de connexion au serveur.";
+        setCurrentUser(null); 
+        if (loginMessageElement) loginMessageElement.textContent = error.message || t('global.error_generic');
     }
 }
 
-/**
- * Handles the registration form submission.
- * Note: This is a placeholder as the actual registration form HTML is missing.
- * @param {Event} event - The form submission event.
- */
 async function handleRegistrationForm(event) {
     event.preventDefault();
     const form = event.target;
     clearFormErrors(form);
     
-    const emailField = form.querySelector('#register-email'); // Assuming IDs like #register-email
+    const emailField = form.querySelector('#register-email'); 
     const passwordField = form.querySelector('#register-password');
     const confirmPasswordField = form.querySelector('#register-confirm-password');
     const nomField = form.querySelector('#register-nom');
@@ -184,8 +147,9 @@ async function handleRegistrationForm(event) {
     let isValid = true;
 
     if (!emailField.value || !validateEmail(emailField.value)) {
-        setFieldError(emailField, "E-mail invalide."); isValid = false;
+        setFieldError(emailField, t('public.js.newsletter_invalid_email')); isValid = false;
     }
+    // Add more specific translated validation messages if needed
     if (!nomField.value.trim()) {
         setFieldError(nomField, "Nom requis."); isValid = false;
     }
@@ -200,11 +164,11 @@ async function handleRegistrationForm(event) {
     }
 
     if (!isValid) {
-        showGlobalMessage("Veuillez corriger les erreurs du formulaire d'inscription.", "error");
+        showGlobalMessage(t('global.error_generic'), "error");
         return;
     }
 
-    showGlobalMessage("Création du compte...", "info");
+    showGlobalMessage(t('public.account.create_account_btn') + "...", "info"); // "Creating account..."
     try {
         const result = await makeApiRequest('/auth/register', 'POST', {
             email: emailField.value,
@@ -213,22 +177,16 @@ async function handleRegistrationForm(event) {
             prenom: prenomField.value
         });
         if (result.success) {
-            showGlobalMessage(result.message || "Compte créé avec succès ! Veuillez vous connecter.", "success");
+            showGlobalMessage(result.message || t('public.js.login_success'), "success"); // Or a specific registration success message
             form.reset();
-            // Potentially switch to login form/tab or redirect to login page
         } else {
-            showGlobalMessage(result.message || "Erreur lors de l'inscription.", "error");
+            showGlobalMessage(result.message || t('global.error_generic'), "error");
         }
     } catch (error) {
-        // Error message shown by makeApiRequest
-        console.error("Erreur d'inscription:", error);
+        console.error("Registration error:", error);
     }
 }
 
-/**
- * Displays the account dashboard if the user is logged in,
- * otherwise shows the login/register section.
- */
 function displayAccountDashboard() {
     const loginRegisterSection = document.getElementById('login-register-section');
     const accountDashboardSection = document.getElementById('account-dashboard-section');
@@ -245,37 +203,30 @@ function displayAccountDashboard() {
         
         const logoutButton = document.getElementById('logout-button');
         if (logoutButton) {
-            logoutButton.removeEventListener('click', logoutUser); // Avoid multiple listeners
+            logoutButton.removeEventListener('click', logoutUser); 
             logoutButton.addEventListener('click', logoutUser);
         }
-        loadOrderHistory(); // Load order history when dashboard is displayed
+        loadOrderHistory(); 
     } else if (loginRegisterSection) {
         loginRegisterSection.style.display = 'block';
         if (accountDashboardSection) accountDashboardSection.style.display = 'none';
     }
 }
 
-/**
- * Loads and displays the user's order history.
- */
 async function loadOrderHistory() {
     const orderHistoryContainer = document.getElementById('order-history-container');
     if (!orderHistoryContainer) return;
 
     const currentUser = getCurrentUser();
     if (!currentUser) {
-        orderHistoryContainer.innerHTML = '<p class="text-sm text-brand-warm-taupe italic">Veuillez vous connecter pour voir votre historique.</p>';
+        orderHistoryContainer.innerHTML = `<p class="text-sm text-brand-warm-taupe italic">${t('public.cart.login_prompt')}</p>`; // "Please log in to see your history."
         return;
     }
 
-    orderHistoryContainer.innerHTML = '<p class="text-sm text-brand-warm-taupe italic">Chargement de l\'historique des commandes...</p>';
+    orderHistoryContainer.innerHTML = `<p class="text-sm text-brand-warm-taupe italic">${t('global.loading')}</p>`;
     try {
-        // TODO: Replace with actual API call when endpoint is available
-        // const ordersData = await makeApiRequest('/orders/history', 'GET', null, true);
-        
-        // Mockup for now, as /api/orders/history is not implemented in backend
-        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-        const ordersData = { success: true, orders: [] }; // Mockup: empty orders
+        await new Promise(resolve => setTimeout(resolve, 500)); 
+        const ordersData = { success: true, orders: [] }; 
 
         if (ordersData.success && ordersData.orders.length > 0) {
             let html = '<ul class="space-y-4">';
@@ -283,40 +234,28 @@ async function loadOrderHistory() {
                 html += `
                     <li class="p-4 border border-brand-warm-taupe/50 rounded-md bg-white">
                         <div class="flex justify-between items-center mb-2">
-                            <p class="font-semibold text-brand-near-black">Commande #${order.orderId || order.id}</p>
+                            <p class="font-semibold text-brand-near-black">${t('public.confirmation.order_number_label')} #${order.orderId || order.id}</p>
                             <span class="px-2 py-1 text-xs font-semibold rounded-full ${getOrderStatusClass(order.status)}">${order.status}</span>
                         </div>
-                        <p class="text-sm"><strong>Date:</strong> ${new Date(order.date || order.order_date).toLocaleDateString('fr-FR')}</p>
-                        <p class="text-sm"><strong>Total:</strong> ${parseFloat(order.totalAmount || order.total_amount).toFixed(2)} €</p>
-                        <button class="text-sm text-brand-classic-gold hover:underline mt-2" onclick="viewOrderDetail('${order.orderId || order.id}')">Voir détails</button>
-                    </li>
+                        <p class="text-sm"><strong>Date:</strong> ${new Date(order.date || order.order_date).toLocaleDateString(currentLang)}</p>
+                        <p class="text-sm"><strong>${t('public.cart.total')}</strong> ${parseFloat(order.totalAmount || order.total_amount).toFixed(2)} €</p>
+                        <button class="text-sm text-brand-classic-gold hover:underline mt-2" onclick="viewOrderDetail('${order.orderId || order.id}')">${t('public.confirmation.view_account_btn')}</button> </li>
                 `;
             });
             html += '</ul>';
             orderHistoryContainer.innerHTML = html;
         } else {
-            orderHistoryContainer.innerHTML = '<p class="text-sm text-brand-warm-taupe italic">Vous n\'avez aucune commande pour le moment.</p>';
+            orderHistoryContainer.innerHTML = `<p class="text-sm text-brand-warm-taupe italic">${t('public.account.dashboard_orders_placeholder')}</p>`;
         }
     } catch (error) {
-        orderHistoryContainer.innerHTML = `<p class="text-sm text-brand-truffle-burgundy italic">Impossible de charger l'historique des commandes: ${error.message}</p>`;
+        orderHistoryContainer.innerHTML = `<p class="text-sm text-brand-truffle-burgundy italic">${t('global.error_generic')}: ${error.message}</p>`;
     }
 }
 
-/**
- * Placeholder function to view order details.
- * This would typically open a modal or navigate to an order detail page.
- * @param {string} orderId - The ID of the order to view.
- */
 function viewOrderDetail(orderId) {
-    // Implementation for viewing order details (e.g., open a modal, redirect)
-    showGlobalMessage(`Détail de la commande #${orderId} (fonctionnalité à implémenter).`, 'info');
-    console.log("Voir détails pour commande:", orderId);
+    showGlobalMessage(`${t('public.confirmation.order_number_label')} #${orderId} (${t('global.loading')}).`, 'info'); // "Order Detail #... (feature to implement)"
 }
 
-/**
- * Checks if a user is currently logged in.
- * @returns {boolean} True if a user is logged in, false otherwise.
- */
 function isUserLoggedIn() {
     return !!getCurrentUser();
 }
