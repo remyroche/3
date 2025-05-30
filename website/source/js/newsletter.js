@@ -12,34 +12,31 @@ function initializeNewsletterForm() {
             event.preventDefault();
             const newsletterEmailInput = document.getElementById('email-newsletter');
             if (!newsletterEmailInput) {
-                console.error("Champ e-mail de la newsletter non trouvé.");
+                console.error("Newsletter email field not found."); // Dev console
                 return;
             }
-            clearFormErrors(newsletterForm); // Assumes clearFormErrors is in ui.js
+            clearFormErrors(newsletterForm); 
 
             const email = newsletterEmailInput.value;
 
-            if (!email || !validateEmail(email)) { // Assumes validateEmail is in ui.js
-                setFieldError(newsletterEmailInput, "Veuillez entrer une adresse e-mail valide."); // Assumes setFieldError is in ui.js
-                showGlobalMessage("Veuillez entrer une adresse e-mail valide.", "error"); // Assumes showGlobalMessage is in ui.js
+            if (!email || !validateEmail(email)) { 
+                setFieldError(newsletterEmailInput, t('public.js.newsletter_invalid_email')); 
+                showGlobalMessage(t('public.js.newsletter_invalid_email'), "error"); 
                 return;
             }
-            showGlobalMessage("Enregistrement en cours...", "info");
+            showGlobalMessage(t('public.js.newsletter_subscribing'), "info");
             try {
-                // Assumes makeApiRequest is in api.js and API_BASE_URL is in config.js
-                // Backend expects { email: "...", consentement: "Y" }
                 const result = await makeApiRequest('/subscribe-newsletter', 'POST', { email: email, consentement: 'Y' });
                 if (result.success) {
-                    showGlobalMessage(result.message || "Merci ! Votre adresse a été enregistrée.", "success");
-                    newsletterEmailInput.value = ""; // Clear input on success
+                    showGlobalMessage(result.message || t('public.js.newsletter_success'), "success");
+                    newsletterEmailInput.value = ""; 
                 } else {
-                    setFieldError(newsletterEmailInput, result.message || "Erreur d'inscription.");
-                    showGlobalMessage(result.message || "Une erreur s'est produite.", "error");
+                    setFieldError(newsletterEmailInput, result.message || t('public.js.newsletter_error'));
+                    showGlobalMessage(result.message || t('public.js.newsletter_error'), "error");
                 }
             } catch (error) {
-                // Error message is already shown by makeApiRequest's catch block
-                setFieldError(newsletterEmailInput, error.message || "Erreur serveur.");
-                console.error("Erreur d'inscription à la newsletter:", error);
+                setFieldError(newsletterEmailInput, error.message || t('global.error_generic'));
+                console.error("Error subscribing to newsletter:", error);
             }
         });
     }
