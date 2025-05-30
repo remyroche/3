@@ -9,17 +9,6 @@ function initializeMobileMenu() {
     const mobileMenuDropdown = document.getElementById('mobile-menu-dropdown');
     if (mobileMenuButton && mobileMenuDropdown) {
         mobileMenuButton.addEventListener('click', () => {
-            mobileMenuDropdown.classList.toggle('hidden');// website/js/ui.js
-// UI helper functions for the frontend application
-
-/**
- * Initializes the mobile menu toggle functionality.
- */
-function initializeMobileMenu() {
-    const mobileMenuButton = document.getElementById('mobile-menu-button');
-    const mobileMenuDropdown = document.getElementById('mobile-menu-dropdown');
-    if (mobileMenuButton && mobileMenuDropdown) {
-        mobileMenuButton.addEventListener('click', () => {
             mobileMenuDropdown.classList.toggle('hidden');
         });
     }
