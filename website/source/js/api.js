@@ -9,15 +9,16 @@
  * @param {boolean} [requiresAuth=false] - Whether the request requires an authentication token.
  * @returns {Promise<object>} - A promise that resolves with the JSON response from the API.
  * @throws {Error} - Throws an error if the API request fails or authentication is required but missing.
- */
+ */// website/js/api.js
+// Handles API communication for the frontend application
+
 async function makeApiRequest(endpoint, method = 'GET', body = null, requiresAuth = false) {
     const headers = { 'Content-Type': 'application/json' };
     if (requiresAuth) {
-        const token = getAuthToken(); // Assumes getAuthToken is available (from auth.js)
+        const token = getAuthToken(); 
         if (!token) {
-            // Assumes showGlobalMessage is available (from ui.js)
-            showGlobalMessage("Vous n'êtes pas authentifié.", "error");
-            throw new Error("Authentification requise.");
+            showGlobalMessage(t('public.js.logged_out'), "error"); // "You are not authenticated."
+            throw new Error("Authentification requise."); // Keep French for internal error unless t() is used here too
         }
         headers['Authorization'] = `Bearer ${token}`;
     }
@@ -32,19 +33,18 @@ async function makeApiRequest(endpoint, method = 'GET', body = null, requiresAut
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, config); // Assumes API_BASE_URL is available (from config.js)
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, config); 
         if (!response.ok) {
-            const errorResult = await response.json().catch(() => ({ message: "Erreur de communication avec le serveur." }));
+            const errorResult = await response.json().catch(() => ({ message: t('global.error_generic') }));
             throw new Error(errorResult.message || `Erreur HTTP: ${response.status}`);
         }
-        if (response.status === 204) { // No Content
+        if (response.status === 204) { 
             return { success: true, message: "Opération réussie (pas de contenu)." };
         }
         return await response.json();
     } catch (error) {
-        console.error(`Erreur API pour ${method} ${API_BASE_URL}${endpoint}:`, error);
-        // Assumes showGlobalMessage is available (from ui.js)
-        showGlobalMessage(error.message || "Une erreur réseau est survenue.", "error");
+        console.error(`API Error for ${method} ${API_BASE_URL}${endpoint}:`, error);
+        showGlobalMessage(error.message || t('global.error_generic'), "error");
         throw error;
     }
 }
