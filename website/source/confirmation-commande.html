@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmation de Commande - Maison Trüvra</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-cream': '#F5EEDE',
+                        'brand-near-black': '#11120D',
+                        'brand-classic-gold': '#D4AF37',
+                        'brand-warm-taupe': '#A28C6A',
+                        'brand-earth-brown': '#7D6A4F',
+                        'brand-slate-blue-grey': '#6E7582',
+                        'brand-deep-sage-green': '#4B5A59',
+                        'brand-truffle-burgundy': '#8A3E3E',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F5EEDE; color: #7D6A4F; }
+        h1, h2, h3, .font-serif { font-family: 'Playfair Display', serif; }
+        .btn-primary { background-color: #7D6A4F; color: #F5EEDE; padding: 0.85rem 1.75rem; border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease; font-weight: 500; letter-spacing: 0.025em; display: inline-block; cursor: pointer; }
+        .btn-primary:hover { background-color: #11120D; transform: translateY(-2px); }
+         .btn-secondary {
+            background-color: #A28C6A; color: #F5EEDE; padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: 500; display: inline-block; cursor: pointer;
+        }
+        .btn-secondary:hover { background-color: #7D6A4F; transform: translateY(-1px); }
+        .modal-message { @apply fixed bottom-5 right-5 bg-brand-deep-sage-green text-brand-cream p-4 rounded-lg shadow-xl z-[100] transition-all duration-500 ease-out opacity-0 translate-y-10; }
+        .modal-message.show { @apply opacity-100 translate-y-0; }
+    </style>
+</head>
+<body id="page-confirmation-commande" class="antialiased">
+
+    <div id="header-placeholder"></div>
+
+    <main class="bg-brand-cream py-12">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="bg-white shadow-lg rounded-lg p-8 md:p-12 max-w-2xl mx-auto">
+                <svg class="w-16 h-16 text-brand-deep-sage-green mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <h1 class="text-3xl md:text-4xl font-serif text-brand-near-black mb-4">Merci pour votre commande !</h1>
+                <p id="confirmation-message" class="text-brand-earth-brown mb-2">Votre commande a été passée avec succès.</p>
+                <p class="text-brand-earth-brown mb-2">Un e-mail de confirmation vous a été envoyé.</p>
+                <div class="mt-6 text-brand-near-black">
+                    <p class="text-lg">Numéro de commande : <strong id="confirmation-order-id" class="text-brand-classic-gold">Chargement...</strong></p>
+                    <p class="text-lg">Montant total : <strong id="confirmation-total-amount" class="text-brand-classic-gold">Chargement...</strong> €</p>
+                </div>
+                <div class="mt-10 space-x-0 space-y-3 sm:space-y-0 sm:space-x-4">
+                    <a href="nos-produits.html" class="btn-primary w-full sm:w-auto">Continuer mes achats</a>
+                    <a href="compte.html" class="btn-secondary w-full sm:w-auto">Voir mon compte</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <div id="global-message-toast" class="modal-message">
+        <p id="global-message-text"></p>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/product.js"></script>
+    <script src="js/checkout.js"></script>
+    <script src="js/newsletter.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
