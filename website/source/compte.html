@@ -9,6 +9,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <script>
+        tailwind.config = {<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="{{global.charset}}">
+    <meta name="viewport" content="{{global.viewport}}">
+    <title>{{public.account.title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
         tailwind.config = {
             theme: {
                 extend: {
@@ -48,7 +59,7 @@
         }
         .btn-secondary:hover { background-color: #7D6A4F; transform: translateY(-1px); }
         .form-input-checkout { @apply w-full px-4 py-3 text-brand-near-black bg-white border border-brand-warm-taupe/50 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-classic-gold shadow-sm; }
-        .page-header { @apply text-3xl md:text-4xl font-serif text-brand-near-black mb-8 text-center; } /* Retiré py-8 bg-white shadow-sm pour compte */
+        .page-header { @apply text-3xl md:text-4xl font-serif text-brand-near-black mb-8 text-center; }
         .modal-message { @apply fixed bottom-5 right-5 bg-brand-deep-sage-green text-brand-cream p-4 rounded-lg shadow-xl z-[100] transition-all duration-500 ease-out opacity-0 translate-y-10; }
         .modal-message.show { @apply opacity-100 translate-y-0; }
     </style>
@@ -61,28 +72,29 @@
         <section id="login-register-section" class="py-16">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-lg">
                 <div class="bg-white shadow-xl rounded-lg p-8 md:p-12">
-                    <h1 class="page-header text-2xl md:text-3xl">Connectez-vous</h1>
+                    <h1 class="page-header text-2xl md:text-3xl">{{public.account.login_header}}</h1>
                     
                     <form id="login-form" class="mb-10">
                         <div id="login-message" class="text-sm text-brand-truffle-burgundy mb-4"></div> 
                         <div class="space-y-5">
                             <div>
-                                <label for="login-email" class="block text-sm font-medium text-brand-near-black mb-1">Adresse e-mail</label>
+                                <label for="login-email" class="block text-sm font-medium text-brand-near-black mb-1">{{public.account.email_label}}</label>
                                 <input type="email" id="login-email" name="email" class="form-input-checkout" required>
                             </div>
                             <div>
-                                <label for="login-password" class="block text-sm font-medium text-brand-near-black mb-1">Mot de passe</label>
+                                <label for="login-password" class="block text-sm font-medium text-brand-near-black mb-1">{{public.account.password_label}}</label>
                                 <input type="password" id="login-password" name="password" class="form-input-checkout" required>
-                                <a href="#" onclick="event.preventDefault(); showGlobalMessage('Fonctionnalité de mot de passe oublié non implémentée.', 'info');" class="text-xs text-brand-warm-taupe hover:text-brand-classic-gold block mt-1 text-right">Mot de passe oublié ?</a>
+                                <a href="#" onclick="event.preventDefault(); showGlobalMessage(t('public.js.password_reset_not_implemented'), 'info');" class="text-xs text-brand-warm-taupe hover:text-brand-classic-gold block mt-1 text-right">{{public.account.forgot_password}}</a>
                             </div>
-                            <button type="submit" class="btn-primary w-full py-3">Se connecter</button>
+                            <button type="submit" class="btn-primary w-full py-3">{{public.account.login_btn}}</button>
                         </div>
                     </form>
         
                     <div>
-                        <h2 class="text-xl font-serif text-brand-near-black mb-4">Nouveau client ?</h2>
-                        <p class="text-brand-earth-brown mb-5 text-sm">Créez un compte pour suivre vos commandes, enregistrer vos informations et plus encore.</p>
-                        <button class="btn-secondary w-full py-3">Créer un compte</button> </div>
+                        <h2 class="text-xl font-serif text-brand-near-black mb-4">{{public.account.new_customer_header}}</h2>
+                        <p class="text-brand-earth-brown mb-5 text-sm">{{public.account.new_customer_desc}}</p>
+                        <button class="btn-secondary w-full py-3">{{public.account.create_account_btn}}</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -90,25 +102,25 @@
         <section id="account-dashboard-section" style="display:none;" class="py-16">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-2xl">
                 <div class="bg-white shadow-xl rounded-lg p-8 md:p-12">
-                    <h1 class="page-header text-2xl md:text-3xl">Mon Espace Client</h1>
+                    <h1 class="page-header text-2xl md:text-3xl">{{public.account.dashboard_header}}</h1>
                     <div class="space-y-6 text-brand-earth-brown">
-                        <p>Bonjour, <strong id="dashboard-username" class="text-brand-near-black"></strong> !</p>
-                        <p><strong>Email :</strong> <span id="dashboard-email"></span></p>
+                        <p>{{public.account.dashboard_greeting}} <strong id="dashboard-username" class="text-brand-near-black"></strong>!</p>
+                        <p><strong>{{public.account.dashboard_email_label}}</strong> <span id="dashboard-email"></span></p>
                         
                         <div>
-                            <h2 class="text-xl font-serif text-brand-near-black mt-8 mb-4">Mes Commandes</h2>
+                            <h2 class="text-xl font-serif text-brand-near-black mt-8 mb-4">{{public.account.dashboard_orders_title}}</h2>
                             <div id="order-history-container">
-                                <p class="text-sm text-brand-warm-taupe italic">Votre historique de commandes apparaîtra ici.</p>
+                                <p class="text-sm text-brand-warm-taupe italic">{{public.account.dashboard_orders_placeholder}}</p>
                             </div>
                         </div>
         
                         <div>
-                            <h2 class="text-xl font-serif text-brand-near-black mt-8 mb-4">Mes Informations</h2>
-                            <button class="btn-secondary text-sm" onclick="showGlobalMessage('Modification des informations non implémentée.', 'info');">Modifier mes informations</button>
+                            <h2 class="text-xl font-serif text-brand-near-black mt-8 mb-4">{{public.account.dashboard_info_title}}</h2>
+                            <button class="btn-secondary text-sm" onclick="showGlobalMessage('Modification des informations non implémentée.', 'info');">{{public.account.dashboard_edit_info_btn}}</button>
                         </div>
         
                         <div class="mt-10">
-                            <button id="logout-button" class="btn-primary bg-brand-truffle-burgundy hover:bg-opacity-80 w-full sm:w-auto py-2.5">Se déconnecter</button>
+                            <button id="logout-button" class="btn-primary bg-brand-truffle-burgundy hover:bg-opacity-80 w-full sm:w-auto py-2.5">{{global.logout}}</button>
                         </div>
                     </div>
                 </div>
@@ -127,10 +139,8 @@
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/cart.js"></script>
-    <script src="js/product.js"></script>
-    <script src="js/checkout.js"></script>
+    <script src="js/products.js"></script> <script src="js/checkout.js"></script>
     <script src="js/newsletter.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
-
