@@ -11,70 +11,26 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // TODO: Stripe.js Integration
     // let stripe; 
-    // let cardElement;
-    // const stripePublishableKey = 'YOUR_STRIPE_PUBLISHABLE_KEY'; // Replace with your actual key from config or env
+    // let cardElement;// Maison Trüvra - Checkout Logic
 
-    // async function initializeStripe() {
-    //     if (!stripePublishableKey || stripePublishableKey === 'YOUR_STRIPE_PUBLISHABLE_KEY') {
-    //         console.warn("Stripe Publishable Key is not set. Payment processing will be simulated.");
-    //         showGlobalMessage("Mode de paiement non configuré (simulation activée).", "info");
-    //         return;
-    //     }
-    //     try {
-    //         stripe = Stripe(stripePublishableKey);
-    //         const elements = stripe.elements({
-    //             // Optional: Add locale if you want Stripe Elements to match site language
-    //             // locale: 'fr' 
-    //         });
-    //         cardElement = elements.create('card', { 
-    //             hidePostalCode: true,
-    //             // style: { base: { /* your custom styles */ } } 
-    //         });
-    //         const cardElementPlaceholder = document.getElementById('card-element-placeholder');
-    //         if (cardElementPlaceholder) {
-    //             cardElement.mount('#card-element-placeholder');
-    //             cardElementPlaceholder.innerHTML = ''; // Clear placeholder text
-    //         } else {
-    //            console.error("Stripe card element placeholder not found in payment.html");
-    //            showGlobalMessage("Erreur: Impossible d'afficher le formulaire de carte.", "error");
-    //            return;
-    //         }
-            
-
-    //         cardElement.on('change', (event) => {
-    //             const displayError = document.getElementById('card-errors');
-    //             if (displayError) {
-    //                 if (event.error) {
-    //                     displayError.textContent = event.error.message;
-    //                 } else {
-    //                     displayError.textContent = '';
-    //                 }
-    //             }
-    //         });
-    //         console.log("Stripe initialized and card element mounted.");
-    //     } catch (error) {
-    //         console.error("Failed to initialize Stripe:", error);
-    //         showGlobalMessage("Erreur d'initialisation du module de paiement.", "error");
-    //     }
-    // }
+document.addEventListener('DOMContentLoaded', () => {
+    const paymentForm = document.getElementById('payment-form');
+    const checkoutSummaryContainer = document.getElementById('checkout-summary-container');
+    const paymentButtonAmount = document.getElementById('payment-amount-button');
     
-    // Display Order Summary
     async function displayCheckoutSummary() {
         if (!checkoutSummaryContainer) return;
 
         const itemsContainer = document.getElementById('checkout-summary-items');
         const totalEl = document.getElementById('checkout-summary-total');
         
-        if (!itemsContainer || !totalEl) {
-            console.error("Checkout summary elements not found in payment.html");
-            return;
-        }
+        if (!itemsContainer || !totalEl) return;
 
-        const cartItems = getCartItems(); // From cart.js
-        itemsContainer.innerHTML = ''; // Clear previous items
+        const cartItems = getCartItems(); 
+        itemsContainer.innerHTML = ''; 
 
         if (cartItems.length === 0) {
-            itemsContainer.innerHTML = '<p class="text-gray-600">Votre panier est vide.</p>';
+            itemsContainer.innerHTML = `<p class="text-gray-600">${t('public.cart.empty_message')}</p>`;
             totalEl.textContent = '0.00 €';
             if(paymentButtonAmount) paymentButtonAmount.textContent = '0.00';
             const paymentButton = document.getElementById('submit-payment-button');
@@ -95,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             itemsContainer.appendChild(itemDiv);
         });
 
-        const cartTotal = getCartTotal(); // From cart.js
+        const cartTotal = getCartTotal(); 
         totalEl.textContent = `${cartTotal.toFixed(2)} €`;
         if(paymentButtonAmount) paymentButtonAmount.textContent = cartTotal.toFixed(2);
         const paymentButton = document.getElementById('submit-payment-button');
@@ -105,81 +61,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
     if (paymentForm) {
-        // initializeStripe(); // Call to set up Stripe Elements
-
         paymentForm.addEventListener('submit', async (event) => {
             event.preventDefault();
-            showGlobalMessage('Traitement de votre commande...', 'info', 10000); // Longer timeout
+            showGlobalMessage(t('public.js.order_processing'), 'info', 10000); 
             const paymentButton = document.getElementById('submit-payment-button');
             if (paymentButton) paymentButton.disabled = true;
             const paymentMessageEl = document.getElementById('payment-message');
             if(paymentMessageEl) paymentMessageEl.textContent = '';
 
-
-            // --- TODO: Stripe Payment Processing Logic ---
-            // This section needs to be implemented with your Stripe integration.
-            //
-            // if (!stripe || !cardElement) {
-            //     showGlobalMessage("Le module de paiement n'est pas prêt. Veuillez réessayer.", "error");
-            //     if (paymentButton) paymentButton.disabled = false;
-            //     return;
-            // }
-            //
-            // const cardholderName = document.getElementById('card-name').value;
-            // if (!cardholderName) {
-            //     showGlobalMessage("Veuillez entrer le nom sur la carte.", "error");
-            //     setFieldError(document.getElementById('card-name'), "Nom requis."); // Assumes setFieldError from ui.js
-            //     if (paymentButton) paymentButton.disabled = false;
-            //     return;
-            // }
-            //
-            // try {
-            //     // 1. Create PaymentIntent on backend
-            //     const intentResponse = await makeApiRequest('/orders/create-payment-intent', 'POST', { 
-            //         amount: Math.round(getCartTotal() * 100), // Amount in cents
-            //         currency: 'eur' // Or from config
-            //     });
-            //     if (!intentResponse.success || !intentResponse.client_secret) {
-            //         throw new Error(intentResponse.message || "Erreur de préparation du paiement.");
-            //     }
-            //     const clientSecret = intentResponse.client_secret;
-            //
-            //     // 2. Confirm card payment with Stripe.js
-            //     const { paymentIntent, error: stripeError } = await stripe.confirmCardPayment(
-            //         clientSecret, {
-            //             payment_method: {
-            //                 card: cardElement,
-            //                 billing_details: { name: cardholderName },
-            //             }
-            //         }
-            //     );
-            //
-            //     if (stripeError) {
-            //         throw new Error(stripeError.message || "Erreur de paiement Stripe.");
-            //     }
-            //
-            //     if (paymentIntent.status === 'succeeded') {
-            //         showGlobalMessage("Paiement réussi ! Finalisation de la commande...", "success");
-            //         await createOrderOnBackend(paymentIntent);
-            //     } else {
-            //         throw new Error("Le paiement n'a pas abouti. Statut: " + paymentIntent.status);
-            //     }
-            // } catch (error) {
-            //     console.error("Payment processing error:", error);
-            //     showGlobalMessage(error.message || "Une erreur est survenue lors du paiement.", "error");
-            //     if(paymentMessageEl) paymentMessageEl.textContent = `Erreur: ${error.message || "Une erreur est survenue lors du paiement."}`;
-            //     if (paymentButton) paymentButton.disabled = false;
-            // }
-            // --- END TODO: Stripe Payment Processing Logic ---
-
-            // --- Fallback/Simulation (Remove this when Stripe is integrated) ---
-            console.warn("SIMULATION: Paiement Stripe non intégré. Passage à la création de commande simulée.");
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate payment processing delay
+            // --- Fallback/Simulation ---
+            console.warn("SIMULATION: Stripe payment not integrated. Proceeding with simulated order creation.");
+            await new Promise(resolve => setTimeout(resolve, 1500)); 
             const simulatedPaymentIntent = { 
                 id: `sim_maison_truvra_${new Date().getTime()}`, 
-                status: 'succeeded', // Simulate success
+                status: 'succeeded', 
                 amount: Math.round(getCartTotal() * 100), 
                 currency: 'eur'
             }; 
@@ -191,103 +87,77 @@ document.addEventListener('DOMContentLoaded', () => {
     async function createOrderOnBackend(paymentResult) {
         const paymentButton = document.getElementById('submit-payment-button');
         const paymentMessageEl = document.getElementById('payment-message');
-
         const cartItems = getCartItems(); 
+
         if (cartItems.length === 0) {
-            showGlobalMessage("Votre panier est vide. Impossible de passer commande.", "error");
+            showGlobalMessage(t('public.js.cart_is_empty_redirecting'), "error");
             if (paymentButton) paymentButton.disabled = false;
             return;
         }
 
         const shippingAddressString = localStorage.getItem('shippingAddress');
         const billingAddressString = localStorage.getItem('billingAddress');
-        
         let shippingAddress, billingAddress;
+
         try {
             shippingAddress = shippingAddressString ? JSON.parse(shippingAddressString) : null;
             billingAddress = billingAddressString ? JSON.parse(billingAddressString) : shippingAddress;
         } catch (e) {
-            console.error("Error parsing addresses from localStorage", e);
-            showGlobalMessage("Erreur avec les adresses enregistrées. Veuillez réessayer.", "error");
+            showGlobalMessage(t('global.error_generic'), "error"); // Generic error for parsing
             if (paymentButton) paymentButton.disabled = false;
             return;
         }
-
 
         if (!shippingAddress || !shippingAddress.address_line1 || !shippingAddress.city || !shippingAddress.postal_code || !shippingAddress.country || !shippingAddress.first_name || !shippingAddress.last_name) {
-            showGlobalMessage("Adresse de livraison incomplète. Veuillez compléter les étapes précédentes.", "error");
-            // window.location.href = 'checkout-address.html'; // Redirect to address form if separate
+            showGlobalMessage(t('public.js.missing_shipping_info'), "error");
             if (paymentButton) paymentButton.disabled = false;
             return;
         }
-        // Ensure billing address is also complete if provided and different
         if (billingAddress !== shippingAddress && (!billingAddress || !billingAddress.address_line1 || !billingAddress.city || !billingAddress.postal_code || !billingAddress.country || !billingAddress.first_name || !billingAddress.last_name)) {
-            showGlobalMessage("Adresse de facturation incomplète.", "error");
+            showGlobalMessage(t('public.js.missing_shipping_info'), "error"); // Assuming same message for billing
             if (paymentButton) paymentButton.disabled = false;
             return;
         }
 
-
-        const currentUser = getCurrentUser(); // from auth.js
+        const currentUser = getCurrentUser(); 
         const orderData = {
             items: cartItems.map(item => ({
                 product_id: item.id,
                 variant_id: item.variantId || null,
                 quantity: item.quantity,
-                // unit_price: item.price, // Backend should fetch current price for security/accuracy
-                // product_name: item.name, // Backend can fetch this
-                // variant_description: item.variantDescription // Backend can fetch this
             })),
-            // total_amount: getCartTotal(), // Backend should recalculate total for security
             currency: 'EUR',
             shipping_address: shippingAddress,
             billing_address: billingAddress,
             payment_details: { 
-                method: 'stripe_simulation', // Change to 'stripe' with real integration
+                method: 'stripe_simulation', 
                 transaction_id: paymentResult.id, 
                 status: paymentResult.status,
                 amount_captured: paymentResult.amount / 100 
             },
-            customer_email: currentUser ? currentUser.email : shippingAddress.email, // Ensure email is captured
-            // customer_notes: document.getElementById('customer-notes')?.value 
+            customer_email: currentUser ? currentUser.email : shippingAddress.email,
         };
 
         try {
-            // makeApiRequest from api.js
-            const orderCreationResponse = await makeApiRequest('/orders/create', 'POST', orderData, !!currentUser); // requiresAuth if user is logged in
-            
-            showGlobalMessage(orderCreationResponse.message || "Commande créée avec succès!", "success");
+            const orderCreationResponse = await makeApiRequest('/orders/create', 'POST', orderData, !!currentUser); 
+            showGlobalMessage(orderCreationResponse.message || t('public.confirmation.success_message'), "success");
             clearCart(); 
             localStorage.setItem('lastOrderId', orderCreationResponse.order_id);
-            localStorage.setItem('lastOrderTotal', orderCreationResponse.total_amount.toFixed(2)); // Store total for confirmation page
-            
-            // Remove address from localStorage after successful order
+            localStorage.setItem('lastOrderTotal', orderCreationResponse.total_amount.toFixed(2)); 
             localStorage.removeItem('shippingAddress');
             localStorage.removeItem('billingAddress');
-
             window.location.href = 'confirmation-commande.html'; 
         } catch (error) {
-            console.error("Order creation failed on backend:", error);
-            showGlobalMessage(error.message || "La création de la commande a échoué après le paiement.", "error");
-            if(paymentMessageEl) paymentMessageEl.textContent = `Erreur critique: ${error.message || "La création de la commande a échoué. Veuillez contacter le support."}`;
+            showGlobalMessage(error.message || t('public.js.order_creation_failed'), "error");
+            if(paymentMessageEl) paymentMessageEl.textContent = `${t('global.error_generic')}: ${error.message || t('public.js.order_creation_failed')}`;
             if (paymentButton) paymentButton.disabled = false;
-            // CRITICAL: Handle payment reconciliation/refund if order creation fails *after* successful payment.
-            // This usually involves backend logic and potentially manual intervention.
-            // Log this error thoroughly on the backend.
         }
     }
 
-    // Initial display and checks
     if (document.getElementById('payment-form') || checkoutSummaryContainer) {
-        if (!isUserLoggedIn()) { // from auth.js
-            // For guest checkout, shippingAddress must contain email.
-            // If login is mandatory for checkout, redirect here.
-            // showGlobalMessage("Veuillez vous connecter pour finaliser votre commande.", "info");
-            // window.location.href = `compte.html?redirect=${encodeURIComponent(window.location.pathname)}`;
-        }
         const cartItems = getCartItems();
         if (cartItems.length === 0 && window.location.pathname.includes('payment.html')) {
-            showGlobalMessage("Votre panier est vide. Redirection...", "info");
+            showGlobalMessage(t('public.js.cart_is_empty_redirecting'), "info");
             setTimeout(() => { window.location.href = 'nos-produits.html'; }, 2000);
         } else {
             displayCheckoutSummary();
@@ -295,19 +165,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// This function is called from main.js if on payment page
 function initializeCheckoutPage() {
-    // Specific initializations for payment.html if any, beyond DOMContentLoaded
-    // For example, re-validating addresses from localStorage or user profile
     const shippingAddress = JSON.parse(localStorage.getItem('shippingAddress'));
     if (!shippingAddress && window.location.pathname.includes('payment.html')) {
-        showGlobalMessage("Informations de livraison manquantes. Veuillez d'abord compléter l'adresse.", "error");
-        // Redirect to address step if it's separate, e.g., 'checkout-address.html'
-        // For now, we assume address is collected before reaching payment.html or is part of user profile.
+        showGlobalMessage(t('public.js.missing_shipping_info'), "error");
     }
 }
 
-// This function is called from main.js if on confirmation page
 function initializeConfirmationPage() {
     const orderIdEl = document.getElementById('confirmation-order-id');
     const totalAmountEl = document.getElementById('confirmation-total-amount');
@@ -317,13 +181,12 @@ function initializeConfirmationPage() {
     if (orderIdEl && totalAmountEl && lastOrderId && lastOrderTotal) {
         orderIdEl.textContent = lastOrderId;
         totalAmountEl.textContent = `${lastOrderTotal} €`;
-        // Clear stored order details after displaying them
         localStorage.removeItem('lastOrderId');
         localStorage.removeItem('lastOrderTotal');
-    } else if (orderIdEl) { // If on confirmation page but no order details
+    } else if (orderIdEl) { 
         orderIdEl.textContent = 'N/A';
         if(totalAmountEl) totalAmountEl.textContent = 'N/A';
         const confirmationMessageEl = document.getElementById('confirmation-message');
-        if(confirmationMessageEl) confirmationMessageEl.textContent = "Détails de la commande non trouvés. Veuillez vérifier votre compte ou vos e-mails.";
+        if(confirmationMessageEl) confirmationMessageEl.textContent = t('public.js.order_details_not_found');
     }
 }
