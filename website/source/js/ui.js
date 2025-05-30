@@ -9,6 +9,17 @@ function initializeMobileMenu() {
     const mobileMenuDropdown = document.getElementById('mobile-menu-dropdown');
     if (mobileMenuButton && mobileMenuDropdown) {
         mobileMenuButton.addEventListener('click', () => {
+            mobileMenuDropdown.classList.toggle('hidden');// website/js/ui.js
+// UI helper functions for the frontend application
+
+/**
+ * Initializes the mobile menu toggle functionality.
+ */
+function initializeMobileMenu() {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenuDropdown = document.getElementById('mobile-menu-dropdown');
+    if (mobileMenuButton && mobileMenuDropdown) {
+        mobileMenuButton.addEventListener('click', () => {
             mobileMenuDropdown.classList.toggle('hidden');
         });
     }
@@ -35,36 +46,33 @@ function showGlobalMessage(message, type = 'success', duration = 4000) {
     const textElement = document.getElementById('global-message-text');
     if (!toast || !textElement) {
         console.warn("Global message toast elements not found. Fallback to alert.");
-        alert(message); // Fallback if toast elements are not in the HTML
+        alert(message); 
         return;
     }
 
     textElement.textContent = message;
-    toast.className = 'modal-message'; // Reset classes, then add specific ones
+    toast.className = 'modal-message'; 
 
     if (type === 'error') {
         toast.classList.add('bg-brand-truffle-burgundy', 'text-brand-cream');
     } else if (type === 'info') {
         toast.classList.add('bg-brand-slate-blue-grey', 'text-brand-cream');
-    } else { // success
+    } else { 
         toast.classList.add('bg-brand-deep-sage-green', 'text-brand-cream');
     }
     
     toast.style.display = 'block';
-    // Force reflow before adding 'show' class for transition to work
     void toast.offsetWidth; 
     toast.classList.add('show');
 
-    // Clear existing timeouts to prevent conflicts
     if (toast.currentTimeout) clearTimeout(toast.currentTimeout);
     if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
 
     toast.currentTimeout = setTimeout(() => {
         toast.classList.remove('show');
-        // Wait for fade out transition to complete before hiding
         toast.hideTimeout = setTimeout(() => {
             toast.style.display = 'none';
-        }, 500); // Match this duration with CSS transition duration
+        }, 500); 
     }, duration);
 }
 
@@ -72,13 +80,18 @@ function showGlobalMessage(message, type = 'success', duration = 4000) {
  * Opens a modal dialog.
  * @param {string} modalId - The ID of the modal element to open.
  * @param {string} [productName=''] - Optional product name for the add-to-cart modal.
+ * @param {number} [quantity=1] - Optional quantity for the add-to-cart modal.
  */
-function openModal(modalId, productName = '') {
+function openModal(modalId, productName = '', quantity = 1) {
     const modal = document.getElementById(modalId);
     if (modal) {
         if (modalId === 'add-to-cart-modal' && productName) {
             const modalProductName = modal.querySelector('#modal-product-name');
-            if (modalProductName) modalProductName.textContent = `${productName} ajouté au panier !`;
+            if (modalProductName) {
+                 // Using t() for translation, assuming it's globally available
+                const message = t('public.js.added_to_cart_toast').replace('%qty%', quantity).replace('%name%', productName);
+                modalProductName.textContent = message;
+            }
         }
         modal.classList.add('active');
     }
@@ -104,7 +117,6 @@ function setActiveNavLink() {
     
     navLinks.forEach(link => {
         link.classList.remove('active');
-        // Ensure href is not null or empty before trying to split
         const linkHref = link.getAttribute('href');
         if (linkHref) {
             const linkPage = linkHref.split("/").pop() || "index.html";
@@ -137,7 +149,6 @@ function setFieldError(field, message) {
     if (!errorElement) {
         errorElement = document.createElement('p');
         errorElement.classList.add('error-message', 'text-xs', 'text-red-600', 'mt-1');
-        // Insert after the field, or at the end of parent if structure is complex
         if (field.nextSibling) {
             field.parentElement.insertBefore(errorElement, field.nextSibling);
         } else {
@@ -172,5 +183,23 @@ function getOrderStatusClass(status) {
         case 'Pending': return 'bg-yellow-100 text-yellow-800';
         case 'Cancelled': return 'bg-red-100 text-red-800';
         default: return 'bg-gray-100 text-gray-800';
+    }
+}
+
+/**
+ * Updates the cart icon in the header with the current item count.
+ */
+function updateCartIcon() {
+    const cartItemCount = getCartItemCount(); // from cart.js
+    const desktopCountEl = document.getElementById('cart-item-count');
+    const mobileCountEl = document.getElementById('mobile-cart-item-count');
+
+    if (desktopCountEl) {
+        desktopCountEl.textContent = cartItemCount;
+        desktopCountEl.style.display = cartItemCount > 0 ? 'flex' : 'none';
+    }
+    if (mobileCountEl) {
+        mobileCountEl.textContent = cartItemCount;
+        mobileCountEl.style.display = cartItemCount > 0 ? 'flex' : 'none';
     }
 }
