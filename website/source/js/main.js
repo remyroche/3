@@ -27,29 +27,142 @@ function initializeLangSwitcher() {
     }
 
     const otherLang = currentLang === 'fr' ? 'en' : 'fr';
-    const newHref = `../${otherLang}/${pagePath}`;
+    const newHref = `../${otherLang}/${pagePath}`;// website/js/main.js
+// Main script for initializing the frontend application and page-specific logic.
 
-    // Update all switcher links (desktop and mobile)
+let currentLang = 'fr'; // Default language
+let translations = {}; // To store loaded translations
+
+/**
+ * Fetches and loads translation data for the given language.
+ * @param {string} lang - The language code (e.g., 'fr', 'en').
+ */
+async function loadTranslations(lang) {
+    try {
+        const response = await fetch(`../locales/${lang}.json`); // Path relative to HTML files in dist/lang/
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        translations = await response.json();
+        currentLang = lang;
+        console.log(`Translations loaded for ${lang}`);
+        // After loading, re-apply translations to the page
+        applyTranslationsToPage();
+        initializeLangSwitcher(); // Re-initialize switcher to reflect current lang
+    } catch (error) {
+        console.error(`Could not load translations for ${lang}:`, error);
+        // Fallback or error handling
+        if (lang !== 'fr') { // Try loading French as a fallback if English fails
+            console.warn("Falling back to French translations.");
+            await loadTranslations('fr');
+        } else {
+            // If French also fails, the page will show keys or default text
+            document.documentElement.lang = 'fr'; // Default lang attribute
+        }
+    }
+}
+
+/**
+ * Translates a key using the loaded dictionary.
+ * @param {string} key - The translation key (e.g., "public.nav.home").
+ * @param {object} [replacements={}] - Optional replacements for placeholders in format {placeholder: value}.
+ * @returns {string} The translated string, or the key itself if not found.
+ */
+function t(key, replacements = {}) {
+    let text = translations[key] || key;
+    for (const placeholder in replacements) {
+        text = text.replace(new RegExp(`%${placeholder}%`, 'g'), replacements[placeholder]);
+    }
+    return text;
+}
+
+
+/**
+ * Applies loaded translations to all elements with data-translate attributes.
+ */
+function applyTranslationsToPage() {
+    document.querySelectorAll('[data-translate]').forEach(element => {
+        const key = element.dataset.translate;
+        const translatedText = t(key);
+        if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+            if (element.placeholder) element.placeholder = translatedText;
+        } else {
+            element.innerHTML = translatedText; // Use innerHTML to allow for HTML in translations if needed
+        }
+    });
+    // Set the lang attribute on the HTML tag
+    document.documentElement.lang = currentLang;
+
+    // Update page title
+    const pageTitleKey = document.body.dataset.pageTitleKey; // e.g. public.index.title
+    if (pageTitleKey) {
+        document.title = t(pageTitleKey);
+    }
+}
+
+
+/**
+ * Initializes the language switcher links and highlights the current language.
+ * Determines current language from the path (e.g., /dist/fr/index.html).
+ */
+function initializeLangSwitcher() {
+    const path = window.location.pathname;
+    // Expected path: /dist/{lang}/page.html or /{lang}/page.html if dist is root
+    const pathSegments = path.split('/').filter(Boolean); 
+    
+    let detectedLang = 'fr'; // Default
+    let pagePathAfterLang = 'index.html'; // Default page
+
+    // Try to find 'fr' or 'en' in path segments
+    const langIndexFR = pathSegments.indexOf('fr');
+    const langIndexEN = pathSegments.indexOf('en');
+
+    if (langIndexFR !== -1) {
+        detectedLang = 'fr';
+        pagePathAfterLang = pathSegments.slice(langIndexFR + 1).join('/') || 'index.html';
+    } else if (langIndexEN !== -1) {
+        detectedLang = 'en';
+        pagePathAfterLang = pathSegments.slice(langIndexEN + 1).join('/') || 'index.html';
+    } else {
+        // Fallback if lang not in path (e.g. local dev without /dist/{lang}/ structure)
+        // This part might need adjustment based on your exact dev server setup.
+        // For now, we'll rely on the initially loaded `currentLang`.
+        detectedLang = currentLang; 
+        // Try to guess pagePath if not index.html
+        if (pathSegments.length > 0 && pathSegments[pathSegments.length -1].endsWith('.html')) {
+            pagePathAfterLang = pathSegments[pathSegments.length -1];
+        }
+    }
+    
+    currentLang = detectedLang; // Update global currentLang based on detection
+
     document.querySelectorAll('.lang-link').forEach(link => {
         const linkLang = link.dataset.lang;
-        if (linkLang === otherLang) {
-            link.setAttribute('href', newHref);
+        // Construct new href: go up one level from current lang dir, then into other lang dir
+        const newHref = `../${linkLang}/${pagePathAfterLang}`; 
+        link.setAttribute('href', newHref);
+
+        if (linkLang === currentLang) {
+            link.style.opacity = '1';
+            link.style.border = '2px solid #D4AF37';
+            link.style.borderRadius = '4px';
+            link.style.padding = '2px 4px'; // Added horizontal padding
+            link.style.cursor = 'default';
+            link.onclick = (e) => e.preventDefault(); // Prevent navigation
+        } else {
             link.style.opacity = '0.6';
             link.style.border = '2px solid transparent';
+            link.style.padding = '2px 4px';
             link.style.cursor = 'pointer';
-        } else if (linkLang === currentLang) {
-            link.setAttribute('href', '#'); // Current language link
-            link.style.opacity = '1';
-            link.style.border = '2px solid #D4AF37'; // gold border for active
-            link.style.borderRadius = '4px';
-            link.style.padding = '2px';
-            link.style.cursor = 'default';
+            link.onclick = null; // Ensure click works for other lang
         }
 
-        // Add hover effects for non-active links
-        if(linkLang !== currentLang){
+        if (linkLang !== currentLang) {
             link.addEventListener('mouseover', () => { link.style.opacity = '1' });
             link.addEventListener('mouseout', () => { link.style.opacity = '0.6' });
+        } else {
+            link.onmouseover = null;
+            link.onmouseout = null;
         }
     });
 }
@@ -58,90 +171,82 @@ function initializeLangSwitcher() {
 async function loadHeader() {
     const headerPlaceholder = document.getElementById('header-placeholder');
     if (!headerPlaceholder) {
-        console.error("L'élément #header-placeholder est introuvable.");
+        console.error("Header placeholder #header-placeholder not found.");
         return;
     }
 
     try {
-        const response = await fetch('header.html'); // Assurez-vous que header.html est au bon endroit
+        const response = await fetch('header.html'); 
         if (!response.ok) {
-            throw new Error(`Erreur de chargement du header: ${response.status} ${response.statusText}`);
+            throw new Error(t('public.js.loading_header_error') + `: ${response.status}`);
         }
         const headerHtml = await response.text();
         headerPlaceholder.innerHTML = headerHtml;
 
-        // Initialiser les composants interactifs de l'en-tête
-        if (typeof initializeMobileMenu === 'function') {
-            initializeMobileMenu();
-        }
-        if (typeof setActiveNavLink === 'function') {
-            setActiveNavLink();
-        }
-        if (typeof updateLoginState === 'function') {
-            updateLoginState();
-        }
-        if (typeof updateCartDisplay === 'function') { // Changed from updateCartCountDisplay
-            updateCartDisplay();
-        }
-        // Initialize the language switcher after header is loaded
-        if (typeof initializeLangSwitcher === 'function') {
-            initializeLangSwitcher();
-        }
+        if (typeof initializeMobileMenu === 'function') initializeMobileMenu();
+        if (typeof setActiveNavLink === 'function') setActiveNavLink();
+        if (typeof updateLoginState === 'function') updateLoginState();
+        if (typeof updateCartDisplay === 'function') updateCartDisplay();
+        
+        // Language switcher init is now part of loadTranslations flow
+        // but we ensure it's called after header content is in DOM.
+        // If translations are already loaded, this will just update styles.
+        initializeLangSwitcher(); 
+        applyTranslationsToPage(); // Apply to newly loaded header content
 
     } catch (error) {
-        console.error("Impossible de charger l'en-tête:", error);
-        headerPlaceholder.innerHTML = "<p class='text-center text-red-500'>Erreur: L'en-tête n'a pas pu être chargé.</p>";
+        console.error("Failed to load header:", error);
+        headerPlaceholder.innerHTML = `<p class='text-center text-red-500'>${t('public.js.loading_header_error')}</p>`;
     }
 }
 
-/**
- * Charge le contenu de footer.html dans l'élément #footer-placeholder
- * et initialise les fonctionnalités du pied de page.
- */
 async function loadFooter() {
     const footerPlaceholder = document.getElementById('footer-placeholder');
     if (!footerPlaceholder) {
-        console.error("L'élément #footer-placeholder est introuvable.");
+        console.error("Footer placeholder #footer-placeholder not found.");
         return;
     }
     try {
-        const response = await fetch('footer.html'); // Assurez-vous que footer.html est au bon endroit
+        const response = await fetch('footer.html'); 
         if (!response.ok) {
-            throw new Error(`Erreur de chargement du footer: ${response.status} ${response.statusText}`);
+            throw new Error(t('public.js.loading_footer_error') + `: ${response.status}`);
         }
         const footerHtml = await response.text();
         footerPlaceholder.innerHTML = footerHtml;
 
-        // Initialiser les éléments interactifs du footer si besoin
         if (typeof initializeNewsletterForm === 'function') {
-            if (footerPlaceholder.querySelector('#newsletter-form')) { // Vérifie si le formulaire est bien dans le footer chargé
+            if (footerPlaceholder.querySelector('#newsletter-form')) {
                 initializeNewsletterForm();
             }
         }
-        const currentYearEl = footerPlaceholder.querySelector('#currentYear'); // Chercher DANS le footer chargé
+        const currentYearEl = footerPlaceholder.querySelector('#currentYear');
         if (currentYearEl) {
             currentYearEl.textContent = new Date().getFullYear();
         }
+        applyTranslationsToPage(); // Apply to newly loaded footer content
 
     } catch (error) {
-        console.error("Impossible de charger le pied de page:", error);
-        footerPlaceholder.innerHTML = "<p class='text-center text-red-500'>Erreur: Le pied de page n'a pas pu être chargé.</p>";
+        console.error("Failed to load footer:", error);
+        footerPlaceholder.innerHTML = `<p class='text-center text-red-500'>${t('public.js.loading_footer_error')}</p>`;
     }
 }
 
+document.addEventListener('DOMContentLoaded', async () => {
+    // Determine initial language from path or default to 'fr'
+    const pathSegments = window.location.pathname.split('/').filter(Boolean);
+    let initialLang = 'fr';
+    const langIndexFR = pathSegments.indexOf('fr');
+    const langIndexEN = pathSegments.indexOf('en');
+    if (langIndexEN !== -1) initialLang = 'en';
+    else if (langIndexFR !== -1) initialLang = 'fr';
+    
+    await loadTranslations(initialLang); // Load translations first
 
-// Exécuté une fois le DOM entièrement chargé
-document.addEventListener('DOMContentLoaded', async () => { // Consolidated DOMContentLoaded
-    // Charger l'en-tête et le pied de page en parallèle
     await Promise.all([
         loadHeader(),
         loadFooter()
     ]);
 
-    // Initialisations globales qui ne dépendent PAS du header ou du footer directement
-    // (celles qui en dépendent sont appelées DANS loadHeader/loadFooter)
-
-    // Si #currentYear ou #newsletter-form sont en dehors du footer, initialisez-les ici :
     const globalCurrentYearEl = document.getElementById('currentYear');
     if (globalCurrentYearEl && !document.getElementById('footer-placeholder')?.querySelector('#currentYear')) {
          globalCurrentYearEl.textContent = new Date().getFullYear();
@@ -150,12 +255,9 @@ document.addEventListener('DOMContentLoaded', async () => { // Consolidated DOMC
         initializeNewsletterForm();
     }
 
-
-    // Logique spécifique à chaque page
     const bodyId = document.body.id;
 
     if (bodyId === 'page-index') {
-        // Aucune initialisation spécifique à la page index pour l'instant autre que celles du header/footer
     } else if (bodyId === 'page-nos-produits') {
         if (typeof fetchAndDisplayProducts === 'function') fetchAndDisplayProducts('all');
         if (typeof setupCategoryFilters === 'function') setupCategoryFilters();
@@ -169,10 +271,8 @@ document.addEventListener('DOMContentLoaded', async () => { // Consolidated DOMC
             });
         }
     } else if (bodyId === 'page-panier') {
-        if (typeof initCartPage === 'function') { // Changed from displayCartItems
-            initCartPage(); // From cart.js - handles login prompt or cart content
-        } else {
-            console.error('initCartPage function not found. Ensure cart.js is loaded.');
+        if (typeof initCartPage === 'function') {
+            initCartPage(); 
         }
     } else if (bodyId === 'page-compte') {
         if (typeof displayAccountDashboard === 'function') displayAccountDashboard();
@@ -184,7 +284,7 @@ document.addEventListener('DOMContentLoaded', async () => { // Consolidated DOMC
         if(createAccountButton && typeof showGlobalMessage === 'function'){
             createAccountButton.addEventListener('click', (e) => {
                 e.preventDefault();
-                showGlobalMessage('Fonctionnalité d\'inscription non implémentée sur cette page. Veuillez contacter l\'administrateur.', 'info');
+                showGlobalMessage(t('public.js.registration_feature_not_implemented'), 'info');
             });
         }
     } else if (bodyId === 'page-paiement') { 
@@ -193,7 +293,6 @@ document.addEventListener('DOMContentLoaded', async () => { // Consolidated DOMC
         if (typeof initializeConfirmationPage === 'function') initializeConfirmationPage();
     }
 
-    // Initialisation des modales globales (si elles ne sont pas chargées dynamiquement)
     document.querySelectorAll('.modal-overlay').forEach(modalOverlay => {
         modalOverlay.addEventListener('click', function(event) {
             if (event.target === modalOverlay && typeof closeModal === 'function') { 
@@ -210,25 +309,17 @@ document.addEventListener('DOMContentLoaded', async () => { // Consolidated DOMC
         });
     });
 
-    // Listen for authentication state changes
     document.addEventListener('authStateChanged', (event) => {
         const currentBodyId = document.body.id;
         const isLoggedIn = event.detail.isLoggedIn;
 
-        console.log(`Auth state changed on page ${currentBodyId}. User is now ${isLoggedIn ? 'logged in' : 'logged out'}.`);
-
-        // Re-initialize components that depend on auth state for the current page
-        if (typeof updateLoginState === 'function') updateLoginState(); // Update header links
-        if (typeof updateCartDisplay === 'function') updateCartDisplay();   // Update cart icon
+        if (typeof updateLoginState === 'function') updateLoginState(); 
+        if (typeof updateCartDisplay === 'function') updateCartDisplay();   
 
         if (currentBodyId === 'page-panier') {
-            if (typeof initCartPage === 'function') {
-                initCartPage(); // Re-check and display cart or login prompt
-            }
+            if (typeof initCartPage === 'function') initCartPage(); 
         } else if (currentBodyId === 'page-compte') {
-            if (typeof displayAccountDashboard === 'function') {
-                displayAccountDashboard(); // Re-check and display login form or dashboard
-            }
+            if (typeof displayAccountDashboard === 'function') displayAccountDashboard(); 
         }
     });
 });
