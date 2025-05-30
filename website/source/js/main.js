@@ -8,212 +8,125 @@ function initializeLangSwitcher() {
     const path = window.location.pathname;
     const pathSegments = path.split('/').filter(Boolean); // e.g., ['dist', 'fr', 'index.html'] or ['fr', 'index.html']
 
-    let currentLang = 'fr'; // Default
-    let langIndex = pathSegments.indexOf('fr');
-    if (langIndex === -1) {
-        langIndex = pathSegments.indexOf('en');
-    }
-
-    let pagePath = 'index.html'; // Default page
-
-    if (langIndex !== -1) {
-        currentLang = pathSegments[langIndex];
-        if (langIndex + 1 < pathSegments.length) {
-            pagePath = pathSegments.slice(langIndex + 1).join('/');
-        }
-    } else {
-        // Fallback to HTML lang attribute if no lang in path
-        currentLang = document.documentElement.lang || 'fr';
-    }
-
-    const otherLang = currentLang === 'fr' ? 'en' : 'fr';
-    const newHref = `../${otherLang}/${pagePath}`;// website/js/main.js
+    let currentLang = 'fr'; // Default// website/js/main.js
 // Main script for initializing the frontend application and page-specific logic.
-
-let currentLang = 'fr'; // Default language
-let translations = {}; // To store loaded translations
-
-/**
- * Fetches and loads translation data for the given language.
- * @param {string} lang - The language code (e.g., 'fr', 'en').
- */
-async function loadTranslations(lang) {
-    try {
-        const response = await fetch(`../locales/${lang}.json`); // Path relative to HTML files in dist/lang/
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        translations = await response.json();
-        currentLang = lang;
-        console.log(`Translations loaded for ${lang}`);
-        // After loading, re-apply translations to the page
-        applyTranslationsToPage();
-        initializeLangSwitcher(); // Re-initialize switcher to reflect current lang
-    } catch (error) {
-        console.error(`Could not load translations for ${lang}:`, error);
-        // Fallback or error handling
-        if (lang !== 'fr') { // Try loading French as a fallback if English fails
-            console.warn("Falling back to French translations.");
-            await loadTranslations('fr');
-        } else {
-            // If French also fails, the page will show keys or default text
-            document.documentElement.lang = 'fr'; // Default lang attribute
-        }
-    }
-}
+// This version assumes that translations are handled by a build script (scripts/build.js)
+// which replaces {{key}} in HTML and t('key') in JS files with static translated strings.
 
 /**
- * Translates a key using the loaded dictionary.
- * @param {string} key - The translation key (e.g., "public.nav.home").
- * @param {object} [replacements={}] - Optional replacements for placeholders in format {placeholder: value}.
- * @returns {string} The translated string, or the key itself if not found.
- */
-function t(key, replacements = {}) {
-    let text = translations[key] || key;
-    for (const placeholder in replacements) {
-        text = text.replace(new RegExp(`%${placeholder}%`, 'g'), replacements[placeholder]);
-    }
-    return text;
-}
-
-
-/**
- * Applies loaded translations to all elements with data-translate attributes.
- */
-function applyTranslationsToPage() {
-    document.querySelectorAll('[data-translate]').forEach(element => {
-        const key = element.dataset.translate;
-        const translatedText = t(key);
-        if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-            if (element.placeholder) element.placeholder = translatedText;
-        } else {
-            element.innerHTML = translatedText; // Use innerHTML to allow for HTML in translations if needed
-        }
-    });
-    // Set the lang attribute on the HTML tag
-    document.documentElement.lang = currentLang;
-
-    // Update page title
-    const pageTitleKey = document.body.dataset.pageTitleKey; // e.g. public.index.title
-    if (pageTitleKey) {
-        document.title = t(pageTitleKey);
-    }
-}
-
-
-/**
- * Initializes the language switcher links and highlights the current language.
- * Determines current language from the path (e.g., /dist/fr/index.html).
+ * Initializes the language switcher links.
+ * It determines the current language from the HTML lang attribute (set by the build script)
+ * and constructs links to the equivalent page in the other language.
  */
 function initializeLangSwitcher() {
-    const path = window.location.pathname;
-    // Expected path: /dist/{lang}/page.html or /{lang}/page.html if dist is root
-    const pathSegments = path.split('/').filter(Boolean); 
+    // Determine current language from the <html lang="..."> attribute
+    const currentLang = document.documentElement.lang || 'fr'; // Default to 'fr' if not set
     
-    let detectedLang = 'fr'; // Default
-    let pagePathAfterLang = 'index.html'; // Default page
-
-    // Try to find 'fr' or 'en' in path segments
-    const langIndexFR = pathSegments.indexOf('fr');
-    const langIndexEN = pathSegments.indexOf('en');
-
-    if (langIndexFR !== -1) {
-        detectedLang = 'fr';
-        pagePathAfterLang = pathSegments.slice(langIndexFR + 1).join('/') || 'index.html';
-    } else if (langIndexEN !== -1) {
-        detectedLang = 'en';
-        pagePathAfterLang = pathSegments.slice(langIndexEN + 1).join('/') || 'index.html';
-    } else {
-        // Fallback if lang not in path (e.g. local dev without /dist/{lang}/ structure)
-        // This part might need adjustment based on your exact dev server setup.
-        // For now, we'll rely on the initially loaded `currentLang`.
-        detectedLang = currentLang; 
-        // Try to guess pagePath if not index.html
-        if (pathSegments.length > 0 && pathSegments[pathSegments.length -1].endsWith('.html')) {
-            pagePathAfterLang = pathSegments[pathSegments.length -1];
-        }
+    // Determine the current page's path relative to the language directory.
+    // Example: if current URL is /dist/fr/nos-produits.html, pageName should be nos-produits.html
+    // This logic assumes a structure like /dist/{lang}/page.html
+    const pathSegments = window.location.pathname.split('/');
+    let pageName = pathSegments.pop() || 'index.html'; // Get the last segment (file name) or default to index.html
+    if (pageName === currentLang && pathSegments.length > 0) { 
+        // This handles cases where the URL might be just /dist/fr/ (implicitly index.html)
+        // or if the last segment was the lang code itself (e.g. from a base URL redirect)
+        pageName = 'index.html';
     }
-    
-    currentLang = detectedLang; // Update global currentLang based on detection
+
 
     document.querySelectorAll('.lang-link').forEach(link => {
-        const linkLang = link.dataset.lang;
-        // Construct new href: go up one level from current lang dir, then into other lang dir
-        const newHref = `../${linkLang}/${pagePathAfterLang}`; 
+        const linkLang = link.dataset.lang; // 'fr' or 'en'
+
+        // Construct the new href.
+        // Assumes HTML files are directly inside /fr/ or /en/ subdirectories.
+        // e.g., if current page is /fr/nos-produits.html and link is for 'en', new href is '../en/nos-produits.html'
+        const newHref = `../${linkLang}/${pageName}`;
         link.setAttribute('href', newHref);
 
         if (linkLang === currentLang) {
             link.style.opacity = '1';
-            link.style.border = '2px solid #D4AF37';
+            link.style.border = '2px solid #D4AF37'; // Gold border for active
             link.style.borderRadius = '4px';
-            link.style.padding = '2px 4px'; // Added horizontal padding
+            link.style.padding = '2px 4px';
             link.style.cursor = 'default';
-            link.onclick = (e) => e.preventDefault(); // Prevent navigation
+            link.onclick = (e) => e.preventDefault(); // Prevent navigation for current language
         } else {
             link.style.opacity = '0.6';
             link.style.border = '2px solid transparent';
             link.style.padding = '2px 4px';
             link.style.cursor = 'pointer';
-            link.onclick = null; // Ensure click works for other lang
-        }
-
-        if (linkLang !== currentLang) {
-            link.addEventListener('mouseover', () => { link.style.opacity = '1' });
-            link.addEventListener('mouseout', () => { link.style.opacity = '0.6' });
-        } else {
-            link.onmouseover = null;
-            link.onmouseout = null;
+            link.onclick = null; // Ensure click works for other language link
+             // Add hover effects for non-active links
+            link.addEventListener('mouseover', () => { link.style.opacity = '1'; });
+            link.addEventListener('mouseout', () => { link.style.opacity = '0.6'; });
         }
     });
 }
 
-
+/**
+ * Loads the header.html content into the #header-placeholder div.
+ * Initializes header-specific functionalities after loading.
+ */
 async function loadHeader() {
     const headerPlaceholder = document.getElementById('header-placeholder');
     if (!headerPlaceholder) {
-        console.error("Header placeholder #header-placeholder not found.");
+        // console.error("Header placeholder #header-placeholder not found.");
+        // Since t() is not available at runtime, use a generic or pre-translated error.
+        // The build script should have replaced any t('public.js.loading_header_error') calls.
+        console.error("{{public.js.loading_header_error}}"); 
         return;
     }
 
     try {
+        // Path to header.html should be relative to the final HTML file location.
+        // If HTML files are in /dist/fr/ or /dist/en/, header.html needs to be accessible.
+        // Assuming header.html is copied by the build script into each language directory or is accessible via a relative path.
+        // For simplicity, if header.html is also processed by build.js, it will be in the same directory.
         const response = await fetch('header.html'); 
         if (!response.ok) {
-            throw new Error(t('public.js.loading_header_error') + `: ${response.status}`);
+            // Error message will be pre-translated by build.js if it uses t()
+            throw new Error(`{{public.js.loading_header_error}}: ${response.status}`);
         }
         const headerHtml = await response.text();
         headerPlaceholder.innerHTML = headerHtml;
 
+        // Initialize components within the loaded header
         if (typeof initializeMobileMenu === 'function') initializeMobileMenu();
         if (typeof setActiveNavLink === 'function') setActiveNavLink();
         if (typeof updateLoginState === 'function') updateLoginState();
-        if (typeof updateCartDisplay === 'function') updateCartDisplay();
+        if (typeof updateCartDisplay === 'function') updateCartDisplay(); // From ui.js
         
-        // Language switcher init is now part of loadTranslations flow
-        // but we ensure it's called after header content is in DOM.
-        // If translations are already loaded, this will just update styles.
-        initializeLangSwitcher(); 
-        applyTranslationsToPage(); // Apply to newly loaded header content
+        // Initialize language switcher now that its HTML is loaded
+        initializeLangSwitcher();
 
     } catch (error) {
         console.error("Failed to load header:", error);
-        headerPlaceholder.innerHTML = `<p class='text-center text-red-500'>${t('public.js.loading_header_error')}</p>`;
+        // Error message will be pre-translated by build.js
+        headerPlaceholder.innerHTML = `<p class='text-center text-red-500'>{{public.js.loading_header_error}}</p>`;
     }
 }
 
+/**
+ * Loads the footer.html content into the #footer-placeholder div.
+ * Initializes footer-specific functionalities after loading.
+ */
 async function loadFooter() {
     const footerPlaceholder = document.getElementById('footer-placeholder');
     if (!footerPlaceholder) {
-        console.error("Footer placeholder #footer-placeholder not found.");
+        // console.error("Footer placeholder #footer-placeholder not found.");
+        console.error("{{public.js.loading_footer_error}}");
         return;
     }
     try {
+        // Assuming footer.html is copied by the build script into each language directory or accessible via a relative path.
         const response = await fetch('footer.html'); 
         if (!response.ok) {
-            throw new Error(t('public.js.loading_footer_error') + `: ${response.status}`);
+            throw new Error(`{{public.js.loading_footer_error}}: ${response.status}`);
         }
         const footerHtml = await response.text();
         footerPlaceholder.innerHTML = footerHtml;
 
+        // Initialize components within the loaded footer
         if (typeof initializeNewsletterForm === 'function') {
             if (footerPlaceholder.querySelector('#newsletter-form')) {
                 initializeNewsletterForm();
@@ -223,41 +136,38 @@ async function loadFooter() {
         if (currentYearEl) {
             currentYearEl.textContent = new Date().getFullYear();
         }
-        applyTranslationsToPage(); // Apply to newly loaded footer content
 
     } catch (error) {
         console.error("Failed to load footer:", error);
-        footerPlaceholder.innerHTML = `<p class='text-center text-red-500'>${t('public.js.loading_footer_error')}</p>`;
+        footerPlaceholder.innerHTML = `<p class='text-center text-red-500'>{{public.js.loading_footer_error}}</p>`;
     }
 }
 
+// Main execution block after DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
-    // Determine initial language from path or default to 'fr'
-    const pathSegments = window.location.pathname.split('/').filter(Boolean);
-    let initialLang = 'fr';
-    const langIndexFR = pathSegments.indexOf('fr');
-    const langIndexEN = pathSegments.indexOf('en');
-    if (langIndexEN !== -1) initialLang = 'en';
-    else if (langIndexFR !== -1) initialLang = 'fr';
-    
-    await loadTranslations(initialLang); // Load translations first
-
+    // Load common components
     await Promise.all([
-        loadHeader(),
+        loadHeader(), // This will also initialize the lang switcher
         loadFooter()
     ]);
 
+    // Initialize global elements not tied to header/footer if they exist outside them
     const globalCurrentYearEl = document.getElementById('currentYear');
     if (globalCurrentYearEl && !document.getElementById('footer-placeholder')?.querySelector('#currentYear')) {
          globalCurrentYearEl.textContent = new Date().getFullYear();
     }
-    if (typeof initializeNewsletterForm === 'function' && !document.getElementById('footer-placeholder')?.querySelector('#newsletter-form')) {
+    // If newsletter form is outside footer and needs init
+    if (typeof initializeNewsletterForm === 'function' && 
+        document.getElementById('newsletter-form') && 
+        !document.getElementById('footer-placeholder')?.querySelector('#newsletter-form')) {
         initializeNewsletterForm();
     }
 
+    // Page-specific initializations
     const bodyId = document.body.id;
 
     if (bodyId === 'page-index') {
+        // Specific logic for index page if any
     } else if (bodyId === 'page-nos-produits') {
         if (typeof fetchAndDisplayProducts === 'function') fetchAndDisplayProducts('all');
         if (typeof setupCategoryFilters === 'function') setupCategoryFilters();
@@ -284,7 +194,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         if(createAccountButton && typeof showGlobalMessage === 'function'){
             createAccountButton.addEventListener('click', (e) => {
                 e.preventDefault();
-                showGlobalMessage(t('public.js.registration_feature_not_implemented'), 'info');
+                // This message will be pre-translated by build.js
+                showGlobalMessage("{{public.js.registration_feature_not_implemented}}", 'info');
+            });
+        }
+         const forgotPasswordLink = document.querySelector('#login-form a[href="#"]'); // More specific selector
+        if (forgotPasswordLink) {
+            forgotPasswordLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                showGlobalMessage("{{public.js.password_reset_not_implemented}}", 'info');
             });
         }
     } else if (bodyId === 'page-paiement') { 
@@ -293,6 +211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof initializeConfirmationPage === 'function') initializeConfirmationPage();
     }
 
+    // Initialize global modals (if any)
     document.querySelectorAll('.modal-overlay').forEach(modalOverlay => {
         modalOverlay.addEventListener('click', function(event) {
             if (event.target === modalOverlay && typeof closeModal === 'function') { 
@@ -309,10 +228,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // Listen for authentication state changes (e.g., after login/logout)
     document.addEventListener('authStateChanged', (event) => {
         const currentBodyId = document.body.id;
-        const isLoggedIn = event.detail.isLoggedIn;
+        // const isLoggedIn = event.detail.isLoggedIn; // This detail may not be needed if UI updates are simple
 
+        // Re-initialize components that depend on auth state for the current page
         if (typeof updateLoginState === 'function') updateLoginState(); 
         if (typeof updateCartDisplay === 'function') updateCartDisplay();   
 
@@ -321,5 +242,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (currentBodyId === 'page-compte') {
             if (typeof displayAccountDashboard === 'function') displayAccountDashboard(); 
         }
+        // Other page-specific updates based on auth state can be added here
     });
 });
