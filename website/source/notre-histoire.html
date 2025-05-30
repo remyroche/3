@@ -9,6 +9,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <script>
+        tailwind.config = {<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="{{global.charset}}">
+    <meta name="viewport" content="{{global.viewport}}">
+    <title>{{public.story.title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
         tailwind.config = {
             theme: {
                 extend: {
@@ -37,28 +48,28 @@
         .modal-message.show { @apply opacity-100 translate-y-0; }
     </style>
 </head>
-<body id="page-notre-histoire" class="antialiased">
+<body id="page-notre-histoire" class="antialiased" data-page-title-key="public.story.title">
 
     <div id="header-placeholder"></div>
 
     <main class="bg-brand-cream">
         <section class="py-20">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 class="font-serif italic text-brand-earth-brown mb-8 text-center text-3xl sm:text-4xl">Notre histoire</h1>
+                <h1 class="font-serif italic text-brand-earth-brown mb-8 text-center text-3xl sm:text-4xl" data-translate="public.story.header">{{public.story.header}}</h1>
                 <div class="max-w-4xl mx-auto text-lg text-brand-earth-brown space-y-8 leading-relaxed">
-                    <p>Chez Maison Trüvra, nous sommes animés par une passion dévorante pour l'excellence. En tant que producteurs récoltants, nous repoussons sans cesse les limites pour offrir des truffes d'une intensité et d'un hédonisme inégalés.</p>
+                    <p data-translate="public.story.p1">{{public.story.p1}}</p>
                     <blockquote class="font-serif italic text-xl text-brand-near-black my-10 p-6 border-l-4 border-brand-classic-gold bg-white shadow-lg rounded-r-lg">
-                        "Nous révolutionnons la trufficulture en créant un écosystème parfaitement contrôlé."
+                        "<span data-translate="public.story.blockquote">{{public.story.blockquote}}</span>"
                     </blockquote>
-                    <p>Cet environnement sur mesure nous permet de cultiver des truffes d'une qualité exceptionnelle, avec des arômes plus puissants et des caractéristiques organoleptiques uniques. Ce terroir est un écrin de pureté dans lequel nous gérons méticuleusement le cycle de chaque truffe depuis son origine.</p>
-                    <p>C'est ce savoir-faire méticuleux et cet environnement unique qui donnent naissance à des truffes d'une qualité inégalée : des arômes plus puissants, des qualités organoleptiques incomparables. Nous ne visons rien moins que la truffe parfaite, celle qui transforme un plat ordinaire en un moment de pur hédonisme.</p>
+                    <p data-translate="public.story.p2">{{public.story.p2}}</p>
+                    <p data-translate="public.story.p3">{{public.story.p3}}</p>
                     <div class="my-12 p-8 bg-white rounded-xl shadow-xl border border-brand-warm-taupe/30">
-                        <h2 class="text-2xl font-serif text-brand-near-black mb-4 text-center">Notre responsabilité environnementale</h2>
-                        <p class="text-center">Notre engagement envers la nature est au cœur de notre démarche. Nous n'utilisons ni pesticides ni insecticides, nos engrais sont d'orgine naturelle et nos installations fonctionnent à 100% grâce à des énergies renouvelables. Nous gérons également l'eau et les déchets de manière responsable.</p>
+                        <h2 class="text-2xl font-serif text-brand-near-black mb-4 text-center" data-translate="public.story.responsibility_title">{{public.story.responsibility_title}}</h2>
+                        <p class="text-center" data-translate="public.story.responsibility_desc">{{public.story.responsibility_desc}}</p>
                     </div>
-                    <p>Chaque truffe est récoltée à son apogée et conditionnée le jour même pour préserver sa fraîcheur. Grâce à un sachet sous vide équipé d'un QR code unique, vous pouvez retracer l'histoire de votre truffe, de la récolte à la livraison : date de récolte, conditionnement, numéro de lot, produit et quantité.</p>
-                    <p>Notre quête de perfection ne s'arrête jamais. Nous investissons continuellement dans la recherche et le développement pour améliorer les caractéristiques organoleptiques de nos truffes et développer des techniques post-récolte innovantes. Ces travaux ouvriront la voie à de nouvelles gammes de produits.</p>
-                    <p class="font-semibold text-brand-near-black">Maison Trüvra vous invite à découvrir des truffes cultivées avec passion, précision et respect. Des arômes à leur apogée et une traçabilité parfaite pour des moments de dégustation inoubliables.</p>
+                    <p data-translate="public.story.p4">{{public.story.p4}}</p>
+                    <p data-translate="public.story.p5">{{public.story.p5}}</p>
+                    <p class="font-semibold text-brand-near-black" data-translate="public.story.p6">{{public.story.p6}}</p>
                 </div>
             </div>
         </section>
@@ -71,14 +82,12 @@
     </div>
 
     <script src="js/config.js"></script>
-    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script> <script src="js/ui.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/cart.js"></script>
-    <script src="js/product.js"></script>
+    <script src="js/products.js"></script>
     <script src="js/checkout.js"></script>
     <script src="js/newsletter.js"></script>
-    <script src="js/main.js"></script>
 </body>
 </html>
-
