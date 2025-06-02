@@ -1,52 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Manual Invoice - Admin</title>
-    <link href="../css/admin_style.css" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Créer Facture Manuelle - Maison Trüvra Admin</title>
+    <link rel="stylesheet" href="css/admin_style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100">
-    <div id="admin-header-placeholder"></div>
+<body id="page-admin-create-invoice">
+    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Retour au Tableau de Bord
+                </a>
+                <div id="admin-header-title-area">
+                     <h1 class="text-xl font-semibold text-gray-700">Maison Trüvra - Admin</h1>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="admin-user-greeting" class="text-gray-700 text-sm mr-2"></span>
+                <button id="admin-logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-sm flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                </button>
+            </div>
+        </div>
+    </header>
 
-    <main class="container mx-auto p-6">
-        <h1 class="text-3xl font-bold mb-6 text-gray-800">Create Manual Invoice</h1>
+    <nav class="bg-gray-800 text-white shadow-md">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-start h-12 space-x-1 overflow-x-auto">
+                <a href="admin_dashboard.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Tableau de Bord</a>
+                <a href="admin_manage_products.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Produits</a>
+                <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Inventaire</a>
+                <a href="admin_view_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voir Inventaire</a>
+                <a href="admin_manage_orders.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Commandes</a>
+                <a href="admin_manage_users.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Utilisateurs</a>
+                <a href="admin_manage_categories.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Catégories</a>
+                <a href="admin_invoices.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 active">Factures</a>
+                <a href="admin_manage_reviews.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Avis</a>
+            </div>
+        </div>
+    </nav>
 
-        <div class="bg-white p-8 rounded-lg shadow-md">
-            <form id="create-invoice-form">
-                <div class="mb-6">
-                    <label for="professional-user-select" class="block text-gray-700 font-bold mb-2">Select Professional User:</label>
-                    <select id="professional-user-select" name="b2b_user_id" class="form-input w-full" required>
-                        <option value="">Loading professionals...</option>
+    <main class="admin-content-area container mx-auto p-6">
+        <h1 class="text-3xl font-semibold text-gray-800 mb-6">Créer une Facture Manuelle</h1>
+
+        <div class="admin-form-container">
+            <form id="create-invoice-form" class="admin-form space-y-6">
+                <div>
+                    <label for="professional-user-select" class="form-label">Sélectionner un Utilisateur Professionnel:</label>
+                    <select id="professional-user-select" name="b2b_user_id" class="form-input-admin" required>
+                        <option value="">Chargement des professionnels...</option>
                     </select>
                 </div>
 
-                <div class="mb-6">
-                    <h2 class="text-xl font-semibold mb-4 text-gray-700">Line Items</h2>
-                    <div id="line-items-container">
+                <div>
+                    <h2 class="text-xl font-semibold mb-3 text-gray-700">Lignes de Facture</h2>
+                    <div id="line-items-container" class="space-y-3">
                         </div>
-                    <button type="button" id="add-line-item-btn" class="btn btn-secondary mt-4">Add Line Item</button>
+                    <button type="button" id="add-line-item-btn" class="btn btn-admin-secondary mt-4">
+                        <i class="fas fa-plus mr-2"></i>Ajouter Ligne
+                    </button>
                 </div>
                 
-                <div class="mb-6">
-                    <label for="invoice-notes" class="block text-gray-700 font-bold mb-2">Notes (Optional):</label>
-                    <textarea id="invoice-notes" name="notes" class="form-input w-full h-24"></textarea>
+                <div>
+                    <label for="invoice-notes" class="form-label">Notes (Optionnel):</label>
+                    <textarea id="invoice-notes" name="notes" class="form-input-admin h-24"></textarea>
                 </div>
 
-
-                <div class="text-right">
-                    <button type="submit" class="btn btn-primary">Generate Invoice</button>
+                <div class="form-actions text-right">
+                    <button type="submit" class="btn btn-admin-primary">
+                        <i class="fas fa-file-invoice mr-2"></i>Générer la Facture
+                    </button>
                 </div>
             </form>
         </div>
     </main>
 
-    <script src="../js/config.js"></script>
-    <script src="../js/api.js"></script>
+    <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
+        <p>&copy; <span id="currentYearCreateInvoice"></span> Maison Trüvra - Admin Panel</p>
+    </footer>
+
+    <div id="admin-toast-container"></div>
+
+    <script src="js/admin_config.js"></script>
+    <script src="js/admin_ui.js"></script>
     <script src="js/admin_api.js"></script>
     <script src="js/admin_auth.js"></script>
     <script src="js/admin_main.js"></script>
     <script src="js/admin_invoices.js"></script>
+     <script>
+        const currentYearSpanCreateInvoice = document.getElementById('currentYearCreateInvoice');
+        if (currentYearSpanCreateInvoice) {
+            currentYearSpanCreateInvoice.textContent = new Date().getFullYear();
+        }
+    </script>
 </body>
 </html>
