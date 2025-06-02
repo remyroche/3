@@ -1,18 +1,701 @@
+# backend/config.py
+import os
+from datetime import timedelta
+
+class Config:
+    """Base configuration."""
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'change_this_default_secret_key_in_prod_sqlalchemy')
+    DEBUG = False
+    TESTING = False
+    APP_BASE_URL = os.environ.get('APP_BASE_URL', 'http://localhost:8000') # Used for frontend redirects
+
+    # SQLAlchemy Configuration
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+        'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'maison_truvra_orm.sqlite3')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = False
+
+    # JWT Extended Settings
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'change_this_default_jwt_secret_key_in_prod_sqlalchemy')
+    JWT_TOKEN_LOCATION = ['headers', 'cookies']
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+    JWT_COOKIE_SECURE = False 
+    JWT_COOKIE_SAMESITE = 'Lax'
+    JWT_REFRESH_COOKIE_PATH = '/api/auth/refresh' 
+    JWT_ACCESS_COOKIE_PATH = '/api/' 
+    JWT_COOKIE_CSRF_PROTECT = True 
+    JWT_CSRF_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE']
+    JWT_CSRF_IN_COOKIES = True 
+
+    # File Uploads / Asset Storage
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'uploads'))
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
+    MAX_CONTENT_LENGTH = 8 * 1024 * 1024
+    ASSET_STORAGE_PATH = os.environ.get('ASSET_STORAGE_PATH', os.path.join(UPLOAD_FOLDER, 'generated_assets'))
+    QR_CODE_FOLDER = os.path.join(ASSET_STORAGE_PATH, 'qr_codes')
+    PASSPORT_FOLDER = os.path.join(ASSET_STORAGE_PATH, 'passports')
+    LABEL_FOLDER = os.path.join(ASSET_STORAGE_PATH, 'labels')
+    DEFAULT_FONT_PATH = os.environ.get('DEFAULT_FONT_PATH', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static_assets', 'fonts', 'DejaVuSans.ttf')) 
+    MAISON_TRUVRA_LOGO_PATH_LABEL = os.environ.get('MAISON_TRUVRA_LOGO_PATH_LABEL', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static_assets', 'logos', 'maison_truvra_label_logo.png')) 
+    MAISON_TRUVRA_LOGO_PATH_PASSPORT = os.environ.get('MAISON_TRUVRA_LOGO_PATH_PASSPORT', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static_assets', 'logos', 'maison_truvra_passport_logo.png'))
+
+    # Email Configuration
+    MAIL_SERVER = os.environ.get('MAIL_SERVER')
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ('true', '1', 't')
+    MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'false').lower() in ('true', '1', 't')
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@example.com')
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')
+
+    # Stripe Configuration
+    STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
+    STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+    STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
+
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO').upper()
+    LOG_FILE = os.environ.get('LOG_FILE', None)
+
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', "http://localhost:8000,http://127.0.0.1:8000")
+    
+    PROFESSIONAL_DOCS_UPLOAD_PATH = os.path.join(UPLOAD_FOLDER, 'professional_documents')
+    INVOICE_PDF_PATH = os.path.join(ASSET_STORAGE_PATH, 'invoices')
+    DEFAULT_COMPANY_INFO = {
+        "name": os.environ.get('INVOICE_COMPANY_NAME', "Maison Trüvra SARL"),
+        "address_line1": os.environ.get('INVOICE_COMPANY_ADDRESS1', "1 Rue de la Truffe"),
+        "address_line2": os.environ.get('INVOICE_COMPANY_ADDRESS2', ""),
+        "city_postal_country": os.environ.get('INVOICE_COMPANY_CITY_POSTAL_COUNTRY', "75001 Paris, France"),
+        "vat_number": os.environ.get('INVOICE_COMPANY_VAT', "FRXX123456789"),
+        "logo_path": os.environ.get('INVOICE_COMPANY_LOGO_PATH', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static_assets', 'logos', 'maison_truvra_invoice_logo.png'))
+    }
+    
+    API_VERSION = "v1.4-sqlalchemy-totp-sso" 
+
+    # Rate Limiting
+    RATELIMIT_STORAGE_URI = os.environ.get('RATELIMIT_STORAGE_URI', "memory://")
+    RATELIMIT_STRATEGY = "fixed-window"
+    RATELIMIT_HEADERS_ENABLED = True
+    DEFAULT_RATELIMITS = ["200 per day", "50 per hour"] 
+    AUTH_RATELIMITS = ["20 per minute", "200 per hour"] 
+    ADMIN_LOGIN_RATELIMITS = ["10 per 5 minutes", "60 per hour"] 
+    PASSWORD_RESET_RATELIMITS = ["5 per 15 minutes"]
+    NEWSLETTER_RATELIMITS = ["10 per minute"] 
+    ADMIN_API_RATELIMITS = ["200 per hour"] 
+
+    # Content Security Policy
+    CONTENT_SECURITY_POLICY = {
+        'default-src': ['\'self\''],
+        'img-src': ['\'self\'', 'https://placehold.co', 'data:'], 
+        'script-src': ['\'self\'', 'https://cdn.tailwindcss.com'],
+        'style-src': ['\'self\'', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com', '\'unsafe-inline\''],
+        'font-src': ['\'self\'', 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
+        'connect-src': ['\'self\'', 'https://app.simplelogin.io'], 
+        'form-action': ['\'self\'', 'https://app.simplelogin.io'], 
+        'frame-ancestors': ['\'none\'']
+    }
+    TALISMAN_FORCE_HTTPS = False
+
+    # Initial Admin User
+    INITIAL_ADMIN_EMAIL = os.environ.get('INITIAL_ADMIN_EMAIL')
+    INITIAL_ADMIN_PASSWORD = os.environ.get('INITIAL_ADMIN_PASSWORD')
+
+    # Token Lifespans
+    VERIFICATION_TOKEN_LIFESPAN_HOURS = 24
+    RESET_TOKEN_LIFESPAN_HOURS = 1
+    MAGIC_LINK_LIFESPAN_MINUTES = 10
+
+    # Invoice Settings
+    INVOICE_DUE_DAYS = 30
+
+    # TOTP Configuration
+    TOTP_ISSUER_NAME = os.environ.get('TOTP_ISSUER_NAME', "Maison Trüvra Admin")
+    TOTP_LOGIN_STATE_TIMEOUT = timedelta(minutes=5) 
+
+    # SimpleLogin OAuth Configuration
+    SIMPLELOGIN_CLIENT_ID = os.environ.get('SIMPLELOGIN_CLIENT_ID', 'truvra-ykisfvoctm') # Updated with your App ID
+    SIMPLELOGIN_CLIENT_SECRET = os.environ.get('SIMPLELOGIN_CLIENT_SECRET', 'cppjuelfvjkkqursqunvwigxiyabakgfthhivwzi') # Updated with your App Secret
+    SIMPLELOGIN_AUTHORIZE_URL = os.environ.get('SIMPLELOGIN_AUTHORIZE_URL', 'https://app.simplelogin.io/oauth2/authorize')
+    SIMPLELOGIN_TOKEN_URL = os.environ.get('SIMPLELOGIN_TOKEN_URL', 'https://app.simplelogin.io/oauth2/token')
+    SIMPLELOGIN_USERINFO_URL = os.environ.get('SIMPLELOGIN_USERINFO_URL', 'https://app.simplelogin.io/oauth2/userinfo')
+    SIMPLELOGIN_REDIRECT_URI_ADMIN = os.environ.get('SIMPLELOGIN_REDIRECT_URI_ADMIN', 'http://localhost:5001/api/admin/login/simplelogin/callback')
+    SIMPLELOGIN_SCOPES = "openid email profile" 
+
+
+class DevelopmentConfig(Config):
+    DEBUG = True
+    LOG_LEVEL = 'DEBUG'
+    SQLALCHEMY_ECHO = False 
+    JWT_COOKIE_SECURE = False
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
+        'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'dev_maison_truvra_orm.sqlite3')
+    MAIL_SERVER = os.environ.get('DEV_MAIL_SERVER', 'localhost')
+    MAIL_PORT = int(os.environ.get('DEV_MAIL_PORT', 1025))
+    MAIL_USE_TLS = False
+    MAIL_USERNAME = None
+    MAIL_PASSWORD = None
+    TALISMAN_FORCE_HTTPS = False
+    APP_BASE_URL = os.environ.get('DEV_APP_BASE_URL', 'http://localhost:8000') 
+    Config.CONTENT_SECURITY_POLICY['connect-src'].extend(['http://localhost:5001', 'http://127.0.0.1:5001'])
+    # Development values for SimpleLogin are now taken from the base Config or environment variables
+
+
+class TestingConfig(Config):
+    TESTING = True
+    DEBUG = True
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL', 'sqlite:///:memory:')
+    JWT_COOKIE_SECURE = False
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=5)
+    JWT_REFRESH_TOKEN_EXPIRES = timedelta(minutes=10)
+    MAIL_SUPPRESS_SEND = True
+    TALISMAN_FORCE_HTTPS = False
+    WTF_CSRF_ENABLED = False 
+    RATELIMIT_ENABLED = False
+    INITIAL_ADMIN_EMAIL = 'test_admin_orm@example.com'
+    INITIAL_ADMIN_PASSWORD = 'test_password_orm123'
+    SQLALCHEMY_ECHO = False
+    SIMPLELOGIN_CLIENT_ID = 'test_sl_client_id_testing' # Keep test credentials separate
+    SIMPLELOGIN_CLIENT_SECRET = 'test_sl_client_secret_testing'
+
+
+class ProductionConfig(Config):
+    DEBUG = False
+    TESTING = False
+    
+    if Config.SECRET_KEY == 'change_this_default_secret_key_in_prod_sqlalchemy':
+        raise ValueError("Production SECRET_KEY is not set or is using the default value.")
+    if Config.JWT_SECRET_KEY == 'change_this_default_jwt_secret_key_in_prod_sqlalchemy':
+        raise ValueError("Production JWT_SECRET_KEY is not set or is using the default value.")
+
+    JWT_COOKIE_SECURE = True
+    JWT_COOKIE_SAMESITE = 'Strict'
+    TALISMAN_FORCE_HTTPS = True 
+    
+    APP_BASE_URL = os.environ.get('PROD_APP_BASE_URL')
+    if not APP_BASE_URL:
+        raise ValueError("PROD_APP_BASE_URL environment variable must be set for production.")
+
+    PROD_CORS_ORIGINS = os.environ.get('PROD_CORS_ORIGINS')
+    if not PROD_CORS_ORIGINS:
+        raise ValueError("PROD_CORS_ORIGINS environment variable must be set for production.")
+    CORS_ORIGINS = PROD_CORS_ORIGINS
+
+    MYSQL_USER_PROD = os.environ.get('MYSQL_USER_PROD')
+    MYSQL_PASSWORD_PROD = os.environ.get('MYSQL_PASSWORD_PROD')
+    MYSQL_HOST_PROD = os.environ.get('MYSQL_HOST_PROD')
+    MYSQL_DB_PROD = os.environ.get('MYSQL_DB_PROD')
+    if not all([MYSQL_USER_PROD, MYSQL_PASSWORD_PROD, MYSQL_HOST_PROD, MYSQL_DB_PROD]):
+        print("WARNING: Production MySQL connection details are not fully set. Database will not connect.")
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'prod_fallback_orm.sqlite3')
+    else:
+        SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{MYSQL_USER_PROD}:{MYSQL_PASSWORD_PROD}@{MYSQL_HOST_PROD}/{MYSQL_DB_PROD}"
+
+    RATELIMIT_STORAGE_URI = os.environ.get('PROD_RATELIMIT_STORAGE_URI')
+    if not RATELIMIT_STORAGE_URI or RATELIMIT_STORAGE_URI == "memory://":
+        print("WARNING: RATELIMIT_STORAGE_URI is not set or is 'memory://' for production. Consider Redis.")
+
+    if not Config.MAIL_SERVER or not Config.MAIL_USERNAME or not Config.MAIL_PASSWORD:
+        print("WARNING: Production email server is not fully configured.")
+    if not Config.STRIPE_SECRET_KEY or not Config.STRIPE_PUBLISHABLE_KEY:
+        print("WARNING: Stripe keys are not configured for production.")
+    
+    Config.CONTENT_SECURITY_POLICY['connect-src'] = ['\'self\'', APP_BASE_URL, 'https://app.simplelogin.io']
+    Config.CONTENT_SECURITY_POLICY['form-action'] = ['\'self\'', 'https://app.simplelogin.io']
+
+    if not Config.INITIAL_ADMIN_EMAIL or not Config.INITIAL_ADMIN_PASSWORD:
+        print("WARNING: INITIAL_ADMIN_EMAIL or INITIAL_ADMIN_PASSWORD environment variables are not set.")
+    
+    # Ensure production uses actual environment variables for SimpleLogin credentials
+    if Config.SIMPLELOGIN_CLIENT_ID == 'truvra-ykisfvoctm' or Config.SIMPLELOGIN_CLIENT_SECRET == 'cppjuelfvjkkqursqunvwigxiyabakgfthhivwzi':
+        if not (os.environ.get('SIMPLELOGIN_CLIENT_ID') and os.environ.get('SIMPLELOGIN_CLIENT_SECRET')):
+             print("WARNING: SimpleLogin OAuth credentials are using fallback values in production. Set environment variables.")
+
+
+config_by_name = dict(
+    development=DevelopmentConfig,
+    testing=TestingConfig,
+    production=ProductionConfig,
+    default=DevelopmentConfig 
+)
+
+def get_config_by_name(config_name=None):
+    if config_name is None:
+        config_name = os.getenv('FLASK_ENV', 'default')
+    
+    if os.getenv('FLASK_ENV') == 'production' and config_name != 'production':
+        print(f"Warning: FLASK_ENV is 'production' but config_name is '{config_name}'. Forcing ProductionConfig.")
+        config_name = 'production'
+        
+    config_instance = config_by_name.get(config_name)()
+    
+    paths_to_create = [
+        os.path.dirname(config_instance.SQLALCHEMY_DATABASE_URI.replace('sqlite:///', '')) if 'sqlite:///' in config_instance.SQLALCHEMY_DATABASE_URI else None,
+        config_instance.UPLOAD_FOLDER,
+        config_instance.ASSET_STORAGE_PATH, config_instance.QR_CODE_FOLDER,
+        config_instance.PASSPORT_FOLDER, config_instance.LABEL_FOLDER,
+        config_instance.PROFESSIONAL_DOCS_UPLOAD_PATH, config_instance.INVOICE_PDF_PATH
+    ]
+    for path in paths_to_create:
+        if path: 
+            try:
+                os.makedirs(path, exist_ok=True)
+            except Exception as e:
+                print(f"Warning: Could not create directory {path}: {e}") 
+    return config_instance
+```python
+# backend/models.py
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timezone, timedelta
+import enum
+import pyotp # For TOTP functionality
+from flask import current_app # For accessing config like TOTP_ISSUER_NAME
+
+db = SQLAlchemy()
+
+class User(db.Model):
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(256)) 
+    first_name = db.Column(db.String(80))
+    last_name = db.Column(db.String(80))
+    role = db.Column(db.String(50), nullable=False, default='b2c_customer', index=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
+    is_verified = db.Column(db.Boolean, default=False, nullable=False, index=True) 
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    
+    company_name = db.Column(db.String(120))
+    vat_number = db.Column(db.String(50))
+    siret_number = db.Column(db.String(50))
+    professional_status = db.Column(db.String(50), index=True) 
+    
+    reset_token = db.Column(db.String(100), index=True)
+    reset_token_expires_at = db.Column(db.DateTime)
+    verification_token = db.Column(db.String(100), index=True)
+    verification_token_expires_at = db.Column(db.DateTime)
+    
+    totp_secret = db.Column(db.String(100)) 
+    is_totp_enabled = db.Column(db.Boolean, default=False, nullable=False)
+    
+    simplelogin_user_id = db.Column(db.String(255), unique=True, nullable=True, index=True) 
+
+    orders = db.relationship('Order', backref='customer', lazy='dynamic')
+    reviews = db.relationship('Review', backref='user', lazy='dynamic')
+    cart = db.relationship('Cart', backref='user', uselist=False, lazy='joined')
+    professional_documents = db.relationship('ProfessionalDocument', backref='user', lazy='dynamic')
+    b2b_invoices = db.relationship('Invoice', foreign_keys='Invoice.b2b_user_id', backref='b2b_user', lazy='dynamic')
+    audit_logs = db.relationship('AuditLog', foreign_keys='AuditLog.user_id', backref='acting_user', lazy='dynamic')
+
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        if not self.password_hash: 
+            return False
+        return check_password_hash(self.password_hash, password)
+
+    def generate_totp_secret(self):
+        self.totp_secret = pyotp.random_base32()
+        return self.totp_secret
+
+    def get_totp_uri(self, issuer_name=None):
+        if not self.totp_secret:
+            return None
+        effective_issuer_name = issuer_name or current_app.config.get('TOTP_ISSUER_NAME', 'Maison Truvra')
+        return pyotp.totp.TOTP(self.totp_secret).provisioning_uri(
+            name=self.email, 
+            issuer_name=effective_issuer_name
+        )
+
+    def verify_totp(self, code_attempt):
+        if not self.totp_secret or not self.is_totp_enabled:
+            return False 
+        totp_instance = pyotp.TOTP(self.totp_secret)
+        return totp_instance.verify(code_attempt)
+
+    def to_dict(self): 
+        return {
+            "id": self.id, "email": self.email, "first_name": self.first_name,
+            "last_name": self.last_name, "role": self.role, "is_active": self.is_active,
+            "is_verified": self.is_verified, "company_name": self.company_name,
+            "professional_status": self.professional_status, "is_totp_enabled": self.is_totp_enabled,
+            "is_admin": self.role == 'admin' 
+        }
+
+    def __repr__(self):
+        return f'<User {self.email}>'
+
+class Category(db.Model):
+    __tablename__ = 'categories'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.Text)
+    image_url = db.Column(db.String(255))
+    category_code = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey('categories.id'), index=True)
+    slug = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    products = db.relationship('Product', backref='category', lazy='dynamic')
+    children = db.relationship('Category', backref=db.backref('parent', remote_side=[id]), lazy='dynamic')
+    localizations = db.relationship('CategoryLocalization', backref='category', lazy='dynamic', cascade="all, delete-orphan")
+    def to_dict(self):
+        return {
+            "id": self.id, "name": self.name, "description": self.description, 
+            "image_url": self.image_url, "category_code": self.category_code,
+            "parent_id": self.parent_id, "slug": self.slug, "is_active": self.is_active,
+            "product_count": self.products.filter_by(is_active=True).count()
+        }
+    def __repr__(self): return f'<Category {self.name}>'
+
+class Product(db.Model):
+    __tablename__ = 'products'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False, index=True)
+    description = db.Column(db.Text)
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), index=True)
+    product_code = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    sku_prefix = db.Column(db.String(100), unique=True, index=True)
+    brand = db.Column(db.String(100), index=True)
+    type = db.Column(db.String(50), nullable=False, default='simple', index=True)
+    base_price = db.Column(db.Float)
+    currency = db.Column(db.String(10), default='EUR')
+    main_image_url = db.Column(db.String(255))
+    aggregate_stock_quantity = db.Column(db.Integer, default=0)
+    aggregate_stock_weight_grams = db.Column(db.Float)
+    unit_of_measure = db.Column(db.String(50))
+    is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
+    is_featured = db.Column(db.Boolean, default=False, index=True)
+    meta_title = db.Column(db.String(255))
+    meta_description = db.Column(db.Text)
+    slug = db.Column(db.String(170), unique=True, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    images = db.relationship('ProductImage', backref='product', lazy='dynamic', cascade="all, delete-orphan")
+    weight_options = db.relationship('ProductWeightOption', backref='product', lazy='dynamic', cascade="all, delete-orphan")
+    serialized_items = db.relationship('SerializedInventoryItem', backref='product', lazy='dynamic')
+    stock_movements = db.relationship('StockMovement', backref='product', lazy='dynamic')
+    order_items = db.relationship('OrderItem', backref='product', lazy='dynamic')
+    reviews = db.relationship('Review', backref='product', lazy='dynamic')
+    cart_items = db.relationship('CartItem', backref='product', lazy='dynamic')
+    localizations = db.relationship('ProductLocalization', backref='product', lazy='dynamic', cascade="all, delete-orphan")
+    generated_assets = db.relationship('GeneratedAsset', foreign_keys='GeneratedAsset.related_product_id', backref='product_asset_owner', lazy='dynamic')
+    def to_dict(self): 
+        return {
+            "id": self.id, "name": self.name, "product_code": self.product_code,
+            "slug": self.slug, "type": self.type, "base_price": self.base_price,
+            "is_active": self.is_active, "is_featured": self.is_featured,
+            "category_id": self.category_id,
+            "category_name": self.category.name if self.category else None,
+            "main_image_url": self.main_image_url, 
+            "aggregate_stock_quantity": self.aggregate_stock_quantity
+        }
+    def __repr__(self): return f'<Product {self.name}>'
+
+class ProductImage(db.Model):
+    __tablename__ = 'product_images'
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
+    image_url = db.Column(db.String(255), nullable=False)
+    alt_text = db.Column(db.String(255))
+    is_primary = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+class ProductWeightOption(db.Model):
+    __tablename__ = 'product_weight_options'
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
+    weight_grams = db.Column(db.Float, nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    sku_suffix = db.Column(db.String(50), nullable=False)
+    aggregate_stock_quantity = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    serialized_items = db.relationship('SerializedInventoryItem', backref='variant', lazy='dynamic')
+    stock_movements = db.relationship('StockMovement', backref='variant', lazy='dynamic')
+    order_items = db.relationship('OrderItem', backref='variant', lazy='dynamic')
+    cart_items = db.relationship('CartItem', backref='variant', lazy='dynamic')
+    __table_args__ = (db.UniqueConstraint('product_id', 'weight_grams', name='uq_product_weight'),
+                      db.UniqueConstraint('product_id', 'sku_suffix', name='uq_product_sku_suffix'))
+
+class SerializedInventoryItem(db.Model):
+    __tablename__ = 'serialized_inventory_items'
+    id = db.Column(db.Integer, primary_key=True)
+    item_uid = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
+    variant_id = db.Column(db.Integer, db.ForeignKey('product_weight_options.id'), index=True)
+    batch_number = db.Column(db.String(100), index=True)
+    production_date = db.Column(db.DateTime)
+    expiry_date = db.Column(db.DateTime, index=True)
+    actual_weight_grams = db.Column(db.Float)
+    cost_price = db.Column(db.Float)
+    purchase_price = db.Column(db.Float)
+    status = db.Column(db.String(50), nullable=False, default='available', index=True)
+    qr_code_url = db.Column(db.String(255))
+    passport_url = db.Column(db.String(255))
+    label_url = db.Column(db.String(255))
+    notes = db.Column(db.Text)
+    supplier_id = db.Column(db.Integer)
+    received_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    sold_at = db.Column(db.DateTime)
+    order_item_id = db.Column(db.Integer, db.ForeignKey('order_items.id'), unique=True, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    stock_movements = db.relationship('StockMovement', backref='serialized_item', lazy='dynamic')
+    generated_assets = db.relationship('GeneratedAsset', foreign_keys='GeneratedAsset.related_item_uid', backref='inventory_item_asset_owner', lazy='dynamic')
+    def to_dict(self):
+        return {
+            "id": self.id, "item_uid": self.item_uid, "product_id": self.product_id,
+            "variant_id": self.variant_id, "batch_number": self.batch_number,
+            "production_date": self.production_date.isoformat() if self.production_date else None,
+            "expiry_date": self.expiry_date.isoformat() if self.expiry_date else None,
+            "status": self.status, "notes": self.notes,
+            "product_name": self.product.name if self.product else None, 
+            "variant_sku_suffix": self.variant.sku_suffix if self.variant else None,
+        }
+
+class StockMovement(db.Model):
+    __tablename__ = 'stock_movements'
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
+    variant_id = db.Column(db.Integer, db.ForeignKey('product_weight_options.id'), index=True)
+    serialized_item_id = db.Column(db.Integer, db.ForeignKey('serialized_inventory_items.id'), index=True)
+    movement_type = db.Column(db.String(50), nullable=False, index=True)
+    quantity_change = db.Column(db.Integer)
+    weight_change_grams = db.Column(db.Float)
+    reason = db.Column(db.Text)
+    related_order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), index=True)
+    related_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True)
+    movement_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    notes = db.Column(db.Text)
+    def to_dict(self): 
+        return {
+            "id": self.id, "product_id": self.product_id, "variant_id": self.variant_id,
+            "serialized_item_id": self.serialized_item_id, "movement_type": self.movement_type,
+            "quantity_change": self.quantity_change, "reason": self.reason,
+            "movement_date": self.movement_date.isoformat(), "notes": self.notes
+        }
+
+class Order(db.Model):
+    __tablename__ = 'orders'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    order_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    status = db.Column(db.String(50), nullable=False, default='pending_payment', index=True)
+    total_amount = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(10), default='EUR')
+    shipping_address_line1 = db.Column(db.String(255))
+    shipping_address_line2 = db.Column(db.String(255))
+    shipping_city = db.Column(db.String(100))
+    shipping_postal_code = db.Column(db.String(20))
+    shipping_country = db.Column(db.String(100))
+    billing_address_line1 = db.Column(db.String(255))
+    billing_address_line2 = db.Column(db.String(255))
+    billing_city = db.Column(db.String(100))
+    billing_postal_code = db.Column(db.String(20))
+    billing_country = db.Column(db.String(100))
+    payment_method = db.Column(db.String(50))
+    payment_transaction_id = db.Column(db.String(100), index=True)
+    shipping_method = db.Column(db.String(100))
+    shipping_cost = db.Column(db.Float, default=0.0)
+    tracking_number = db.Column(db.String(100))
+    notes_customer = db.Column(db.Text)
+    notes_internal = db.Column(db.Text)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'), unique=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    items = db.relationship('OrderItem', backref='order', lazy='dynamic', cascade="all, delete-orphan")
+    stock_movements = db.relationship('StockMovement', backref='related_order', lazy='dynamic')
+    invoice = db.relationship('Invoice', backref=db.backref('order_link', uselist=False)) 
+
+class OrderItem(db.Model):
+    __tablename__ = 'order_items'
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False, index=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
+    variant_id = db.Column(db.Integer, db.ForeignKey('product_weight_options.id'), index=True)
+    serialized_item_id = db.Column(db.Integer, db.ForeignKey('serialized_inventory_items.id'), unique=True, index=True)
+    quantity = db.Column(db.Integer, nullable=False)
+    unit_price = db.Column(db.Float, nullable=False) 
+    total_price = db.Column(db.Float, nullable=False)
+    product_name = db.Column(db.String(150)) 
+    variant_description = db.Column(db.String(100)) 
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    sold_serialized_item = db.relationship('SerializedInventoryItem', backref='order_item_link', foreign_keys=[serialized_item_id], uselist=False)
+
+class Review(db.Model):
+    __tablename__ = 'reviews'
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    rating = db.Column(db.Integer, nullable=False) 
+    comment = db.Column(db.Text)
+    review_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    is_approved = db.Column(db.Boolean, default=False, index=True)
+
+class Cart(db.Model):
+    __tablename__ = 'carts'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, index=True) 
+    session_id = db.Column(db.String(255), unique=True, index=True) 
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    items = db.relationship('CartItem', backref='cart', lazy='dynamic', cascade="all, delete-orphan")
+
+class CartItem(db.Model):
+    __tablename__ = 'cart_items'
+    id = db.Column(db.Integer, primary_key=True)
+    cart_id = db.Column(db.Integer, db.ForeignKey('carts.id'), nullable=False, index=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
+    variant_id = db.Column(db.Integer, db.ForeignKey('product_weight_options.id'), index=True) 
+    quantity = db.Column(db.Integer, nullable=False)
+    added_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+class ProfessionalDocument(db.Model):
+    __tablename__ = 'professional_documents'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    document_type = db.Column(db.String(100), nullable=False)
+    file_path = db.Column(db.String(255), nullable=False)
+    upload_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    status = db.Column(db.String(50), default='pending_review', index=True) 
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id')) 
+    reviewed_at = db.Column(db.DateTime)
+    notes = db.Column(db.Text)
+
+class Invoice(db.Model):
+    __tablename__ = 'invoices'
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), unique=True, index=True) 
+    b2b_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True) 
+    invoice_number = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    issue_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    due_date = db.Column(db.DateTime, index=True)
+    total_amount = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(10), default='EUR') 
+    status = db.Column(db.String(50), nullable=False, default='draft', index=True) 
+    pdf_path = db.Column(db.String(255))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    items = db.relationship('InvoiceItem', backref='invoice', lazy='dynamic', cascade="all, delete-orphan")
+
+class InvoiceItem(db.Model):
+    __tablename__ = 'invoice_items'
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'), nullable=False, index=True)
+    description = db.Column(db.Text, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    unit_price = db.Column(db.Float, nullable=False)
+    total_price = db.Column(db.Float, nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id')) 
+    serialized_item_id = db.Column(db.Integer, db.ForeignKey('serialized_inventory_items.id')) 
+
+class AuditLog(db.Model):
+    __tablename__ = 'audit_log'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True) 
+    username = db.Column(db.String(120)) 
+    action = db.Column(db.String(255), nullable=False, index=True)
+    target_type = db.Column(db.String(50), index=True) 
+    target_id = db.Column(db.Integer, index=True)
+    details = db.Column(db.Text)
+    ip_address = db.Column(db.String(45))
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    status = db.Column(db.String(20), default='success', index=True) 
+
+class NewsletterSubscription(db.Model):
+    __tablename__ = 'newsletter_subscriptions'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    subscribed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    is_active = db.Column(db.Boolean, default=True, index=True)
+    source = db.Column(db.String(100)) 
+    consent = db.Column(db.String(10), nullable=False, default='Y') 
+
+class Setting(db.Model):
+    __tablename__ = 'settings'
+    key = db.Column(db.String(100), primary_key=True)
+    value = db.Column(db.Text)
+    description = db.Column(db.Text)
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+class ProductLocalization(db.Model):
+    __tablename__ = 'product_localizations'
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    lang_code = db.Column(db.String(5), nullable=False) 
+    name_fr = db.Column(db.String(150))
+    name_en = db.Column(db.String(150))
+    description_fr = db.Column(db.Text)
+    description_en = db.Column(db.Text)
+    short_description_fr = db.Column(db.Text)
+    short_description_en = db.Column(db.Text)
+    ideal_uses_fr = db.Column(db.Text)
+    ideal_uses_en = db.Column(db.Text)
+    pairing_suggestions_fr = db.Column(db.Text)
+    pairing_suggestions_en = db.Column(db.Text)
+    sensory_description_fr = db.Column(db.Text)
+    sensory_description_en = db.Column(db.Text)
+    __table_args__ = (db.UniqueConstraint('product_id', 'lang_code', name='uq_product_lang'),)
+
+class CategoryLocalization(db.Model):
+    __tablename__ = 'category_localizations'
+    id = db.Column(db.Integer, primary_key=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
+    lang_code = db.Column(db.String(5), nullable=False)
+    name_fr = db.Column(db.String(100))
+    name_en = db.Column(db.String(100))
+    description_fr = db.Column(db.Text)
+    description_en = db.Column(db.Text)
+    species_fr = db.Column(db.Text)
+    species_en = db.Column(db.Text)
+    main_ingredients_fr = db.Column(db.Text)
+    main_ingredients_en = db.Column(db.Text)
+    ingredients_notes_fr = db.Column(db.Text)
+    ingredients_notes_en = db.Column(db.Text)
+    fresh_vs_preserved_fr = db.Column(db.Text)
+    fresh_vs_preserved_en = db.Column(db.Text)
+    size_details_fr = db.Column(db.Text)
+    size_details_en = db.Column(db.Text)
+    pairings_fr = db.Column(db.Text)
+    pairings_en = db.Column(db.Text)
+    weight_info_fr = db.Column(db.Text)
+    weight_info_en = db.Column(db.Text)
+    category_notes_fr = db.Column(db.Text)
+    category_notes_en = db.Column(db.Text)
+    __table_args__ = (db.UniqueConstraint('category_id', 'lang_code', name='uq_category_lang'),)
+
+class GeneratedAsset(db.Model):
+    __tablename__ = 'generated_assets'
+    id = db.Column(db.Integer, primary_key=True)
+    asset_type = db.Column(db.String(50), nullable=False, index=True) 
+    related_item_uid = db.Column(db.String(100), db.ForeignKey('serialized_inventory_items.item_uid'), index=True)
+    related_product_id = db.Column(db.Integer, db.ForeignKey('products.id'), index=True)
+    file_path = db.Column(db.String(255), nullable=False, unique=True)
+    generated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+```python
 # backend/admin_api/routes.py
 import os
 import uuid
-import requests # For SimpleLogin OAuth calls
-from urllib.parse import urlencode # For building query strings
+import requests 
+from urllib.parse import urlencode 
 
 from werkzeug.utils import secure_filename
-# werkzeug.security.check_password_hash is not used directly here, User.check_password is used
-from flask import request, jsonify, current_app, url_for, redirect, session # Added session for temp storage
+from flask import request, jsonify, current_app, url_for, redirect, session, abort as flask_abort
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
-from sqlalchemy import func, or_, and_
+from sqlalchemy import func, or_, and_ 
 from datetime import datetime, timezone, timedelta
 
-from .. import db
-from ..models import (
+from .. import db 
+from ..models import ( 
     User, Category, Product, ProductImage, ProductWeightOption,
     Order, OrderItem, Review, Setting, SerializedInventoryItem,
     StockMovement, Invoice, InvoiceItem, ProfessionalDocument,
@@ -23,15 +706,11 @@ from ..utils import (
     generate_slug, allowed_file, get_file_extension, format_datetime_for_storage,
     generate_static_json_files
 )
-from ..services.invoice_service import InvoiceService
-from ..database import record_stock_movement
+from ..services.invoice_service import InvoiceService 
+from ..database import record_stock_movement 
 
 from . import admin_api_bp
 
-# Temporary storage for user ID during TOTP verification.
-# In a real app, use Flask session or a more secure temporary token mechanism.
-# For simplicity here, we'll use Flask's session. Ensure SECRET_KEY is strong.
-# This requires `session` to be imported from `flask`.
 
 def _create_admin_session(admin_user):
     """Helper to create JWT and user info for successful admin login."""
@@ -41,7 +720,7 @@ def _create_admin_session(admin_user):
         "first_name": admin_user.first_name, "last_name": admin_user.last_name
     }
     access_token = create_access_token(identity=identity, additional_claims=additional_claims)
-    user_info_to_return = admin_user.to_dict() # Use the to_dict method
+    user_info_to_return = admin_user.to_dict() 
     return jsonify(success=True, message="Admin login successful!", token=access_token, user=user_info_to_return), 200
 
 @admin_api_bp.route('/login', methods=['POST'])
@@ -64,17 +743,14 @@ def admin_login_step1_password():
                 return jsonify(message="Admin account is inactive. Please contact support.", success=False, totp_required=False), 403
 
             if admin_user.is_totp_enabled and admin_user.totp_secret:
-                # Password correct, TOTP enabled. Store user_id temporarily and ask for TOTP.
-                # Using Flask session for temporary storage.
                 session['pending_totp_admin_id'] = admin_user.id
-                session['pending_totp_admin_email'] = admin_user.email # For logging
-                session.permanent = True # Make it last for the configured timeout
+                session['pending_totp_admin_email'] = admin_user.email 
+                session.permanent = True 
                 current_app.permanent_session_lifetime = current_app.config.get('TOTP_LOGIN_STATE_TIMEOUT', timedelta(minutes=5))
 
                 audit_logger.log_action(user_id=admin_user.id, action='admin_login_totp_required', target_type='user_admin', target_id=admin_user.id, status='pending', ip_address=request.remote_addr)
-                return jsonify(message="Password verified. Please enter your TOTP code.", success=True, totp_required=True, email=admin_user.email), 200 # Indicate TOTP is next
+                return jsonify(message="Password verified. Please enter your TOTP code.", success=True, totp_required=True, email=admin_user.email), 200 
             else:
-                # Password correct, TOTP not enabled. Log in directly.
                 audit_logger.log_action(user_id=admin_user.id, action='admin_login_success_no_totp', target_type='user_admin', target_id=admin_user.id, status='success', ip_address=request.remote_addr)
                 return _create_admin_session(admin_user)
         else:
@@ -90,12 +766,10 @@ def admin_login_step1_password():
 def admin_login_step2_verify_totp():
     data = request.json
     totp_code = data.get('totp_code')
-    # email_from_request = data.get('email') # Client might send email for context
-
     audit_logger = current_app.audit_log_service
     
     pending_admin_id = session.get('pending_totp_admin_id')
-    pending_admin_email = session.get('pending_totp_admin_email') # For logging
+    pending_admin_email = session.get('pending_totp_admin_email') 
 
     if not pending_admin_id:
         audit_logger.log_action(action='admin_totp_verify_fail_no_pending_state', details="No pending TOTP login state found in session.", status='failure', ip_address=request.remote_addr)
@@ -119,7 +793,6 @@ def admin_login_step2_verify_totp():
             audit_logger.log_action(user_id=admin_user.id, action='admin_login_success_totp_verified', target_type='user_admin', target_id=admin_user.id, status='success', ip_address=request.remote_addr)
             return _create_admin_session(admin_user)
         else:
-            # Do not clear session yet, allow retries (rate limit this endpoint heavily)
             audit_logger.log_action(user_id=admin_user.id, action='admin_totp_verify_fail_invalid_code', email=pending_admin_email, details="Invalid TOTP code.", status='failure', ip_address=request.remote_addr)
             return jsonify(message="Invalid TOTP code.", success=False), 401
             
@@ -128,11 +801,8 @@ def admin_login_step2_verify_totp():
         audit_logger.log_action(user_id=pending_admin_id, action='admin_totp_verify_fail_server_error', email=pending_admin_email, details=str(e), status='failure', ip_address=request.remote_addr)
         return jsonify(message="TOTP verification failed due to a server error.", success=False), 500
 
-
-# --- SimpleLogin SSO Routes ---
 @admin_api_bp.route('/login/simplelogin/initiate', methods=['GET'])
 def simplelogin_initiate():
-    """Initiates the OAuth flow by redirecting the user to SimpleLogin."""
     client_id = current_app.config.get('SIMPLELOGIN_CLIENT_ID')
     redirect_uri = current_app.config.get('SIMPLELOGIN_REDIRECT_URI_ADMIN')
     authorize_url = current_app.config.get('SIMPLELOGIN_AUTHORIZE_URL')
@@ -142,16 +812,14 @@ def simplelogin_initiate():
         current_app.logger.error("SimpleLogin OAuth settings are not fully configured in the backend.")
         return jsonify(message="SimpleLogin SSO is not configured correctly on the server.", success=False), 500
 
-    # Generate a state parameter for CSRF protection (recommended)
-    # For simplicity, not implemented here but crucial for production.
-    # session['oauth_state'] = secrets.token_urlsafe(16)
+    session['oauth_state_sl'] = secrets.token_urlsafe(16) # Store state for CSRF protection
 
     params = {
         'response_type': 'code',
         'client_id': client_id,
         'redirect_uri': redirect_uri,
         'scope': scopes,
-        # 'state': session['oauth_state'] # Add state here
+        'state': session['oauth_state_sl'] 
     }
     auth_redirect_url = f"{authorize_url}?{urlencode(params)}"
     current_app.logger.info(f"Redirecting admin to SimpleLogin for authentication: {auth_redirect_url}")
@@ -160,17 +828,21 @@ def simplelogin_initiate():
 
 @admin_api_bp.route('/login/simplelogin/callback', methods=['GET'])
 def simplelogin_callback():
-    """Handles the callback from SimpleLogin after user authentication."""
     auth_code = request.args.get('code')
-    # state_returned = request.args.get('state') # Verify state here against session['oauth_state']
-
+    state_returned = request.args.get('state')
     audit_logger = current_app.audit_log_service
+
+    # Verify state parameter for CSRF protection
+    expected_state = session.pop('oauth_state_sl', None)
+    if not expected_state or expected_state != state_returned:
+        audit_logger.log_action(action='simplelogin_callback_fail_state_mismatch', details="OAuth state mismatch.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="SimpleLogin authentication failed (state mismatch).", success=False), 400
+
 
     if not auth_code:
         audit_logger.log_action(action='simplelogin_callback_fail_no_code', details="No authorization code received from SimpleLogin.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="SimpleLogin authentication failed (no code).", success=False), 400
 
-    # Exchange authorization code for access token
     token_url = current_app.config['SIMPLELOGIN_TOKEN_URL']
     payload = {
         'grant_type': 'authorization_code',
@@ -181,7 +853,7 @@ def simplelogin_callback():
     }
     try:
         token_response = requests.post(token_url, data=payload)
-        token_response.raise_for_status() # Raise an exception for HTTP errors
+        token_response.raise_for_status() 
         token_data = token_response.json()
         sl_access_token = token_data.get('access_token')
 
@@ -189,7 +861,6 @@ def simplelogin_callback():
             audit_logger.log_action(action='simplelogin_callback_fail_no_access_token', details="No access token from SimpleLogin.", status='failure', ip_address=request.remote_addr)
             return jsonify(message="Failed to get access token from SimpleLogin.", success=False), 500
 
-        # Fetch user info from SimpleLogin
         userinfo_url = current_app.config['SIMPLELOGIN_USERINFO_URL']
         headers = {'Authorization': f'Bearer {sl_access_token}'}
         userinfo_response = requests.get(userinfo_url, headers=headers)
@@ -197,125 +868,61 @@ def simplelogin_callback():
         sl_user_info = userinfo_response.json()
         
         sl_email = sl_user_info.get('email')
-        # sl_name = sl_user_info.get('name') # Optional
-        # sl_sub = sl_user_info.get('sub') # SimpleLogin user ID
+        sl_simplelogin_user_id = sl_user_info.get('sub') # SimpleLogin's unique user ID
 
         if not sl_email:
             audit_logger.log_action(action='simplelogin_callback_fail_no_email', details="No email in userinfo from SimpleLogin.", status='failure', ip_address=request.remote_addr)
             return jsonify(message="Could not retrieve email from SimpleLogin.", success=False), 500
 
-        # Find or provision admin user in your database
         admin_user = User.query.filter_by(email=sl_email, role='admin').first()
 
         if admin_user and admin_user.is_active:
-            # User exists and is an active admin, log them in
+            # Optionally link SimpleLogin ID if not already linked
+            if not admin_user.simplelogin_user_id and sl_simplelogin_user_id:
+                admin_user.simplelogin_user_id = sl_simplelogin_user_id
+                db.session.commit()
+            
             audit_logger.log_action(user_id=admin_user.id, action='admin_login_success_simplelogin', target_type='user_admin', target_id=admin_user.id, details=f"Admin {sl_email} logged in via SimpleLogin.", status='success', ip_address=request.remote_addr)
             
-            # Create your application's session/JWT
-            _, status_code = _create_admin_session(admin_user) # We only need the JSON response part
-            
-            # Redirect to admin dashboard with token (or set cookie if JWT_TOKEN_LOCATION includes 'cookies')
-            # For simplicity, redirecting and letting frontend JS handle token from response if needed,
-            # or assuming cookie-based JWT session is set by _create_admin_session.
-            # If using header-based JWT, the frontend needs a way to get this token after redirect.
-            # A common pattern is to redirect to a frontend page that then makes a request to get the token,
-            # or pass the token as a query parameter (less secure).
-            # If JWT_TOKEN_LOCATION includes 'cookies' and JWT_COOKIE_CSRF_PROTECT is True,
-            # Flask-JWT-Extended will set the cookies automatically on the response from _create_admin_session.
-            # The redirect below assumes cookies are used or frontend handles it.
-            
-            admin_dashboard_url = url_for('admin_dashboard_frontend_route', _external=True) # Define this route if you have a separate frontend router
-            if not admin_dashboard_url or admin_dashboard_url == '/': # Fallback if not defined
-                 admin_dashboard_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_dashboard.html'
-            
-            # Create the response from _create_admin_session
-            response_data, _ = _create_admin_session(admin_user)
-            # Manually create a redirect response and set cookies if needed by Flask-JWT-Extended
-            # This is a bit complex if not using Flask-Login for session management directly after OAuth.
-            # For now, let's assume the JWT is set as a cookie by `create_access_token`
-            # if `JWT_TOKEN_LOCATION` includes `cookies`.
-            # The `_create_admin_session` returns a jsonify response. We need to make it a redirect.
-
-            # Simplest redirect assuming cookies are set by create_access_token
-            final_response = redirect(admin_dashboard_url)
-            # If create_access_token is configured to set cookies, it will do so on the response.
-            # We need to ensure the JWT cookies are set on this redirect response.
-            # Flask-JWT-Extended does this automatically if JWT_TOKEN_LOCATION includes 'cookies'.
-            # The token from _create_admin_session is in its JSON body.
-            # We need to call create_access_token again here or pass the response object to set cookies.
-
-            # Re-creating token to ensure cookies are set on the redirect response
+            # Create JWT and set cookies
             identity = admin_user.id
             additional_claims = {
                 "role": admin_user.role, "email": admin_user.email, "is_admin": True,
                 "first_name": admin_user.first_name, "last_name": admin_user.last_name
             }
             access_token = create_access_token(identity=identity, additional_claims=additional_claims)
-            # If using cookies, Flask-JWT-Extended will set them on the response object `final_response`
-            # if this function is decorated with @jwt_required or similar, or if done manually.
-            # Since this is a callback, we might need to manually set cookies if not automatic.
-            # However, `create_access_token` itself doesn't set cookies; it returns the token.
-            # The response from `_create_admin_session` *would* set cookies if it were returned directly.
             
-            # For simplicity, let's assume the frontend will handle a token passed via query param after redirect.
-            # This is less secure than cookies or server-side sessions post-OAuth.
-            # A better approach is to redirect to a page that then fetches user info using the JWT.
-            # Or, if JWTs are in cookies, the redirect itself is fine.
+            # Redirect to admin dashboard. Flask-JWT-Extended will handle setting cookies if configured.
+            admin_dashboard_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_dashboard.html'
             
-            # Assuming JWT is in cookies:
-            # Create the token which will be set in cookies by Flask-JWT-Extended on the response
-            create_access_token(identity=admin_user.id, additional_claims={
-                "role": admin_user.role, "email": admin_user.email, "is_admin": True,
-                "first_name": admin_user.first_name, "last_name": admin_user.last_name
-            })
-            # The redirect response will have the JWT cookies set by Flask-JWT-Extended
-            return final_response
+            response = redirect(admin_dashboard_url)
+            # If JWT_TOKEN_LOCATION includes 'cookies', Flask-JWT-Extended should set them on this response.
+            # To be explicit, you might use set_access_cookies from flask_jwt_extended if needed,
+            # but usually it's automatic on responses from decorated endpoints or by returning the token in JSON.
+            # Since we are redirecting, the cookie setting relies on the global response handling of Flask-JWT-Extended.
+            # If it doesn't work, you might need to redirect to a frontend page that makes one more call to get the token.
+            current_app.logger.info(f"SimpleLogin successful for {sl_email}, redirecting to dashboard. Token: {access_token[:20]}...") # Log part of token
+            return response
 
         else:
             audit_logger.log_action(action='simplelogin_callback_fail_user_not_admin_or_inactive', email=sl_email, details="User found but not an active admin.", status='failure', ip_address=request.remote_addr)
-            # Redirect to login page with an error message
-            login_page_url = url_for('admin_login_frontend_route', error="sso_admin_not_found", _external=True) # Define this route
-            if not login_page_url or login_page_url == '/':
-                login_page_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_login.html?error=sso_admin_not_found'
+            login_page_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_login.html?error=sso_admin_not_found'
             return redirect(login_page_url)
 
     except requests.exceptions.RequestException as e:
         current_app.logger.error(f"SimpleLogin OAuth request failed: {e}", exc_info=True)
         audit_logger.log_action(action='simplelogin_callback_fail_request_exception', details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message=f"Communication error with SimpleLogin: {e}", success=False), 502 # Bad Gateway
+        login_page_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_login.html?error=sso_communication_error'
+        return redirect(login_page_url)
     except Exception as e:
         current_app.logger.error(f"Error during SimpleLogin callback: {e}", exc_info=True)
         audit_logger.log_action(action='simplelogin_callback_fail_server_error', details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message=f"An unexpected error occurred during SimpleLogin SSO: {e}", success=False), 500
+        login_page_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_login.html?error=sso_server_error'
+        return redirect(login_page_url)
 
-
-# --- Dashboard ---
-# (get_dashboard_stats and other routes remain the same)
-# Ensure you have placeholder routes for 'admin_dashboard_frontend_route' and 'admin_login_frontend_route'
-# if you use url_for with them, or construct URLs manually.
-# For simplicity, I'll assume frontend handles query params on admin_login.html for errors.
 @admin_api_bp.route('/dashboard/stats', methods=['GET'])
 @admin_required
 def get_dashboard_stats():
-    current_admin_id = get_jwt_identity()
-    audit_logger = current_app.audit_log_service
-    try:
-        total_users = db.session.query(func.count(User.id)).scalar()
-        total_products = Product.query.filter_by(is_active=True).count()
-        # More specific count for pending orders based on typical statuses
-        pending_order_statuses = ('paid', 'processing', 'awaiting_shipment')
-        pending_orders = Order.query.filter(Order.status.in_(pending_order_statuses)).count()
-        total_categories = Category.query.filter_by(is_active=True).count()
-        pending_b2b_applications = User.query.filter_by(role='b2b_professional', professional_status='pending').count()
-        
-        stats = {
-            "total_users": total_users,
-            "total_products": total_products,
-            "pending_orders": pending_orders, # Updated key for clarity
-            "total_categories": total_categories,
-            "pending_b2b_applications": pending_b2b_applications,
-            "success": True
-        }
     current_admin_id = get_jwt_identity()
     audit_logger = current_app.audit_log_service
     try:
@@ -331,11 +938,11 @@ def get_dashboard_stats():
             "total_products": total_products,
             "pending_orders": pending_orders,
             "total_categories": total_categories,
-            "pending_b2b_applications": pending_b2b_applications,
-            "success": True
+            "pending_b2b_applications": pending_b2b_applications
+            # "success": True # No longer needed here, _request handles it
         }
         audit_logger.log_action(user_id=current_admin_id, action='get_dashboard_stats', status='success', ip_address=request.remote_addr)
-        return jsonify(stats=stats), 200
+        return jsonify(stats=stats, success=True), 200 # Ensure success=True is in the main body
     except Exception as e:
         current_app.logger.error(f"Error fetching dashboard stats: {e}", exc_info=True)
         audit_logger.log_action(user_id=current_admin_id, action='get_dashboard_stats_fail', details=str(e), status='failure', ip_address=request.remote_addr)
@@ -400,8 +1007,7 @@ def create_category():
         audit_logger.log_action(user_id=current_user_id, action='create_category_fail_exception', details=str(e), status='failure', ip_address=request.remote_addr)
         return jsonify(message=f"Failed to create category: {str(e)}", success=False), 500
 
-@admin_api_bp.route('/categories', methods=['GET'])
-@admin_required
+
 @admin_api_bp.route('/categories', methods=['GET'])
 @admin_required
 def get_categories():
@@ -409,7 +1015,7 @@ def get_categories():
         categories_models = Category.query.order_by(Category.name).all()
         categories_data = []
         for cat_model in categories_models:
-            cat_dict = cat_model.to_dict() # Assuming to_dict method exists
+            cat_dict = cat_model.to_dict() 
             if cat_model.image_url:
                 try:
                     cat_dict['image_full_url'] = url_for('serve_public_asset', filepath=cat_model.image_url, _external=True)
