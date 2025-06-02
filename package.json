@@ -1,0 +1,23 @@
+{
+  "name": "maison-truvra-project",
+  "version": "1.0.0",
+  "description": "Maison Trüvra is a Flask and JavaScript-based e-commerce web application designed for selling truffles and related luxury food products. This project includes a backend API for managing products, inventory, users, orders, and newsletter subscriptions, as well as a frontend website for customer interaction.",
+  "main": "index.js",
+  "scripts": {
+    "start": "FLASK_APP=app.py python3 -m flask run",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/remyroche/maison-truvra-project.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/remyroche/maison-truvra-project/issues"
+  },
+  "homepage": "https://github.com/remyroche/maison-truvra-project#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.2"
+  }
+}
