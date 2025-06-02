@@ -29,8 +29,6 @@ import pyotp # Added for TOTP setup routes
 
 from . import admin_api_bp # Assuming limiter is initialized elsewhere and applied to blueprint or app
 
-
-# Helper function (can be part of this file or a utils file if used elsewhere)
 def _create_admin_session_and_get_response(admin_user, redirect_url):
     """Helper to create JWT, set cookies, and prepare a redirect response."""
     identity = admin_user.id
@@ -59,12 +57,8 @@ def simplelogin_callback():
     auth_code = request.args.get('code')
     state_returned = request.args.get('state')
     audit_logger = current_app.audit_log_service
-    # Define the base admin login URL for redirects
-    base_admin_login_url = url_for('admin_api_bp.admin_login_step1_password', _external=True).replace('/login', '/admin_login.html')
-    # A more robust way if your admin login page is static:
     base_admin_login_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_login.html'
     admin_dashboard_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_dashboard.html'
-
 
     expected_state = session.pop('oauth_state_sl', None)
     if not expected_state or expected_state != state_returned:
@@ -105,6 +99,42 @@ def simplelogin_callback():
         if not sl_email:
             audit_logger.log_action(action='simplelogin_callback_fail_no_email', details="No email in userinfo from SimpleLogin.", status='failure', ip_address=request.remote_addr)
             return redirect(f"{base_admin_login_url}?error=sso_email_error")
+
+        # --- EMAIL FILTER ---
+        allowed_admin_email = "remy.roche@pm.me"
+        if sl_email.lower() != allowed_admin_email.lower():
+            audit_logger.log_action(action='simplelogin_callback_fail_email_not_allowed', email=sl_email, details=f"SSO attempt from non-allowed email: {sl_email}", status='failure', ip_address=request.remote_addr)
+            current_app.logger.warning(f"SimpleLogin attempt from non-allowed email: {sl_email}")
+            return redirect(f"{base_admin_login_url}?error=sso_unauthorized_email")
+        # --- END OF EMAIL FILTER ---
+
+        admin_user = User.query.filter(func.lower(User.email) == sl_email.lower(), User.role == 'admin').first()
+
+        if admin_user and admin_user.is_active:
+            if not admin_user.simplelogin_user_id and sl_simplelogin_user_id:
+                admin_user.simplelogin_user_id = sl_simplelogin_user_id
+                db.session.commit()
+            
+            audit_logger.log_action(user_id=admin_user.id, action='admin_login_success_simplelogin', target_type='user_admin', target_id=admin_user.id, details=f"Admin {sl_email} logged in via SimpleLogin.", status='success', ip_address=request.remote_addr)
+            
+            return _create_admin_session_and_get_response(admin_user, admin_dashboard_url)
+
+        elif admin_user and not admin_user.is_active:
+            audit_logger.log_action(action='simplelogin_callback_fail_user_inactive', email=sl_email, details="Admin account found but is inactive.", status='failure', ip_address=request.remote_addr)
+            return redirect(f"{base_admin_login_url}?error=sso_account_inactive")
+        else: 
+            audit_logger.log_action(action='simplelogin_callback_fail_user_not_admin', email=sl_email, details="User authenticated via SimpleLogin but not a registered/active admin in local DB.", status='failure', ip_address=request.remote_addr)
+            return redirect(f"{base_admin_login_url}?error=sso_admin_not_found")
+
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"SimpleLogin OAuth request failed: {e}", exc_info=True)
+        audit_logger.log_action(action='simplelogin_callback_fail_request_exception', details=str(e), status='failure', ip_address=request.remote_addr)
+        return redirect(f"{base_admin_login_url}?error=sso_communication_error")
+    except Exception as e:
+        current_app.logger.error(f"Error during SimpleLogin callback: {e}", exc_info=True)
+        audit_logger.log_action(action='simplelogin_callback_fail_server_error', details=str(e), status='failure', ip_address=request.remote_addr)
+        return redirect(f"{base_admin_login_url}?error=sso_server_error")
+        
 
         # --- ADDED EMAIL FILTER ---
         allowed_admin_email = "remy.roche@pm.me"
