@@ -3,21 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Manage Products & Inventory</title>
-    <link rel="stylesheet" href="js/css/admin_style.css">
+    <title>Admin - Manage Products & Inventory (Legacy)</title>
+    <link rel="stylesheet" href="css/admin_style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body id="page-admin-panel"> <header class="legacy-admin-header"> <h1>Admin Panel</h1>
-        <nav>
-            <a href="admin_dashboard.html">Dashboard</a>
-            <a href="admin_manage_inventory.html">Manage Products</a>
-            <a href="admin_manage_categories.html">Manage Categories</a>
-            <a href="admin_manage_orders.html">Manage Orders</a>
-            <a href="admin_manage_users.html">Manage Users</a>
-            </nav>
+<body id="page-admin-manage-products-inventory"> 
+    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Retour au Tableau de Bord
+                </a>
+                <div id="admin-header-title-area">
+                     <h1 class="text-xl font-semibold text-gray-700">Maison Trüvra - Admin</h1>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="admin-user-greeting" class="text-gray-700 text-sm mr-2"></span>
+                <button id="admin-logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-sm flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                </button>
+            </div>
+        </div>
     </header>
 
-    <main class="admin-content-area-legacy"> <h2 class="admin-page-title">Manage Products & Inventory</h2>
+    <nav class="bg-gray-800 text-white shadow-md">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-start h-12 space-x-1 overflow-x-auto">
+                <a href="admin_dashboard.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Tableau de Bord</a>
+                <a href="admin_manage_products.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 active">Produits</a> 
+                <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Inventaire</a>
+                <a href="admin_view_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voir Inventaire</a>
+                <a href="admin_manage_orders.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Commandes</a>
+                <a href="admin_manage_users.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Utilisateurs</a>
+                <a href="admin_manage_categories.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Catégories</a>
+                <a href="admin_invoices.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Factures</a>
+                <a href="admin_manage_reviews.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Avis</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="admin-content-area container mx-auto p-6 space-y-6">
+        <h2 class="text-2xl font-semibold text-gray-800">Manage Products & Inventory (Legacy Interface)</h2>
+        <p class="text-sm text-orange-600 bg-orange-100 p-3 rounded-md">Note: This is an older interface for product management. Please use <a href="admin_manage_products.html" class="font-semibold underline hover:text-orange-800">'Manage Products'</a> for the current version.</p>
+
 
         <div id="productFormContainer" class="admin-form-container">
             <h3 class="admin-form-title"><span id="formTitle">Add New Product</span></h3>
@@ -25,7 +55,7 @@
                 <div>
                     <label for="productCode" class="form-label">Product Code (SKU): <span class="required">*</span></label>
                     <input type="text" id="productCode" name="product_code" required class="form-input-admin">
-                    <small class="form-text">Unique identifier for the product (e.g., ABELHA-MIEL-500G). Cannot be changed after creation if there are orders associated.</small>
+                    <small class="form-text">Unique identifier for the product. Cannot be changed after creation if there are orders associated.</small>
                 </div>
                 
                 <div>
@@ -88,31 +118,34 @@
 
         <div id="productsTableContainer" class="admin-table-container">
             <h3 class="admin-table-title">Existing Products</h3>
-            <input type="text" id="productSearchInput" placeholder="Search products by name, code, category..." class="form-input-admin" style="margin-bottom: 10px;">
-            <table id="productsTable" class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Code</th>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Price</th>
-                        <th>Stock</th>
-                        <th>Active</th>
-                        <th>Featured</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="productsTableBody">
-                    <tr><td colspan="8" class="text-center py-4">Loading products...</td></tr>
-                </tbody>
-            </table>
+            <input type="text" id="productSearchInput" placeholder="Search products by name, code, category..." class="form-input-admin mb-4">
+            <div class="overflow-x-auto">
+                <table id="productsTable" class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Active</th>
+                            <th>Featured</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTableBody">
+                        <tr><td colspan="8" class="text-center py-4">Loading products...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 
-    <footer class="legacy-admin-footer"> <p>&copy; 2024 Your Company - Admin Panel</p>
+    <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
+        <p>&copy; <span id="currentYearAdminProdInv"></span> Maison Trüvra - Admin Panel</p>
     </footer>
 
-    <div id="admin-toast-container" class="fixed bottom-0 right-0 p-4 space-y-2 z-[1051]"></div>
+    <div id="admin-toast-container"></div>
 
     <script src="js/admin_config.js"></script>
     <script src="js/admin_ui.js"></script> 
@@ -120,6 +153,11 @@
     <script src="js/admin_auth.js"></script>
     <script src="js/admin_main.js"></script>
     <script src="js/admin_products.js"></script>
+     <script>
+        const currentYearSpanAdminProdInv = document.getElementById('currentYearAdminProdInv');
+        if (currentYearSpanAdminProdInv) {
+            currentYearSpanAdminProdInv.textContent = new Date().getFullYear();
+        }
+    </script>
 </body>
 </html>
-```
