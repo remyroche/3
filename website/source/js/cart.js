@@ -6,7 +6,7 @@ function loadCart() {
     try {
         return cartJson ? JSON.parse(cartJson) : [];
     } catch (e) {
-        console.error("Error parsing cart from localStorage:", e);
+        console.error("Error parsing cart from localStorage:", e); // Dev-facing
         return [];
     }
 }
@@ -16,13 +16,13 @@ function saveCart(cartItems) {
         const cartJson = JSON.stringify(cartItems);
         localStorage.setItem(CART_STORAGE_KEY, cartJson);
     } catch (e) {
-        console.error("Error saving cart to localStorage:", e);
+        console.error("Error saving cart to localStorage:", e); // Dev-facing
     }
 }
 
 function addToCart(product, quantity = 1, variantInfo = null) {
-    if (!product || !product.id || !product.name || (variantInfo ? !variantInfo.price : !product.base_price)) {
-        showGlobalMessage(t('public.js.invalid_product_data'), "error");
+    if (!product || !product.id || !product.name || (variantInfo ? typeof variantInfo.price !== 'number' : typeof product.base_price !== 'number')) {
+        showGlobalMessage(t('public.js.invalid_product_data'), "error"); // Key: public.js.invalid_product_data
         return;
     }
 
@@ -30,7 +30,7 @@ function addToCart(product, quantity = 1, variantInfo = null) {
     const itemPrice = variantInfo ? variantInfo.price : product.base_price;
     const itemName = variantInfo ? `${product.name} (${variantInfo.weight_grams}g)` : product.name;
     const itemSkuSuffix = variantInfo ? variantInfo.sku_suffix : null;
-    const itemVariantId = variantInfo ? variantInfo.id : null;
+    const itemVariantId = variantInfo ? variantInfo.id : null; // Assuming variantInfo has an 'id' if it's a variant from DB
     const itemMainImage = product.main_image_full_url || product.image_url_main || 'https://placehold.co/100x100/eee/ccc?text=Image';
 
     const existingItemIndex = cart.findIndex(item => 
@@ -48,10 +48,10 @@ function addToCart(product, quantity = 1, variantInfo = null) {
             cart.push({
                 id: product.id,
                 variantId: itemVariantId,
-                name: itemName,
+                name: itemName, // This name includes weight if applicable, used for display
                 price: parseFloat(itemPrice),
                 quantity: quantity,
-                skuPrefix: product.sku_prefix,
+                skuPrefix: product.sku_prefix, // Or product.product_code after refactor
                 skuSuffix: itemSkuSuffix,
                 image: itemMainImage,
                 slug: product.slug
@@ -61,7 +61,15 @@ function addToCart(product, quantity = 1, variantInfo = null) {
 
     saveCart(cart);
     updateCartDisplay();
-    showGlobalMessage(t('public.js.added_to_cart_toast', { qty: quantity, name: itemName }), "success");
+    
+    // For dynamic messages like this, direct string construction is often clearer if t() doesn't handle placeholders well with build.js
+    // Option 1: Using a template key if your build.js and locale files support it (e.g. %qty% x %name% added to cart!)
+    // let message = t('public.js.added_to_cart_toast'); 
+    // message = message.replace('%qty%', quantity).replace('%name%', itemName);
+    // showGlobalMessage(message, "success");
+    // Option 2: Simpler, construct in JS with a translated suffix
+    showGlobalMessage(`${quantity} x ${itemName} ${t('public.js.added_to_cart_suffix')}`, "success"); 
+    // New key: public.js.added_to_cart_suffix (e.g., "added to cart!" or "ajouté(s) au panier !")
 }
 
 function removeFromCart(productId, variantId = null) {
@@ -74,7 +82,7 @@ function removeFromCart(productId, variantId = null) {
     if (cart.length < initialLength) {
         saveCart(cart);
         updateCartDisplay();
-        showGlobalMessage(t('public.js.item_removed_from_cart'), "info");
+        showGlobalMessage(t('public.js.item_removed_from_cart'), "info"); // Key: public.js.item_removed_from_cart
     }
 }
 
@@ -89,10 +97,11 @@ function updateCartItemQuantity(productId, newQuantity, variantId = null) {
         if (newQuantity > 0) {
             cart[itemIndex].quantity = newQuantity;
         } else {
-            cart.splice(itemIndex, 1);
+            cart.splice(itemIndex, 1); // Remove if quantity is zero or less
         }
         saveCart(cart);
         updateCartDisplay();
+        // Optional: showGlobalMessage(t('public.js.cart_updated'), "info"); // New key: public.js.cart_updated
     }
 }
 
@@ -113,34 +122,32 @@ function getCartItemCount() {
 function clearCart() {
     localStorage.removeItem(CART_STORAGE_KEY);
     updateCartDisplay();
-    showGlobalMessage(t('public.js.cart_cleared'), "info");
+    showGlobalMessage(t('public.js.cart_cleared'), "info"); // Key: public.js.cart_cleared
 }
 
 function updateCartDisplay() {
-    if (typeof updateCartIcon === 'function') {
+    if (typeof updateCartIcon === 'function') { // from ui.js
         updateCartIcon(); 
     }
+    // If on the cart page, refresh its content
     if (document.body.id === 'page-panier' && typeof initCartPage === 'function') {
         initCartPage();
     }
-    if (document.body.id === 'page-paiement' && typeof displayCheckoutSummary === 'function') {
+    // If on the payment page, refresh its summary
+    if (document.body.id === 'page-paiement' && typeof displayCheckoutSummary === 'function') { // from checkout.js
         displayCheckoutSummary();
     }
 }
 
+// Initialize or update cart display when the cart page is loaded
 function initCartPage() {
     const cartLoginPrompt = document.getElementById('cart-login-prompt');
     const cartContentWrapper = document.getElementById('cart-content-wrapper');
 
     if (!cartLoginPrompt || !cartContentWrapper) return;
 
-    if (typeof isUserLoggedIn !== 'function') {
-        cartLoginPrompt.style.display = 'block'; 
-        cartContentWrapper.style.display = 'none';
-        return;
-    }
-
-    if (isUserLoggedIn()) {
+    // Assuming isUserLoggedIn is globally available from auth.js
+    if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
         cartLoginPrompt.style.display = 'none';
         cartContentWrapper.style.display = 'block'; 
         displayCartOnPage(); 
@@ -160,16 +167,27 @@ function displayCartOnPage() {
 
     if (!cartItemsContainer || !emptyCartMessage || !cartSummaryContainer || !cartSubtotalEl || !cartTotalEl) return;
 
-    cartItemsContainer.innerHTML = ''; 
+    // Clear previous items, but keep the empty message element if it's part of the static HTML.
+    // If emptyCartMessage is dynamically added, this clear is fine.
+    // Assuming emptyCartMessage is static and its display is toggled.
+    while (cartItemsContainer.firstChild && cartItemsContainer.firstChild !== emptyCartMessage) {
+        cartItemsContainer.removeChild(cartItemsContainer.firstChild);
+    }
+
 
     if (cartItems.length === 0) {
-        emptyCartMessage.style.display = 'block';
+        emptyCartMessage.style.display = 'block'; // Show empty message
+        if (cartItemsContainer.children.length > 1) { // If other items were there, clear them (safety)
+            cartItemsContainer.innerHTML = ''; // Clear fully
+            cartItemsContainer.appendChild(emptyCartMessage); // Re-add if needed
+        }
         cartSummaryContainer.style.display = 'none';
     } else {
-        emptyCartMessage.style.display = 'none';
+        emptyCartMessage.style.display = 'none'; // Hide empty message
         cartItems.forEach(item => {
             const itemElement = document.createElement('div');
             itemElement.classList.add('cart-item'); 
+            // The t('public.cart.remove_item') will be replaced by build.js
             itemElement.innerHTML = `
                 <img src="${item.image || 'https://placehold.co/80x80/F5EEDE/7D6A4F?text=Img'}" alt="${item.name}" class="cart-item-image">
                 <div class="flex-grow mx-4">
@@ -188,7 +206,7 @@ function displayCartOnPage() {
                     <p class="font-semibold text-brand-earth-brown">${(item.price * item.quantity).toFixed(2)} €</p>
                     <button class="text-xs text-brand-truffle-burgundy hover:underline mt-1 remove-item-btn" 
                             data-product-id="${item.id}" data-variant-id="${item.variantId || ''}">
-                        ${t('public.cart.remove_item')}
+                        ${t('public.cart.remove_item')} 
                     </button>
                 </div>
             `;
@@ -198,19 +216,24 @@ function displayCartOnPage() {
         const total = getCartTotal();
         cartSubtotalEl.textContent = `${total.toFixed(2)} €`;
         cartTotalEl.textContent = `${total.toFixed(2)} €`; 
-        cartSummaryContainer.style.display = 'block'; 
+        cartSummaryContainer.style.display = 'block'; // md:flex based on Tailwind, block is fine.
     }
 
+    // Re-attach event listeners for quantity and remove buttons
     document.querySelectorAll('.quantity-change-btn').forEach(button => {
         button.addEventListener('click', (e) => {
             const btn = e.currentTarget;
             const productId = parseInt(btn.dataset.productId);
-            const variantId = btn.dataset.variantId ? parseInt(btn.dataset.variantId) : null;
+            // Ensure variantId is correctly parsed or null
+            const variantIdStr = btn.dataset.variantId;
+            const variantId = variantIdStr && variantIdStr !== 'null' && variantIdStr !== 'undefined' ? parseInt(variantIdStr) : null;
+
             const change = parseInt(btn.dataset.change);
             const inputField = btn.parentElement.querySelector('.quantity-value-input');
             let currentQuantity = parseInt(inputField.value);
             let newQuantity = currentQuantity + change;
-            if (newQuantity < 1) newQuantity = 1; 
+            if (newQuantity < 1 && change < 0) newQuantity = 0; // Allow reducing to 0 to remove
+            else if (newQuantity < 1) newQuantity = 1; // Don't go below 1 if incrementing from 0 or direct set
             if (newQuantity > 99) newQuantity = 99; 
             
             if (newQuantity !== currentQuantity) { 
@@ -223,16 +246,22 @@ function displayCartOnPage() {
         button.addEventListener('click', (e) => {
             const btn = e.currentTarget;
             const productId = parseInt(btn.dataset.productId);
-            const variantId = btn.dataset.variantId ? parseInt(btn.dataset.variantId) : null;
+            const variantIdStr = btn.dataset.variantId;
+            const variantId = variantIdStr && variantIdStr !== 'null' && variantIdStr !== 'undefined' ? parseInt(variantIdStr) : null;
             removeFromCart(productId, variantId);
         });
     });
 }
 
+// Initial display update on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
-    updateCartDisplay(); 
+    if (document.body.id === 'page-panier') { // Only run initCartPage if on the cart page
+        initCartPage();
+    }
+    updateCartDisplay(); // Update icon globally
 });
 
+// Expose functions to global scope if not using modules
 window.addToCart = addToCart;
 window.removeFromCart = removeFromCart;
 window.updateCartItemQuantity = updateCartItemQuantity;
