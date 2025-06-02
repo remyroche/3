@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash
 
 # Import the db instance and models from your application structure
 # This assumes db is initialized in backend/__init__.py and models are in backend/models.py
-from . import db # Or from .models import db if you define it there
+from . import db # SQLAlchemy instance
 from .models import User, Category, Product # Import other models as needed
 
 # The old get_db_connection, close_db_connection, query_db, init_db_schema
