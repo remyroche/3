@@ -1,21 +1,14 @@
 // website/source/admin/js/admin_api.js
 // This script handles all API communication for the admin panel.
 
-// API_BASE_URL should be defined globally by admin_config.js
-// e.g., const API_BASE_URL = 'http://localhost:5001/api/admin';
-
 const adminApi = {
-    // Use the API_BASE_URL from admin_config.js
-    BASE_URL: typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '/api/admin', // Fallback for safety
+    BASE_URL: typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '/api/admin',
 
     async _request(method, endpoint, data = null, isFormData = false) {
         if (typeof this.BASE_URL === 'undefined') {
             console.error("Admin API_BASE_URL is not defined. Ensure admin_config.js is loaded and defines API_BASE_URL.");
             throw new Error("Admin API configuration error.");
         }
-
-        // If endpoint starts with http, assume it's a full URL (e.g. for a different service if ever needed)
-        // Otherwise, prepend BASE_URL. Most admin endpoints will be relative.
         const url = endpoint.startsWith('http') ? endpoint : `${this.BASE_URL}${endpoint}`;
         
         const headers = {};
@@ -27,8 +20,6 @@ const adminApi = {
         if (storedToken) {
             headers['Authorization'] = `Bearer ${storedToken}`;
         } else {
-            // For login endpoint, token won't exist yet.
-            // For other endpoints, Flask's @admin_required decorator will handle unauthorized access.
             if (!url.endsWith('/login')) { 
                  console.warn(`Admin API request to ${url} without token.`);
             }
@@ -47,7 +38,7 @@ const adminApi = {
             }
         }
         
-        console.log(`Making Admin API request: ${method} ${url}`); // For debugging
+        console.log(`Making Admin API request: ${method} ${url}`);
 
         try {
             const response = await fetch(url, config);
@@ -66,13 +57,17 @@ const adminApi = {
                 throw error; 
             }
             if (response.status === 204) { 
-                return null; // Or { success: true } if callers expect an object
+                return { success: true, message: "Operation successful (no content)." };
             }
-            return await response.json(); 
+            // Ensure all successful JSON responses are parsed
+            const responseData = await response.json();
+            // Add success: true if not present, for consistency, unless it's explicitly false
+            if (responseData.success === undefined) {
+                responseData.success = true;
+            }
+            return responseData;
         } catch (error) {
             console.error(`Admin API ${method} request to ${url} failed:`, error.data || error.message, error);
-            // Let admin_ui.js (showAdminToast) handle displaying the error to the user.
-            // The error is re-thrown so the calling function can also react if needed.
             if (typeof showAdminToast === 'function') {
                 showAdminToast(error.data?.message || error.message || 'An unexpected Admin API error occurred.', 'error');
             }
@@ -81,9 +76,11 @@ const adminApi = {
     },
 
     loginAdmin: function(email, password) {
-        // Endpoint is relative to this.BASE_URL (which is /api/admin)
-        // So, Flask route is /api/admin/login
         return this._request('POST', '/login', { email, password });
+    },
+
+    getDashboardStats: function() { // New method for dashboard stats
+        return this._request('GET', '/dashboard/stats');
     },
 
     // --- Product Management ---
@@ -128,61 +125,58 @@ const adminApi = {
     getUserDetail: function(userId) {
         return this._request('GET', `/users/${userId}`);
     },
-    updateUser: function(userId, userData) { // Renamed from updateUserAdmin to just updateUser for consistency
+    updateUser: function(userId, userData) {
         return this._request('PUT', `/users/${userId}`, userData);
+    },
+     getProfessionalUsers: function() { // Added for invoice creation form
+        return this._request('GET', '/users/professionals');
     },
 
     // --- Order Management ---
-    getOrders: function(filters = {}) { // Renamed from getOrdersAdmin
+    getOrders: function(filters = {}) {
         const queryParams = new URLSearchParams(filters).toString();
         return this._request('GET', `/orders${queryParams ? '?' + queryParams : ''}`);
     },
-    getOrderDetail: function(orderId) { // Renamed from getOrderAdminDetail
+    getOrderDetail: function(orderId) {
         return this._request('GET', `/orders/${orderId}`);
     },
-    updateOrderStatus: function(orderId, statusData) { // Renamed from updateOrderStatusAdmin
+    updateOrderStatus: function(orderId, statusData) {
         return this._request('PUT', `/orders/${orderId}/status`, statusData);
     },
-    addOrderNote: function(orderId, noteData) { // Renamed from addOrderNoteAdmin
+    addOrderNote: function(orderId, noteData) {
         return this._request('POST', `/orders/${orderId}/notes`, noteData);
     },
 
     // --- Review Management ---
-    getReviews: function(filters = {}) { // Renamed from getReviewsAdmin
+    getReviews: function(filters = {}) {
         const queryParams = new URLSearchParams(filters).toString();
         return this._request('GET', `/reviews${queryParams ? '?' + queryParams : ''}`);
     },
-    approveReview: function(reviewId) { // Renamed from approveReviewAdmin
+    approveReview: function(reviewId) {
         return this._request('PUT', `/reviews/${reviewId}/approve`);
     },
-    unapproveReview: function(reviewId) { // Renamed from unapproveReviewAdmin
+    unapproveReview: function(reviewId) {
         return this._request('PUT', `/reviews/${reviewId}/unapprove`);
     },
-    deleteReview: function(reviewId) { // Renamed from deleteReviewAdmin
+    deleteReview: function(reviewId) {
         return this._request('DELETE', `/reviews/${reviewId}`);
     },
     
     // --- Settings Management ---
-    getSettings: function() { // Renamed from getSettingsAdmin
+    getSettings: function() {
         return this._request('GET', '/settings');
     },
-    updateSettings: function(settingsData) { // Renamed from updateSettingsAdmin
+    updateSettings: function(settingsData) {
         return this._request('POST', '/settings', settingsData);
     },
 
-    // --- Dashboard Stats ---
-    getDashboardStats: function() {
-        return this._request('GET', '/dashboard/stats');
-    },
-
     // --- Inventory ---
-    getDetailedInventoryItems: function(filters = {}) { // Renamed from getDetailedInventoryItemsAdmin
+    getDetailedInventoryItems: function(filters = {}) {
         const queryParams = new URLSearchParams(filters).toString();
-        // This endpoint in Flask is /api/admin/inventory/items/detailed
         return this._request('GET', `/inventory/items/detailed${queryParams ? '?' + queryParams : ''}`);
     },
     receiveSerializedStock: function(stockData) {
-        return this._request('POST', '/inventory/serialized/receive', stockData); // isFormData might be needed if file uploads are part of this
+        return this._request('POST', '/inventory/serialized/receive', stockData); 
     },
     updateSerializedItemStatus: function(itemUid, statusData) {
         return this._request('PUT', `/inventory/serialized/items/${itemUid}/status`, statusData);
@@ -194,17 +188,12 @@ const adminApi = {
         return fetch(url, { headers: { 'Authorization': `Bearer ${storedToken}` } })
             .then(response => {
                 if (!response.ok) {
-                    // Try to get error message from response if possible
                     return response.text().then(text => {
                         let errorMsg = `CSV Export failed: ${response.status} ${response.statusText}`;
                         try {
                             const jsonError = JSON.parse(text);
-                            if (jsonError && jsonError.message) {
-                                errorMsg = jsonError.message;
-                            }
-                        } catch (e) { /* Not a JSON error, use text or default */ 
-                            if(text) errorMsg = text;
-                        }
+                            if (jsonError && jsonError.message) errorMsg = jsonError.message;
+                        } catch (e) { if(text) errorMsg = text; }
                         throw new Error(errorMsg);
                     });
                 }
@@ -226,16 +215,28 @@ const adminApi = {
     importSerializedItemsCsv: function(formData) { 
         return this._request('POST', '/inventory/import/serialized_items', formData, true);
     },
-    adjustAggregatedStock: function(adjustmentData) {
+    adjustStock: function(adjustmentData) { // Renamed from adjustAggregatedStock for simplicity
         return this._request('POST', '/inventory/stock/adjust', adjustmentData);
     },
-    getAdminProductInventoryDetails: function(productCode, variantSkuSuffix = null) {
+    getProductInventoryDetails: function(productCode, variantSkuSuffix = null) { // Renamed
         let endpoint = `/inventory/product/${productCode}`;
         if (variantSkuSuffix) {
             endpoint += `?variant_sku_suffix=${encodeURIComponent(variantSkuSuffix)}`;
         }
         return this._request('GET', endpoint);
     },
+    // --- Invoice Management (Admin) ---
+    createManualInvoice: function(invoiceData) { // New method for admin creating manual invoice
+        return this._request('POST', '/invoices/create', invoiceData);
+    },
+    getAdminInvoices: function(filters = {}) { // New method to get all invoices (admin)
+        const queryParams = new URLSearchParams(filters).toString();
+        return this._request('GET', `/invoices${queryParams ? '?' + queryParams : ''}`);
+    },
+    updateAdminInvoiceStatus: function(invoiceId, statusData) { // New method to update any invoice status (admin)
+        return this._request('PUT', `/invoices/${invoiceId}/status`, statusData);
+    },
+
     regenerateStaticJson: function() {
         return this._request('POST', '/regenerate-static-json');
     }
