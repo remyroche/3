@@ -1,51 +1,31 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="js/css/admin_style.css"> <style>
-        /* Basic styling for dashboard, move to admin_style.css for consistency */
-        main { padding: 20px; max-width: 1200px; margin: auto; }
-        .dashboard-header { margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-        .dashboard-header h1 { color: #333; }
-        .dashboard-summary { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 30px; }
-        .summary-card { background-color: #f9f9f9; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex: 1; min-width: 200px; }
-        .summary-card h3 { margin-top: 0; color: #007bff; }
-        .summary-card p { font-size: 1.5em; font-weight: bold; margin-bottom: 5px; }
-        .summary-card a { text-decoration: none; color: #0056b3; font-size: 0.9em;}
-        .quick-links ul { list-style: none; padding: 0; }
-        .quick-links li a { display: block; padding: 10px; background-color: #e9ecef; margin-bottom: 5px; border-radius: 4px; text-decoration: none; color: #333; }
-        .quick-links li a:hover { background-color: #dee2e6; }
-        
-        /* Common Admin Header Styles (should be in admin_style.css) */
-        header { background-color: #343a40; padding: 15px 20px; color: white; }
-        header h1 { margin: 0; font-size: 1.8em; display: inline-block; }
-        header nav { float: right; margin-top: 5px;}
-        header nav a { color: #f8f9fa; text-decoration: none; margin-left: 15px; padding: 5px 10px; border-radius: 4px; }
-        header nav a:hover, header nav a.active { background-color: #495057; }
-        footer { text-align: center; padding: 20px; margin-top: 30px; background-color: #f8f9f9; border-top: 1px solid #eee; font-size: 0.9em; color: #6c757d;}
-
-    </style>
+    <link rel="stylesheet" href="js/css/admin_style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body>
-    <header>
+<body id="page-admin-dashboard"> <header class="legacy-admin-header">
         <h1>Admin Panel</h1>
         <nav>
             <a href="admin_dashboard.html" class="active">Dashboard</a>
-            <a href="admin_manage_inventory.html">Manage Products</a>
-            <a href="admin_manage_categories.html">Manage Categories</a>
+            <a href="admin_manage_products.html">Manage Products</a> <a href="admin_manage_categories.html">Manage Categories</a>
             <a href="admin_manage_orders.html">Manage Orders</a>
             <a href="admin_manage_users.html">Manage Users</a>
             <a href="admin_manage_reviews.html">Manage Reviews</a>
             <a href="admin_invoices.html">Invoices</a>
             <a href="admin_view_inventory.html">View Inventory Report</a>
-            <a href="../index.html" target="_blank">View Site</a> <a href="#" id="adminLogoutLink">Logout</a> </nav>
+            <a href="../index.html" target="_blank">View Site</a> 
+            <a href="#" id="adminLogoutLinkDashboard">Logout</a> 
+        </nav>
     </header>
 
-    <main>
+    <main class="admin-content-area-legacy">
         <div class="dashboard-header">
-            <h2>Welcome, Admin!</h2>
+            <h2 class="admin-page-title">Welcome, <span id="admin-user-greeting-main">Admin</span>!</h2>
             <p>Here's a quick overview of your store.</p>
         </div>
 
@@ -53,7 +33,7 @@
             <div class="summary-card" id="totalProductsCard">
                 <h3>Total Products</h3>
                 <p>Loading...</p>
-                <a href="admin_manage_inventory.html">Manage Products &raquo;</a>
+                <a href="admin_manage_products.html">Manage Products &raquo;</a>
             </div>
             <div class="summary-card" id="totalCategoriesCard">
                 <h3>Total Categories</h3>
@@ -63,8 +43,7 @@
             <div class="summary-card" id="pendingOrdersCard">
                 <h3>Pending Orders</h3>
                 <p>Loading...</p>
-                <a href="admin_manage_orders.html?status=pending">View Pending Orders &raquo;</a>
-            </div>
+                <a href="admin_manage_orders.html?status=processing">View Pending Orders &raquo;</a> </div>
             <div class="summary-card" id="totalUsersCard">
                 <h3>Registered Users</h3>
                 <p>Loading...</p>
@@ -72,33 +51,57 @@
             </div>
         </section>
 
-        <section class="quick-links">
-            <h3>Quick Links</h3>
+        <section class="quick-links admin-form-container"> <h3 class="admin-form-title">Quick Links</h3>
             <ul>
-                <li><a href="admin_manage_inventory.html#productFormContainer">Add New Product</a></li>
+                <li><a href="admin_manage_products.html#productFormContainer">Add New Product</a></li>
                 <li><a href="admin_manage_categories.html#categoryFormContainer">Add New Category</a></li>
                 <li><a href="admin_manage_orders.html">View All Orders</a></li>
-                </ul>
+            </ul>
         </section>
         
     </main>
 
-    <footer>
-        <p>&copy; <span id="currentYear"></span> Your Company - Admin Panel</p>
+    <footer class="legacy-admin-footer">
+        <p>&copy; <span id="currentYearDashboard"></span> Maison Trüvra - Admin Panel</p>
     </footer>
 
-    <script src="js/admin_api.js"></script> <script src="js/admin_ui.js"></script> <script src="js/admin_dashboard.js"></script>
+    <div id="admin-toast-container" class="fixed bottom-0 right-0 p-4 space-y-2 z-[1051]"></div>
+
+    <script src="js/admin_config.js"></script>
+    <script src="js/admin_ui.js"></script> 
+    <script src="js/admin_api.js"></script>
+    <script src="js/admin_auth.js"></script>
+    <script src="js/admin_main.js"></script>
+    <script src="js/admin_dashboard.js"></script>
     <script>
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
-        // Basic logout functionality (placeholder)
-        const logoutLink = document.getElementById('adminLogoutLink');
-        if(logoutLink) {
-            logoutLink.addEventListener('click', function(e) {
+        // This can be moved to admin_main.js if it's a common footer element
+        const currentYearSpanDashboard = document.getElementById('currentYearDashboard');
+        if (currentYearSpanDashboard) {
+            currentYearSpanDashboard.textContent = new Date().getFullYear();
+        }
+
+        // Update user greeting on this page specifically if needed, though admin_main.js should handle the header one.
+        const adminUser = typeof getAdminUser === 'function' ? getAdminUser() : null;
+        const greetingMain = document.getElementById('admin-user-greeting-main');
+        if (greetingMain && adminUser) {
+            greetingMain.textContent = `${adminUser.prenom || 'Admin'}`;
+        }
+
+
+        // Logout link specific to this older page structure
+        const logoutLinkDashboard = document.getElementById('adminLogoutLinkDashboard');
+        if(logoutLinkDashboard && typeof adminLogout === 'function') {
+            logoutLinkDashboard.addEventListener('click', function(e) {
                 e.preventDefault();
-                // Implement actual logout: clear token, redirect to login
-                localStorage.removeItem('admin_jwt_token'); 
-                showAdminMessage('You have been logged out.', 'info', 'Logout');
-                setTimeout(() => window.location.href = 'admin_login.html', 1500);
+                adminLogout();
+            });
+        } else if (logoutLinkDashboard) {
+            logoutLinkDashboard.addEventListener('click', function(e) {
+                e.preventDefault();
+                sessionStorage.removeItem('adminAuthToken'); 
+                sessionStorage.removeItem('adminUser');
+                alert('Logged out (fallback).');
+                window.location.href = 'admin_login.html';
             });
         }
     </script>
