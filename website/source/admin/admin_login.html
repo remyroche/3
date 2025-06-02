@@ -4,19 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion Administrateur - Maison Trüvra</title>
-    <!-- Assuming admin_style.css is located at admin/css/admin_style.css relative to the website root (i.e., in .../website/admin/css/) -->
     <link rel="stylesheet" href="css/admin_style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-        <div class="text-center mb-8">
+<body id="page-admin-login" class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="admin-login-container bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <div class="logo-container text-center mb-8">
             <i class="fas fa-user-shield fa-3x text-gray-700"></i>
             <h1 class="text-3xl font-bold text-gray-800 mt-2">Maison Trüvra</h1>
             <p class="text-gray-600">Portail Administrateur</p>
         </div>
 
-        <form id="admin-login-form" class="space-y-6" method="POST" action="/api/admin/login">
+        <form id="admin-login-form" class="space-y-6">
             <div>
                 <label for="admin-email" class="block text-sm font-medium text-gray-700">Email</label>
                 <div class="mt-1 relative rounded-md shadow-sm">
@@ -24,7 +23,7 @@
                         <i class="fas fa-envelope text-gray-400"></i>
                     </div>
                     <input type="email" id="admin-email" name="email" required
-                           class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2">
+                           class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 form-input-admin">
                 </div>
             </div>
 
@@ -35,16 +34,16 @@
                         <i class="fas fa-lock text-gray-400"></i>
                     </div>
                     <input type="password" id="admin-password" name="password" required
-                           class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2">
+                           class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 form-input-admin">
                 </div>
             </div>
             
-            <div id="login-error-message" class="hidden text-red-500 text-sm text-center"></div>
+            <div id="login-error-message" class="hidden text-red-500 text-sm text-center min-h-[1.25rem]"></div>
 
 
             <div>
                 <button type="submit"
-                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 login-button">
                     Se connecter
                 </button>
             </div>
@@ -55,19 +54,186 @@
             </a>
         </p>
     </div>
-
-    <div id="global-message" class="hidden fixed bottom-5 right-5 p-4 rounded-md text-white z-50">
-        <span id="global-message-text"></span>
-        <button id="global-message-close" class="ml-4 text-xl font-bold">&times;</button>
-    </div>
    
-       <!-- Container for admin toasts -->
-       <div id="admin-toast-container" class="fixed bottom-0 right-0 p-4 space-y-2 z-[1051]"></div>
+    <div id="admin-toast-container" class="fixed bottom-0 right-0 p-4 space-y-2 z-[1051]"></div>
 
-    <script src="js/admin_config.js"></script> <!-- Load config first -->
+    <script src="js/admin_config.js"></script> 
     <script src="js/admin_ui.js"></script>
-    <script src="js/admin_api.js"></script>
-    <script src="js/admin_auth.js"></script>
-    <script src="js/admin_main.js"></script> <!-- Add admin_main.js -->
-    </body>
+    <script src="js/admin_api.js"></script> <script src="js/admin_auth.js"></script> <script src="js/admin_main.js"></script> </body>
 </html>
+```
+**Key changes in `admin_login.html`:**
+* Added `id="page-admin-login"` to the `<body>` tag for easier identification in `admin_main.js`.
+* Removed `action="/api/admin/login"` and `method="POST"` from the `<form id="admin-login-form">` tag.
+* Ensured input fields have `id` attributes (`admin-email`, `admin-password`).
+* Ensured the error message `div` has `id="login-error-message"`.
+* Added `form-input-admin` class to inputs for consistent styling if defined in `admin_style.css`.
+* Added `login-button` class to the submit button for easier selection if needed, though targeting `form button[type="submit"]` is also fine.
+* Corrected script loading order: `admin_config.js` first, then `admin_ui.js`, `admin_api.js`, `admin_auth.js`, and finally `admin_main.js`.
+
+Finally, let's update `website/source/admin/js/admin_main.js` to attach the event listener for the admin login form.
+
+```javascript
+// website/admin/js/admin_main.js
+// Main script for initializing the Admin Panel and page-specific logic.
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("admin_main.js: DOMContentLoaded");
+
+    // --- Global Admin Initializations ---
+    const bodyId = document.body.id;
+    const pagePath = window.location.pathname;
+
+    // If on login page, attach login handler and skip other initializations
+    if (bodyId === 'page-admin-login' || pagePath.includes('admin_login.html')) {
+        console.log("admin_main.js: On admin_login.html");
+        
+        // Check if already logged in as admin; if so, redirect to dashboard.
+        // This check is now primarily handled by checkAdminLogin.
+        if (typeof checkAdminLogin === 'function') {
+            checkAdminLogin(); // This will redirect if already logged in.
+        } else {
+            console.error("admin_main.js: checkAdminLogin function not found. Ensure admin_auth.js is loaded.");
+        }
+
+        const adminLoginForm = document.getElementById('admin-login-form');
+        if (adminLoginForm) {
+            if (typeof handleAdminLoginFormSubmit === 'function') {
+                adminLoginForm.addEventListener('submit', handleAdminLoginFormSubmit);
+                console.log("admin_main.js: Admin login form event listener attached.");
+            } else {
+                console.error("admin_main.js: handleAdminLoginFormSubmit function not found. Ensure admin_auth.js is loaded.");
+            }
+        } else {
+            console.warn("admin_main.js: Admin login form not found on this page.");
+        }
+        return; // Stop further execution for login page
+    }
+
+    // For all other admin pages, check login status first
+    // This will redirect to admin_login.html if not authenticated.
+    if (typeof checkAdminLogin === 'function') {
+        if (!checkAdminLogin()) {
+            console.log("admin_main.js: Admin not logged in, checkAdminLogin should have redirected.");
+            return; 
+        }
+    } else {
+        console.error("admin_main.js: checkAdminLogin function not found. Site protection compromised. Ensure admin_auth.js is loaded.");
+        // Fallback redirect if checkAdminLogin is missing, though it shouldn't be.
+        // window.location.href = 'admin_login.html'; 
+        return;
+    }
+
+    // --- Common UI Setup for Authenticated Admin Pages ---
+    setupAdminUIGlobals();
+
+
+    // --- Page-Specific Initializations ---
+    // Ensure each admin page has a unique body ID like id="page-admin-manage-products".
+
+    if (bodyId === 'page-admin-dashboard' || pagePath.includes('admin_dashboard.html')) {
+        console.log("admin_main.js: Initializing Admin Dashboard page.");
+        if (typeof initializeAdminDashboard === 'function') initializeAdminDashboard(); // Assuming a specific init function
+        else console.log("admin_main.js: initializeAdminDashboard not found, assuming admin_dashboard.js handles its own init within its DOMContentLoaded.");
+    } else if (bodyId === 'page-admin-manage-products' || pagePath.includes('admin_manage_products.html') || pagePath.includes('admin_panel.html')) { // admin_panel.html seems to be product management too
+        console.log("admin_main.js: Initializing Product Management page.");
+        // The script admin_products.js is already loaded and its DOMContentLoaded will run.
+        // No specific function call needed here if admin_products.js self-initializes.
+    } else if (bodyId === 'page-admin-manage-inventory' || pagePath.includes('admin_manage_inventory.html')) {
+        console.log("admin_main.js: Initializing Inventory Management page.");
+        // admin_inventory.js self-initializes.
+    } else if (bodyId === 'page-admin-view-inventory' || pagePath.includes('admin_view_inventory.html')) {
+        console.log("admin_main.js: Initializing View Detailed Inventory page.");
+        // admin_view_inventory.js self-initializes.
+    } else if (bodyId === 'page-admin-manage-users' || pagePath.includes('admin_manage_users.html')) {
+        console.log("admin_main.js: Initializing User Management page.");
+        if (typeof initializeUserManagement === 'function') initializeUserManagement();
+        else console.error("admin_main.js: initializeUserManagement not found. Ensure admin_users.js is loaded and defines it.");
+    } else if (bodyId === 'page-admin-manage-orders' || pagePath.includes('admin_manage_orders.html')) {
+        console.log("admin_main.js: Initializing Order Management page.");
+        if (typeof initializeOrderManagement === 'function') initializeOrderManagement();
+        else console.error("admin_main.js: initializeOrderManagement not found. Ensure admin_orders.js is loaded and defines it.");
+    } else if (bodyId === 'page-admin-manage-categories' || pagePath.includes('admin_manage_categories.html')) {
+        console.log("admin_main.js: Initializing Category Management page.");
+        // admin_categories.js self-initializes.
+    } else if (bodyId === 'page-admin-manage-reviews' || pagePath.includes('admin_manage_reviews.html')) {
+        console.log("admin_main.js: Initializing Review Management page.");
+        // admin_reviews.js self-initializes.
+    } else if (bodyId === 'page-admin-invoices' || pagePath.includes('admin_invoices.html')) {
+        console.log("admin_main.js: Initializing Invoice Management page.");
+        // admin_invoices.js self-initializes.
+    }
+
+
+    // --- Admin Modal Global Event Listeners (if using generic modals not handled by specific page scripts) ---
+    // This can be simplified if modals are always opened/closed by specific functions like openAdminModal/closeAdminModal from admin_ui.js
+    document.querySelectorAll('.admin-modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', function(event) {
+            if (event.target === this) { 
+                if (typeof closeAdminModal === 'function') {
+                    const modalId = this.id || this.dataset.modalId; 
+                    if(modalId) closeAdminModal(modalId); 
+                }
+            }
+        });
+    });
+    
+    // Example for a generic close button if you have one not tied to specific modal logic
+    // const genericModalCloseButton = document.getElementById('close-generic-modal-button');
+    // if (genericModalCloseButton && typeof closeAdminModal === 'function') {
+    //     genericModalCloseButton.addEventListener('click', () => closeAdminModal('generic-modal')); // Replace 'generic-modal' with actual ID
+    // }
+});
+
+
+/**
+ * Sets up global UI elements common to authenticated admin pages.
+ */
+function setupAdminUIGlobals() {
+    // Admin user greeting
+    const adminUser = getAdminUser(); // From admin_auth.js
+    const greetingElement = document.getElementById('admin-user-greeting');
+    if (greetingElement && adminUser) {
+        greetingElement.textContent = `Bonjour, ${adminUser.prenom || adminUser.email}!`;
+    } else if (greetingElement) {
+        greetingElement.textContent = 'Bonjour, Admin!'; // Fallback
+    }
+
+    // Logout button
+    const logoutButton = document.getElementById('admin-logout-button');
+    if (logoutButton) {
+        if (typeof adminLogout === 'function') { // From admin_auth.js
+            logoutButton.removeEventListener('click', adminLogout); // Remove if already attached
+            logoutButton.addEventListener('click', adminLogout);
+        } else {
+            console.error("admin_main.js: adminLogout function not found for logout button.");
+        }
+    }
+
+    // Handle "Back to Dashboard" button visibility
+    const backToDashboardButton = document.getElementById('back-to-dashboard-button');
+    if (backToDashboardButton) {
+        const bodyId = document.body.id;
+        const pagePath = window.location.pathname;
+        if (bodyId === 'page-admin-dashboard' || pagePath.includes('admin_dashboard.html')) {
+            backToDashboardButton.style.display = 'none';
+        } else {
+            // Ensure it's visible, Tailwind might use 'hidden' class, so remove it.
+            // Or set display directly. Default is often inline-flex for these buttons.
+            backToDashboardButton.classList.remove('hidden'); 
+            // backToDashboardButton.style.display = 'inline-flex'; 
+        }
+    }
+    
+    // Set active navigation link
+    const currentPageFilename = window.location.pathname.split("/").pop();
+    document.querySelectorAll('nav.bg-gray-800 .admin-nav-link').forEach(link => { // More specific selector for admin nav
+        link.classList.remove('active', 'bg-gray-900'); // Remove active and potential hover/focus style if needed
+        const linkHref = link.getAttribute('href');
+        if (linkHref && linkHref === currentPageFilename) {
+            link.classList.add('active', 'bg-gray-900'); // Add classes for active state
+        }
+    });
+    console.log("Admin UI Globals (greeting, logout, nav) setup.");
+}
+```
