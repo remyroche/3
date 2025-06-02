@@ -1,6 +1,147 @@
-# backend/config.py
+# backend/admin_api/routes.py
 import os
-from datetime import timedelta
+import uuid
+import requests 
+from urllib.parse import urlencode 
+import secrets # Make sure secrets is imported
+
+from werkzeug.utils import secure_filename
+from flask import request, jsonify, current_app, url_for, redirect, session, abort as flask_abort 
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt, set_access_cookies # Added set_access_cookies
+from sqlalchemy import func, or_, and_ 
+from datetime import datetime, timezone, timedelta
+
+from .. import db 
+from ..models import ( 
+    User, Category, Product, ProductImage, ProductWeightOption,
+    Order, OrderItem, Review, Setting, SerializedInventoryItem,
+    StockMovement, Invoice, InvoiceItem, ProfessionalDocument,
+    ProductLocalization, CategoryLocalization, GeneratedAsset
+)
+from ..utils import (
+    admin_required, staff_or_admin_required, format_datetime_for_display, parse_datetime_from_iso,
+    generate_slug, allowed_file, get_file_extension, format_datetime_for_storage,
+    generate_static_json_files
+)
+from ..services.invoice_service import InvoiceService 
+from ..database import record_stock_movement 
+import pyotp # Added for TOTP setup routes
+
+from . import admin_api_bp # Assuming limiter is initialized elsewhere and applied to blueprint or app
+
+
+# Helper function (can be part of this file or a utils file if used elsewhere)
+def _create_admin_session_and_get_response(admin_user, redirect_url):
+    """Helper to create JWT, set cookies, and prepare a redirect response."""
+    identity = admin_user.id
+    additional_claims = {
+        "role": admin_user.role, "email": admin_user.email, "is_admin": True,
+        "first_name": admin_user.first_name, "last_name": admin_user.last_name
+    }
+    access_token = create_access_token(identity=identity, additional_claims=additional_claims)
+    
+    response = redirect(redirect_url)
+    # Explicitly set the access token in cookies if JWT_TOKEN_LOCATION includes 'cookies'
+    # and if Flask-JWT-Extended doesn't automatically do it on redirect responses.
+    if 'cookies' in current_app.config.get('JWT_TOKEN_LOCATION', ['headers']):
+        set_access_cookies(response, access_token)
+        current_app.logger.info(f"Access cookie set for admin {admin_user.email} during SSO redirect.")
+    
+    current_app.logger.info(f"SSO successful for {admin_user.email}, redirecting. Token (prefix): {access_token[:20]}...")
+    return response
+
+# ... (other routes like admin_login_step1_password, admin_login_step2_verify_totp, simplelogin_initiate remain the same) ...
+# Make sure the _create_admin_session helper from the previous turn is also included or adapted if it was separate.
+# For this update, I'm focusing only on simplelogin_callback.
+
+@admin_api_bp.route('/login/simplelogin/callback', methods=['GET'])
+def simplelogin_callback():
+    auth_code = request.args.get('code')
+    state_returned = request.args.get('state')
+    audit_logger = current_app.audit_log_service
+    # Define the base admin login URL for redirects
+    base_admin_login_url = url_for('admin_api_bp.admin_login_step1_password', _external=True).replace('/login', '/admin_login.html')
+    # A more robust way if your admin login page is static:
+    base_admin_login_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_login.html'
+    admin_dashboard_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_dashboard.html'
+
+
+    expected_state = session.pop('oauth_state_sl', None)
+    if not expected_state or expected_state != state_returned:
+        audit_logger.log_action(action='simplelogin_callback_fail_state_mismatch', details="OAuth state mismatch.", status='failure', ip_address=request.remote_addr)
+        return redirect(f"{base_admin_login_url}?error=sso_state_mismatch")
+
+    if not auth_code:
+        audit_logger.log_action(action='simplelogin_callback_fail_no_code', details="No authorization code received from SimpleLogin.", status='failure', ip_address=request.remote_addr)
+        return redirect(f"{base_admin_login_url}?error=sso_no_code")
+
+    token_url = current_app.config['SIMPLELOGIN_TOKEN_URL']
+    payload = {
+        'grant_type': 'authorization_code',
+        'code': auth_code,
+        'redirect_uri': current_app.config['SIMPLELOGIN_REDIRECT_URI_ADMIN'],
+        'client_id': current_app.config['SIMPLELOGIN_CLIENT_ID'],
+        'client_secret': current_app.config['SIMPLELOGIN_CLIENT_SECRET'],
+    }
+    try:
+        token_response = requests.post(token_url, data=payload)
+        token_response.raise_for_status() 
+        token_data = token_response.json()
+        sl_access_token = token_data.get('access_token')
+
+        if not sl_access_token:
+            audit_logger.log_action(action='simplelogin_callback_fail_no_access_token', details="No access token from SimpleLogin.", status='failure', ip_address=request.remote_addr)
+            return redirect(f"{base_admin_login_url}?error=sso_token_error")
+
+        userinfo_url = current_app.config['SIMPLELOGIN_USERINFO_URL']
+        headers = {'Authorization': f'Bearer {sl_access_token}'}
+        userinfo_response = requests.get(userinfo_url, headers=headers)
+        userinfo_response.raise_for_status()
+        sl_user_info = userinfo_response.json()
+        
+        sl_email = sl_user_info.get('email')
+        sl_simplelogin_user_id = sl_user_info.get('sub') 
+
+        if not sl_email:
+            audit_logger.log_action(action='simplelogin_callback_fail_no_email', details="No email in userinfo from SimpleLogin.", status='failure', ip_address=request.remote_addr)
+            return redirect(f"{base_admin_login_url}?error=sso_email_error")
+
+        # --- ADDED EMAIL FILTER ---
+        allowed_admin_email = "remy.roche@pm.me"
+        if sl_email.lower() != allowed_admin_email.lower():
+            audit_logger.log_action(action='simplelogin_callback_fail_email_not_allowed', email=sl_email, details=f"SSO attempt from non-allowed email: {sl_email}", status='failure', ip_address=request.remote_addr)
+            current_app.logger.warning(f"SimpleLogin attempt from non-allowed email: {sl_email}")
+            return redirect(f"{base_admin_login_url}?error=sso_unauthorized_email")
+        # --- END OF EMAIL FILTER ---
+
+        admin_user = User.query.filter(func.lower(User.email) == sl_email.lower(), User.role == 'admin').first()
+
+        if admin_user and admin_user.is_active:
+            if not admin_user.simplelogin_user_id and sl_simplelogin_user_id:
+                admin_user.simplelogin_user_id = sl_simplelogin_user_id
+                db.session.commit()
+            
+            audit_logger.log_action(user_id=admin_user.id, action='admin_login_success_simplelogin', target_type='user_admin', target_id=admin_user.id, details=f"Admin {sl_email} logged in via SimpleLogin.", status='success', ip_address=request.remote_addr)
+            
+            # Use the helper to create session and get redirect response with cookies
+            return _create_admin_session_and_get_response(admin_user, admin_dashboard_url)
+
+        elif admin_user and not admin_user.is_active:
+            audit_logger.log_action(action='simplelogin_callback_fail_user_inactive', email=sl_email, details="Admin account found but is inactive.", status='failure', ip_address=request.remote_addr)
+            return redirect(f"{base_admin_login_url}?error=sso_account_inactive")
+        else: # User with this email is not an admin or doesn't exist in local DB
+            audit_logger.log_action(action='simplelogin_callback_fail_user_not_admin', email=sl_email, details="User authenticated via SimpleLogin but not a registered/active admin in local DB.", status='failure', ip_address=request.remote_addr)
+            return redirect(f"{base_admin_login_url}?error=sso_admin_not_found")
+
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"SimpleLogin OAuth request failed: {e}", exc_info=True)
+        audit_logger.log_action(action='simplelogin_callback_fail_request_exception', details=str(e), status='failure', ip_address=request.remote_addr)
+        return redirect(f"{base_admin_login_url}?error=sso_communication_error")
+    except Exception as e:
+        current_app.logger.error(f"Error during SimpleLogin callback: {e}", exc_info=True)
+        audit_logger.log_action(action='simplelogin_callback_fail_server_error', details=str(e), status='failure', ip_address=request.remote_addr)
+        return redirect(f"{base_admin_login_url}?error=sso_server_error")
+
 
 class Config:
     """Base configuration."""
