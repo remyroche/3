@@ -3,249 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Manage Products & Inventory</title>
-    <link rel="stylesheet" href="js/css/admin_style.css"> <style>
-        /* Basic styling for readability, move to admin_style.css */
-        main { padding: 20px; max-width: 1200px; margin: auto; }
-        h2, h3 { color: #333; }
-        #productFormContainer, #productsTableContainer { margin-bottom: 30px; padding: 15px; background-color: #f9f9f9; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        form div { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="number"], input[type="url"], textarea, select {
-            width: calc(100% - 22px); padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
-        }
-        input[type="checkbox"] { margin-right: 5px; vertical-align: middle; }
-        textarea { min-height: 80px; }
-        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
-        button:hover { background-color: #0056b3; }
-        button.delete { background-color: #dc3545; }
-        button.delete:hover { background-color: #c82333; }
-        button.small-button { padding: 5px 10px; font-size: 0.9em; }
-        #cancelEditButton { background-color: #6c757d; }
-        #cancelEditButton:hover { background-color: #545b62; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background-color: #f0f0f0; }
-        tbody tr:nth-child(even) { background-color: #f9f9f9; }
-        small { font-size: 0.85em; color: #666; display: block; margin-top: 3px;}
-    </style>
+    <title>Admin - Manage Products - Maison Trüvra</title>
+    <link rel="stylesheet" href="css/admin_style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body>
-    <header>
-        <h1>Admin Panel</h1>
-        <nav>
-            <a href="admin_dashboard.html">Dashboard</a>
-            <a href="admin_manage_inventory.html">Manage Products</a>
-            <a href="admin_manage_categories.html">Manage Categories</a>
-            <a href="admin_manage_orders.html">Manage Orders</a>
-            <a href="admin_manage_users.html">Manage Users</a>
-            </nav>
+<body id="page-admin-panel">
+    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Retour au Tableau de Bord
+                </a>
+                <div id="admin-header-title-area">
+                     <h1 class="text-xl font-semibold text-gray-700">Maison Trüvra - Admin</h1>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="admin-user-greeting" class="text-gray-700 text-sm mr-2"></span>
+                <button id="admin-logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-sm flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                </button>
+            </div>
+        </div>
     </header>
 
-    <main>
-        <h2>Manage Products & Inventory</h2>
+    <nav class="bg-gray-800 text-white shadow-md">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-start h-12 space-x-1 overflow-x-auto">
+                <a href="admin_dashboard.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Tableau de Bord</a>
+                <a href="admin_manage_products.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 active">Produits</a> 
+                <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Inventaire</a>
+                <a href="admin_view_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voir Inventaire</a>
+                <a href="admin_manage_orders.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Commandes</a>
+                <a href="admin_manage_users.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Utilisateurs</a>
+                <a href="admin_manage_categories.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Catégories</a>
+                <a href="admin_invoices.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Factures</a>
+                <a href="admin_manage_reviews.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Avis</a>
+            </div>
+        </div>
+    </nav>
 
-        <div id="productFormContainer">
-            <h3><span id="formTitle">Add New Product</span></h3>
-            <form id="productForm">
+    <main class="admin-content-area container mx-auto p-6 space-y-6">
+        <h2 class="text-2xl font-semibold text-gray-800">Manage Products & Inventory</h2>
+        <p class="text-sm text-orange-600 bg-orange-100 p-3 rounded-md">Note: This page ('admin_panel.html') appears to be an older version for product management. Consider using <a href="admin_manage_products.html" class="font-semibold underline hover:text-orange-800">'Manage Products'</a> (which points to `admin_manage_products.html`) for the dedicated interface.</p>
+
+        <div id="productFormContainer" class="admin-form-container">
+            <h3 class="admin-form-title"><span id="formTitle">Add New Product</span></h3>
+            <form id="productForm" class="admin-form">
                 <div>
-                    <label for="productCode">Product Code (SKU): <span class="required">*</span></label>
-                    <input type="text" id="productCode" name="product_code" required>
-                    <small>Unique identifier for the product (e.g., ABELHA-MIEL-500G). Cannot be changed after creation if there are orders associated.</small>
+                    <label for="productCode" class="form-label">Product Code (SKU): <span class="required">*</span></label>
+                    <input type="text" id="productCode" name="product_code" required class="form-input-admin">
+                    <small class="form-text">Unique identifier for the product. Cannot be changed after creation if there are orders associated.</small>
                 </div>
                 
                 <div>
-                    <label for="productName">Product Name: <span class="required">*</span></label>
-                    <input type="text" id="productName" name="name" required>
+                    <label for="productName" class="form-label">Product Name: <span class="required">*</span></label>
+                    <input type="text" id="productName" name="name" required class="form-input-admin">
                 </div>
 
                 <div>
-                    <label for="productCategory">Category: <span class="required">*</span></label>
-                    <select id="productCategory" name="category_id" required>
+                    <label for="productCategory" class="form-label">Category: <span class="required">*</span></label>
+                    <select id="productCategory" name="category_id" required class="form-input-admin">
                         <option value="">Loading categories...</option>
-                        </select>
+                    </select>
                 </div>
                 
                 <div>
-                    <label for="productPrice">Price (€): <span class="required">*</span></label>
-                    <input type="number" id="productPrice" name="price" step="0.01" min="0" required>
+                    <label for="productPrice" class="form-label">Price (€): <span class="required">*</span></label>
+                    <input type="number" id="productPrice" name="price" step="0.01" min="0" required class="form-input-admin">
                 </div>
 
                 <div>
-                    <label for="productQuantity">Stock Quantity: <span class="required">*</span></label>
-                    <input type="number" id="productQuantity" name="quantity" min="0" required>
+                    <label for="productQuantity" class="form-label">Stock Quantity: <span class="required">*</span></label>
+                    <input type="number" id="productQuantity" name="quantity" min="0" required class="form-input-admin">
                 </div>
 
                 <div>
-                    <label for="lowStockThreshold">Low Stock Threshold:</label>
-                    <input type="number" id="lowStockThreshold" name="low_stock_threshold" min="0" value="10">
+                    <label for="lowStockThreshold" class="form-label">Low Stock Threshold:</label>
+                    <input type="number" id="lowStockThreshold" name="low_stock_threshold" min="0" value="10" class="form-input-admin">
                 </div>
                 
                 <div>
-                    <label for="productDescription">Description:</label>
-                    <textarea id="productDescription" name="description"></textarea>
+                    <label for="productDescription" class="form-label">Description:</label>
+                    <textarea id="productDescription" name="description" class="form-input-admin"></textarea>
                 </div>
 
                 <div>
-                    <label for="productImageUrl">Image URL:</label>
-                    <input type="url" id="productImageUrl" name="image_url" placeholder="[https://example.com/image.jpg](https://example.com/image.jpg)">
+                    <label for="productImageUrl" class="form-label">Image URL:</label>
+                    <input type="url" id="productImageUrl" name="image_url" placeholder="https://example.com/image.jpg" class="form-input-admin">
                 </div>
 
                 <div>
-                    <label for="supplierInfo">Supplier Info:</label>
-                    <input type="text" id="supplierInfo" name="supplier_info">
+                    <label for="supplierInfo" class="form-label">Supplier Info:</label>
+                    <input type="text" id="supplierInfo" name="supplier_info" class="form-input-admin">
                 </div>
                 
-                <div>
-                    <input type="checkbox" id="productIsActive" name="is_active" checked style="width: auto;">
-                    <label for="productIsActive" style="display: inline;">Is Active (visible on site)</label>
+                <div class="form-checkbox-group">
+                    <input type="checkbox" id="productIsActive" name="is_active" checked class="form-checkbox-admin">
+                    <label for="productIsActive" class="form-label-inline">Is Active (visible on site)</label>
                 </div>
-                <div>
-                    <input type="checkbox" id="productIsFeatured" name="is_featured" style="width: auto;">
-                    <label for="productIsFeatured" style="display: inline;">Is Featured (highlighted on site)</label>
+                <div class="form-checkbox-group">
+                    <input type="checkbox" id="productIsFeatured" name="is_featured" class="form-checkbox-admin">
+                    <label for="productIsFeatured" class="form-label-inline">Is Featured (highlighted on site)</label>
                 </div>
                 
-                <button type="submit" id="saveProductButton">Save Product</button>
-                <button type="button" id="cancelEditButton" style="display:none;">Cancel Edit</button>
+                <div class="form-actions">
+                    <button type="submit" id="saveProductButton" class="btn btn-admin-primary">Save Product</button>
+                    <button type="button" id="cancelEditButton" class="btn btn-admin-secondary" style="display:none;">Cancel Edit</button>
+                </div>
             </form>
         </div>
 
-        <div id="productsTableContainer">
-            <h3>Existing Products</h3>
-            <input type="text" id="productSearchInput" placeholder="Search products by name, code, category..." style="margin-bottom: 10px; padding: 8px; width: calc(100% - 18px);">
-            <table id="productsTable">
-                <thead>
-                    <tr>
-                        <th>Code</th>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Price</th>
-                        <th>Stock</th>
-                        <th>Active</th>
-                        <th>Featured</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="productsTableBody">
-                    <tr><td colspan="8">Loading products...</td></tr>
-                </tbody>
-            </table>
+        <div id="productsTableContainer" class="admin-table-container">
+            <h3 class="admin-table-title">Existing Products</h3>
+            <input type="text" id="productSearchInput" placeholder="Search products by name, code, category..." class="form-input-admin mb-4">
+            <div class="overflow-x-auto">
+                <table id="productsTable" class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Active</th>
+                            <th>Featured</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTableBody">
+                        <tr><td colspan="8" class="text-center py-4">Loading products...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 
-    <footer>
-        <p>&copy; 2024 Your Company - Admin Panel</p>
+    <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
+        <p>&copy; <span id="currentYearAdminPanel"></span> Maison Trüvra - Admin Panel</p>
     </footer>
 
-    <script src="js/admin_api.js"></script>
+    <div id="admin-toast-container"></div>
+
+    <script src="js/admin_config.js"></script>
     <script src="js/admin_ui.js"></script> 
-    <script src="js/admin_products.js"></script>
-</body>
-</html>
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Manage Categories</title>
-    <link rel="stylesheet" href="js/css/admin_style.css"> <style>
-        /* Basic styling for readability, move to admin_style.css */
-        main { padding: 20px; max-width: 900px; margin: auto; }
-        h2, h3 { color: #333; }
-        #categoryFormContainer, #categoriesTableContainer { margin-bottom: 30px; padding: 15px; background-color: #f9f9f9; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        form div { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="url"], textarea {
-            width: calc(100% - 22px); padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
-        }
-        input[type="checkbox"] { margin-right: 5px; vertical-align: middle; }
-        textarea { min-height: 80px; }
-        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
-        button:hover { background-color: #0056b3; }
-        button.delete { background-color: #dc3545; }
-        button.delete:hover { background-color: #c82333; }
-        button.small-button { padding: 5px 10px; font-size: 0.9em; }
-        #cancelCategoryEditButton { background-color: #6c757d; }
-        #cancelCategoryEditButton:hover { background-color: #545b62; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background-color: #f0f0f0; }
-        tbody tr:nth-child(even) { background-color: #f9f9f9; }
-        small { font-size: 0.85em; color: #666; display: block; margin-top: 3px;}
-        .required { color: red; }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>Admin Panel</h1>
-         <nav>
-            <a href="admin_dashboard.html">Dashboard</a>
-            <a href="admin_manage_inventory.html">Manage Products</a>
-            <a href="admin_manage_categories.html">Manage Categories</a>
-            <a href="admin_manage_orders.html">Manage Orders</a>
-            <a href="admin_manage_users.html">Manage Users</a>
-            </nav>
-    </header>
-
-    <main>
-        <h2>Manage Categories</h2>
-
-        <div id="categoryFormContainer">
-            <h3><span id="categoryFormTitle">Add New Category</span></h3>
-            <form id="categoryForm">
-                <div>
-                    <label for="categoryCode">Category Code: <span class="required">*</span></label>
-                    <input type="text" id="categoryCode" name="category_code" required>
-                    <small>Unique code for the category (e.g., MIEL, HUILE, SAVON).</small>
-                </div>
-                <div>
-                    <label for="categoryName">Category Name: <span class="required">*</span></label>
-                    <input type="text" id="categoryName" name="name" required>
-                </div>
-                <div>
-                    <label for="categoryDescription">Description:</label>
-                    <textarea id="categoryDescription" name="description"></textarea>
-                </div>
-                <div>
-                    <label for="categoryImageUrl">Image URL:</label>
-                    <input type="url" id="categoryImageUrl" name="image_url" placeholder="https://example.com/category_image.jpg">
-                </div>
-                <div>
-                    <input type="checkbox" id="categoryIsActive" name="is_active" checked style="width: auto;">
-                    <label for="categoryIsActive" style="display: inline;">Is Active (visible on site)</label>
-                </div>
-                <button type="submit" id="saveCategoryButton">Save Category</button>
-                <button type="button" id="cancelCategoryEditButton" style="display:none;">Cancel Edit</button>
-            </form>
-        </div>
-
-        <div id="categoriesTableContainer">
-            <h3>Existing Categories</h3>
-            <table id="categoriesTable">
-                <thead>
-                    <tr>
-                        <th>Code</th>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>Active</th>
-                        <th>Products</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="categoriesTableBody">
-                    <tr><td colspan="6">Loading categories...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </main>
-
-    <footer>
-        <p>&copy; 2024 Your Company - Admin Panel</p>
-    </footer>
-
     <script src="js/admin_api.js"></script>
-    <script src="js/admin_ui.js"></script>
-    <script src="js/admin_categories.js"></script>
+    <script src="js/admin_auth.js"></script>
+    <script src="js/admin_main.js"></script>
+    <script src="js/admin_products.js"></script> 
+     <script>
+        const currentYearSpanAdminPanel = document.getElementById('currentYearAdminPanel');
+        if (currentYearSpanAdminPanel) {
+            currentYearSpanAdminPanel.textContent = new Date().getFullYear();
+        }
+    </script>
 </body>
 </html>
