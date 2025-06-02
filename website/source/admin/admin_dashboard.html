@@ -1,32 +1,48 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="js/css/admin_style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <title>Admin Dashboard - Maison Trüvra</title> <link rel="stylesheet" href="css/admin_style.css"> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body id="page-admin-dashboard"> <header class="legacy-admin-header">
-        <h1>Admin Panel</h1>
-        <nav>
-            <a href="admin_dashboard.html" class="active">Dashboard</a>
-            <a href="admin_manage_products.html">Manage Products</a> <a href="admin_manage_categories.html">Manage Categories</a>
-            <a href="admin_manage_orders.html">Manage Orders</a>
-            <a href="admin_manage_users.html">Manage Users</a>
-            <a href="admin_manage_reviews.html">Manage Reviews</a>
-            <a href="admin_invoices.html">Invoices</a>
-            <a href="admin_view_inventory.html">View Inventory Report</a>
-            <a href="../index.html" target="_blank">View Site</a> 
-            <a href="#" id="adminLogoutLinkDashboard">Logout</a> 
-        </nav>
+<body id="page-admin-dashboard"> 
+    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Retour au Tableau de Bord
+                </a>
+                <div id="admin-header-title-area">
+                     <h1 class="text-xl font-semibold text-gray-700">Maison Trüvra - Admin</h1>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="admin-user-greeting" class="text-gray-700 text-sm mr-2"></span>
+                <button id="admin-logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-sm flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                </button>
+            </div>
+        </div>
     </header>
 
-    <main class="admin-content-area-legacy">
-        <div class="dashboard-header">
-            <h2 class="admin-page-title">Welcome, <span id="admin-user-greeting-main">Admin</span>!</h2>
-            <p>Here's a quick overview of your store.</p>
+    <nav class="bg-gray-800 text-white shadow-md">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-start h-12 space-x-1 overflow-x-auto">
+                <a href="admin_dashboard.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 active">Tableau de Bord</a>
+                <a href="admin_manage_products.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Produits</a>
+                <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Inventaire</a>
+                <a href="admin_view_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voir Inventaire</a>
+                <a href="admin_manage_orders.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Commandes</a>
+                <a href="admin_manage_users.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Utilisateurs</a>
+                <a href="admin_manage_categories.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Catégories</a>
+                <a href="admin_invoices.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Factures</a>
+                <a href="admin_manage_reviews.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Avis</a>
+                <a href="../index.html" target="_blank" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voir Site Public</a>
+            </div>
+        </div>
+    </nav>
+    <main class="admin-content-area container mx-auto p-6 space-y-6"> <div class="dashboard-header"> <h2 class="text-2xl font-semibold text-gray-800">Welcome, <span id="admin-user-greeting-main">Admin</span>!</h2> <p class="text-gray-600">Here's a quick overview of your store.</p>
         </div>
 
         <section class="dashboard-summary">
@@ -43,7 +59,8 @@
             <div class="summary-card" id="pendingOrdersCard">
                 <h3>Pending Orders</h3>
                 <p>Loading...</p>
-                <a href="admin_manage_orders.html?status=processing">View Pending Orders &raquo;</a> </div>
+                <a href="admin_manage_orders.html?status=processing">View Pending Orders &raquo;</a>
+            </div>
             <div class="summary-card" id="totalUsersCard">
                 <h3>Registered Users</h3>
                 <p>Loading...</p>
@@ -51,7 +68,8 @@
             </div>
         </section>
 
-        <section class="quick-links admin-form-container"> <h3 class="admin-form-title">Quick Links</h3>
+        <section class="quick-links admin-form-container"> 
+            <h3 class="admin-form-title">Quick Links</h3>
             <ul>
                 <li><a href="admin_manage_products.html#productFormContainer">Add New Product</a></li>
                 <li><a href="admin_manage_categories.html#categoryFormContainer">Add New Category</a></li>
@@ -61,7 +79,7 @@
         
     </main>
 
-    <footer class="legacy-admin-footer">
+    <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
         <p>&copy; <span id="currentYearDashboard"></span> Maison Trüvra - Admin Panel</p>
     </footer>
 
@@ -71,38 +89,18 @@
     <script src="js/admin_ui.js"></script> 
     <script src="js/admin_api.js"></script>
     <script src="js/admin_auth.js"></script>
-    <script src="js/admin_main.js"></script>
-    <script src="js/admin_dashboard.js"></script>
+    <script src="js/admin_main.js"></script> <script src="js/admin_dashboard.js"></script>
     <script>
-        // This can be moved to admin_main.js if it's a common footer element
         const currentYearSpanDashboard = document.getElementById('currentYearDashboard');
         if (currentYearSpanDashboard) {
             currentYearSpanDashboard.textContent = new Date().getFullYear();
         }
 
-        // Update user greeting on this page specifically if needed, though admin_main.js should handle the header one.
-        const adminUser = typeof getAdminUser === 'function' ? getAdminUser() : null;
-        const greetingMain = document.getElementById('admin-user-greeting-main');
-        if (greetingMain && adminUser) {
-            greetingMain.textContent = `${adminUser.prenom || 'Admin'}`;
-        }
-
-
-        // Logout link specific to this older page structure
-        const logoutLinkDashboard = document.getElementById('adminLogoutLinkDashboard');
-        if(logoutLinkDashboard && typeof adminLogout === 'function') {
-            logoutLinkDashboard.addEventListener('click', function(e) {
-                e.preventDefault();
-                adminLogout();
-            });
-        } else if (logoutLinkDashboard) {
-            logoutLinkDashboard.addEventListener('click', function(e) {
-                e.preventDefault();
-                sessionStorage.removeItem('adminAuthToken'); 
-                sessionStorage.removeItem('adminUser');
-                alert('Logged out (fallback).');
-                window.location.href = 'admin_login.html';
-            });
+        // Greeting in main content area (if different from header)
+        const adminUserForGreeting = typeof getAdminUser === 'function' ? getAdminUser() : null;
+        const greetingMainElement = document.getElementById('admin-user-greeting-main');
+        if (greetingMainElement && adminUserForGreeting) {
+            greetingMainElement.textContent = `${adminUserForGreeting.prenom || 'Admin'}`;
         }
     </script>
 </body>
