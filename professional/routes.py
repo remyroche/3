@@ -1,62 +1,85 @@
-# Standard library imports
 import os
 import uuid
 from datetime import datetime, timezone, timedelta
 
-# Third-party imports
-from flask import Blueprint, request, jsonify, current_app, url_for # Removed g as it's not used
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import Blueprint, request, jsonify, current_app, url_for
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
-# Local application imports
-from ..database import get_db_connection, query_db # query_db uses get_db_connection
+from ..database import get_db_connection, query_db
 from ..utils import (
     format_datetime_for_display, 
     staff_or_admin_required, 
-    # allowed_file, # Not used in this file snippet
-    # get_file_extension, # Not used in this file snippet
     format_datetime_for_storage
 )
-from ..services.invoice_service import generate_invoice_pdf
-from . import professional_bp # Assuming a local __init__.py defines the blueprint
+# Assuming InvoiceService is correctly imported if generate_invoice_pdf is used directly
+# from ..services.invoice_service import InvoiceService 
+# For now, generate_invoice_pdf is commented out as it was in the original.
 
-# Define the Blueprint. The Python variable name is 'professional_bp'.
-# The first argument to Blueprint() is the name of the blueprint instance.
 professional_bp = Blueprint('professional_bp', __name__, url_prefix='/api/professional')
 
-
 @professional_bp.route('/invoices', methods=['GET'])
-@jwt_required()
-def get_professional_invoices():
+@jwt_required() # This route is for the logged-in B2B professional to see THEIR OWN invoices.
+def get_my_professional_invoices():
     """
-    Fetches all invoices for the currently logged-in professional user.
+    Fetches all invoices for the currently logged-in B2B professional user.
     """
     user_id = get_jwt_identity()
+    claims = get_jwt()
+    audit_logger = current_app.audit_log_service
+    ip_address = request.remote_addr
+
+    if claims.get('role') != 'b2b_professional':
+        audit_logger.log_action(user_id=user_id, action='get_my_invoices_fail_unauthorized', details="User is not a B2B professional.", status='failure', ip_address=ip_address)
+        return jsonify(message="Access restricted to B2B professionals."), 403
+
     db = get_db_connection()
-
-    invoices = query_db(
-        "SELECT id, invoice_number, issue_date, due_date, total_amount, currency, status FROM invoices WHERE b2b_user_id = ? ORDER BY issue_date DESC",
-        [user_id],
-        db_conn=db
-    )
-
-    if invoices is None:
-        # query_db might return None on error, or an empty list if no results.
-        # Handle case where it might be None, though an empty list is more likely.
+    try:
+        invoices_data = query_db(
+            "SELECT id, invoice_number, issue_date, due_date, total_amount, currency, status, pdf_path FROM invoices WHERE b2b_user_id = ? ORDER BY issue_date DESC",
+            [user_id],
+            db_conn=db
+        )
         invoices_list = []
-    else:
-        invoices_list = [dict(row) for row in invoices]
-
-    return jsonify(invoices=invoices_list), 200
+        if invoices_data:
+            for row in invoices_data:
+                invoice_dict = dict(row)
+                invoice_dict['issue_date'] = format_datetime_for_display(invoice_dict['issue_date'])
+                invoice_dict['due_date'] = format_datetime_for_display(invoice_dict['due_date'])
+                if invoice_dict.get('pdf_path'):
+                    try:
+                        # B2B users should download their invoices via the orders route for consistency and security
+                        # This assumes invoice IDs are linked to orders or a direct download route for B2B invoices exists.
+                        # For now, let's use the common public asset serving route if the PDF is stored there,
+                        # or the admin asset one if it's protected and B2B users are given temporary access or a different mechanism.
+                        # The orders_bp.download_invoice route is more appropriate for user-facing downloads.
+                        # We can provide the path, and the frontend can construct the download link.
+                        # Example: Link to /api/orders/invoices/download/<invoice_id>
+                        invoice_dict['pdf_download_url'] = url_for('orders_bp.download_invoice', invoice_id=invoice_dict['id'], _external=True)
+                    except Exception as e_url:
+                        current_app.logger.warning(f"Could not generate download URL for B2B invoice PDF {invoice_dict['pdf_path']}: {e_url}")
+                        invoice_dict['pdf_download_url'] = None
+                invoices_list.append(invoice_dict)
+        
+        audit_logger.log_action(user_id=user_id, action='get_my_invoices_success', details=f"Fetched {len(invoices_list)} invoices.", status='success', ip_address=ip_address)
+        return jsonify(invoices=invoices_list, success=True), 200
+    except Exception as e:
+        current_app.logger.error(f"Error fetching B2B invoices for user {user_id}: {e}", exc_info=True)
+        audit_logger.log_action(user_id=user_id, action='get_my_invoices_fail_exception', details=str(e), status='failure', ip_address=ip_address)
+        return jsonify(message="Failed to fetch your invoices.", success=False), 500
 
 
 @professional_bp.route('/applications', methods=['GET'])
 @staff_or_admin_required 
 def get_professional_applications():
+    """
+    STAFF/ADMIN Route: Fetches B2B professional applications based on status.
+    """
     db = get_db_connection()
     audit_logger = current_app.audit_log_service
     current_staff_id = get_jwt_identity()
+    ip_address = request.remote_addr
 
-    status_filter = request.args.get('status', 'pending')
+    status_filter = request.args.get('status', 'pending') # Default to 'pending'
 
     try:
         query_sql = """
@@ -65,13 +88,14 @@ def get_professional_applications():
             FROM users WHERE role = 'b2b_professional'
         """
         params = []
-        if status_filter:
+        if status_filter and status_filter != 'all': # Add 'all' option if needed
             query_sql += " AND professional_status = ?"
             params.append(status_filter)
         query_sql += " ORDER BY created_at DESC"
 
         users_data = query_db(query_sql, params, db_conn=db)
         applications = [dict(row) for row in users_data] if users_data else []
+        
         for app_data in applications:
             app_data['created_at'] = format_datetime_for_display(app_data['created_at'])
             app_data['updated_at'] = format_datetime_for_display(app_data['updated_at'])
@@ -83,48 +107,49 @@ def get_professional_applications():
                     doc_dict = dict(doc_row)
                     doc_dict['upload_date'] = format_datetime_for_display(doc_dict['upload_date'])
                     if doc_dict.get('file_path'): 
-                        # Assuming admin_api_bp.serve_asset is the correct endpoint for serving these
-                        # Ensure this endpoint is appropriately secured if documents are sensitive
                         try:
+                            # Documents for B2B applications are sensitive, serve via admin-protected route
                             doc_dict['file_full_url'] = url_for('admin_api_bp.serve_asset', asset_relative_path=doc_dict['file_path'], _external=True)
                         except Exception as e_url:
                             current_app.logger.warning(f"Could not generate URL for professional document {doc_dict['file_path']}: {e_url}")
                             doc_dict['file_full_url'] = None
                     app_data['documents'].append(doc_dict)
         
-        audit_logger.log_action(user_id=current_staff_id, action='get_b2b_applications', details=f"Filter: {status_filter}", status='success', ip_address=request.remote_addr)
-        return jsonify(applications), 200
+        audit_logger.log_action(user_id=current_staff_id, action='get_b2b_applications', details=f"Filter: {status_filter}", status='success', ip_address=ip_address)
+        return jsonify(applications=applications, success=True), 200
     except Exception as e:
         current_app.logger.error(f"Error fetching B2B applications: {e}", exc_info=True)
-        audit_logger.log_action(user_id=current_staff_id, action='get_b2b_applications_fail', details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message="Failed to fetch B2B applications"), 500
+        audit_logger.log_action(user_id=current_staff_id, action='get_b2b_applications_fail', details=str(e), status='failure', ip_address=ip_address)
+        return jsonify(message="Failed to fetch B2B applications", success=False), 500
 
 @professional_bp.route('/applications/<int:user_id>/status', methods=['PUT'])
 @staff_or_admin_required
 def update_professional_application_status(user_id):
+    """
+    STAFF/ADMIN Route: Updates the status of a B2B professional application.
+    """
     data = request.json
     new_status = data.get('status') 
     rejection_reason = data.get('rejection_reason', '') 
     
     current_staff_id = get_jwt_identity()
     audit_logger = current_app.audit_log_service
+    ip_address = request.remote_addr
 
     if not new_status or new_status not in ['approved', 'rejected', 'pending']:
-        audit_logger.log_action(user_id=current_staff_id, action='update_b2b_status_fail_invalid_status', target_type='user_b2b_application', target_id=user_id, details=f"Invalid status: {new_status}.", status='failure', ip_address=request.remote_addr)
-        return jsonify(message="Invalid status. Must be 'approved', 'rejected', or 'pending'."), 400
+        return jsonify(message="Invalid status. Must be 'approved', 'rejected', or 'pending'.", success=False), 400
 
     db = get_db_connection()
     cursor = db.cursor()
     try:
         user_to_update_row = query_db("SELECT id, email, first_name, professional_status FROM users WHERE id = ? AND role = 'b2b_professional'", [user_id], db_conn=db, one=True)
         if not user_to_update_row:
-            audit_logger.log_action(user_id=current_staff_id, action='update_b2b_status_fail_not_found', target_type='user_b2b_application', target_id=user_id, details="B2B app not found.", status='failure', ip_address=request.remote_addr)
-            return jsonify(message="B2B user application not found."), 404
+            return jsonify(message="B2B user application not found.", success=False), 404
         
         user_to_update = dict(user_to_update_row)
         old_status = user_to_update['professional_status']
         if old_status == new_status:
-             return jsonify(message=f"B2B application status is already {new_status}."), 200
+             return jsonify(message=f"B2B application status is already {new_status}.", success=True), 200
         
         notes_update = f"Status changed from {old_status} to {new_status} by staff ID {current_staff_id}."
         if new_status == 'rejected' and rejection_reason:
@@ -133,17 +158,19 @@ def update_professional_application_status(user_id):
         cursor.execute("UPDATE users SET professional_status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (new_status, user_id))
         
         # Placeholder for sending email notification
-        # send_email_notification(user_to_update['email'], user_to_update.get('first_name', 'Applicant'), new_status, rejection_reason)
         current_app.logger.info(f"Simulated B2B status update email to {user_to_update['email']} (New Status: {new_status})")
 
         db.commit()
-        audit_logger.log_action(user_id=current_staff_id, action='update_b2b_status_success', target_type='user_b2b_application', target_id=user_id, details=f"B2B app for {user_to_update['email']} status from '{old_status}' to '{new_status}'. Notes: {notes_update}", status='success', ip_address=request.remote_addr)
-        return jsonify(message=f"B2B application status updated to {new_status}."), 200
+        audit_logger.log_action(user_id=current_staff_id, action='update_b2b_status_success', target_type='user_b2b_application', target_id=user_id, details=f"B2B app for {user_to_update['email']} status from '{old_status}' to '{new_status}'. Notes: {notes_update}", status='success', ip_address=ip_address)
+        return jsonify(message=f"B2B application status updated to {new_status}.", success=True), 200
     except Exception as e:
         db.rollback()
         current_app.logger.error(f"Error updating B2B application status for user {user_id}: {e}", exc_info=True)
-        audit_logger.log_action(user_id=current_staff_id, action='update_b2b_status_fail_exception', target_type='user_b2b_application', target_id=user_id, details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message="Failed to update B2B application status."), 500
+        audit_logger.log_action(user_id=current_staff_id, action='update_b2b_status_fail_exception', target_type='user_b2b_application', target_id=user_id, details=str(e), status='failure', ip_address=ip_address)
+        return jsonify(message="Failed to update B2B application status.", success=False), 500
+
+
+
 
 @professional_bp.route('/invoices/generate', methods=['POST'])
 @staff_or_admin_required
