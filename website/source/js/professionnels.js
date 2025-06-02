@@ -6,56 +6,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const userNamePlaceholder = document.getElementById('user-name-placeholder');
     const magicLinkForm = document.getElementById('magic-link-form');
     const proLogoutBtn = document.getElementById('pro-logout-btn');
-    const emailInput = document.getElementById('email-pro'); // For placeholder
+    const emailInput = document.getElementById('email-pro');
 
-    // Set placeholder from translations
-    if(emailInput) emailInput.placeholder = t('professionnels.emailPlaceholder');
+    if(emailInput) emailInput.placeholder = t('professionnels.emailPlaceholder'); // Key: professionnels.emailPlaceholder
 
-
-    handleMagicTokenVerification();
-    updateProfessionalView();
+    handleMagicTokenVerification(); // Handles verification on page load if token in URL
+    updateProfessionalView(); // Initial view update
 
     if (magicLinkForm) {
         magicLinkForm.addEventListener('submit', handleMagicLinkRequest);
     }
     if (proLogoutBtn) {
         proLogoutBtn.addEventListener('click', () => {
-            logout(); 
-            updateProfessionalView();
-            showGlobalMessage(t('professionnels.deconnecteMessage'), 'success');
+            logoutUser(); // Using global logout from auth.js which calls setCurrentUser(null)
+            // updateProfessionalView will be called by 'authStateChanged' event listener in main.js
+            // showGlobalMessage(t('professionnels.deconnecteMessage'), 'success'); // This is also in auth.js logoutUser
         });
     }
 
-
     function updateProfessionalView() {
-        const user = getUser(); // from auth.js
-        if (isLoggedIn() && user && user.role === 'b2b_professional') { // Ensure it's a B2B user
-            userNamePlaceholder.textContent = user.prenom || user.company_name || t('professionnels.bienvenue');
-            loggedInView.style.display = 'block';
-            loggedOutView.style.display = 'none';
+        const user = getCurrentUser(); 
+        if (isUserLoggedIn() && user && user.role === 'b2b_professional') {
+            if(userNamePlaceholder) userNamePlaceholder.textContent = user.prenom || user.company_name || t('professionnels.bienvenue_pro_fallback'); // New key: professionnels.bienvenue_pro_fallback (e.g., "Professional")
+            if(loggedInView) loggedInView.style.display = 'block';
+            if(loggedOutView) loggedOutView.style.display = 'none';
         } else {
-            loggedInView.style.display = 'none';
-            loggedOutView.style.display = 'block';
+            if(loggedInView) loggedInView.style.display = 'none';
+            if(loggedOutView) loggedOutView.style.display = 'block';
         }
     }
+    window.updateProfessionalView = updateProfessionalView; // Expose if needed by authStateChanged directly
 
     async function handleMagicLinkRequest(e) {
         e.preventDefault();
         const email = document.getElementById('email-pro').value;
         const submitButton = e.target.querySelector('button[type="submit"]');
-        const originalButtonText = submitButton.textContent; // Store original text
+        const originalButtonText = submitButton.textContent; 
         submitButton.disabled = true;
-        submitButton.textContent = t('professionnels.messageEnvoiEnCours');
+        submitButton.textContent = t('professionnels.messageEnvoiEnCours'); // Key: professionnels.messageEnvoiEnCours
 
         try {
+            // Backend might send a key or a pre-translated message.
+            // If backend sends key, t(response.message) works. If pre-translated, just response.message.
             const response = await makeApiRequest('/auth/request-magic-link', 'POST', { email });
-            showGlobalMessage(t(response.message) || t('professionnels.messageLienEnvoye'), 'success'); // Attempt to translate backend message
+            showGlobalMessage(response.message || t('professionnels.messageLienEnvoye'), 'success'); // Key: professionnels.messageLienEnvoye
             handleResendCountdown();
         } catch (error) {
-            showGlobalMessage(t(error.data?.message) || t('professionnels.erreurProduite'), 'error');
+            const errorMessage = error.data?.message || t('professionnels.erreurProduite'); // Key: professionnels.erreurProduite
+            showGlobalMessage(errorMessage, 'error');
         } finally {
             submitButton.disabled = false;
-            submitButton.textContent = originalButtonText; // Restore original text
+            submitButton.textContent = originalButtonText; 
         }
     }
 
@@ -64,15 +65,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const token = urlParams.get('magic_token');
 
         if (token) {
-            window.history.replaceState({}, document.title, window.location.pathname);
-            showGlobalMessage(t('professionnels.verificationLienMagique'), 'info');
+            window.history.replaceState({}, document.title, window.location.pathname); // Clean URL
+            showGlobalMessage(t('professionnels.verificationLienMagique'), 'info'); // Key: professionnels.verificationLienMagique
             try {
                 const response = await makeApiRequest('/auth/verify-magic-link', 'POST', { token });
-                saveAuthData(response);
-                showGlobalMessage(t('professionnels.connexionReussie'), 'success');
-                updateProfessionalView();
+                // Assuming response contains user data and token, handled by saveAuthData or similar
+                if (response.success && response.user && response.token) {
+                    setCurrentUser(response.user, response.token); // From auth.js
+                    showGlobalMessage(response.message || t('professionnels.connexionReussie'), 'success'); // Key: professionnels.connexionReussie
+                    // updateProfessionalView(); // Will be handled by authStateChanged event
+                } else {
+                    throw new Error(response.message || t('professionnels.lienInvalideOuExpire')); // Key: professionnels.lienInvalideOuExpire
+                }
             } catch (error) {
-                showGlobalMessage(t(error.data?.message) || t('professionnels.lienInvalideOuExpire'), 'error');
+                const errorMessage = error.data?.message || error.message || t('professionnels.lienInvalideOuExpire');
+                showGlobalMessage(errorMessage, 'error');
             }
         }
     }
@@ -83,26 +90,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const countdownSpan = document.getElementById('resend-countdown');
         let countdown = 30;
 
-        if (!resendContainer || !resendBtn || !countdownSpan) return; // Elements might not exist if user is logged in
+        if (!resendContainer || !resendBtn || !countdownSpan) return;
 
         resendContainer.style.display = 'inline';
         resendBtn.disabled = true;
-        resendBtn.textContent = t('professionnels.magicLinkRenvoyer'); // Ensure button text is set
+        // The button text 'Renvoyer le lien' is already in HTML via {{ professionnels.magicLinkRenvoyer }}
+        // If not, it should be: resendBtn.textContent = t('professionnels.magicLinkRenvoyer');
 
-        const intervalId = `magicLinkInterval_${Date.now()}`; // Unique ID for this interval
-        window[intervalId] = setInterval(() => { // Store interval ID on window to clear it if needed
+        const intervalId = `magicLinkInterval_${Date.now()}`; 
+        window[intervalId] = setInterval(() => { 
             countdown--;
             countdownSpan.textContent = countdown;
             if (countdown <= 0) {
                 clearInterval(window[intervalId]);
                 resendBtn.disabled = false;
-                // resendBtn.textContent = t('professionnels.magicLinkRenvoyer'); // Already set
                 resendBtn.onclick = () => {
                     const email = document.getElementById('email-pro').value;
                     if (email) {
-                        if (magicLinkForm) magicLinkForm.requestSubmit();
+                        if (magicLinkForm) magicLinkForm.requestSubmit(); // Resubmit the form
                     } else {
-                        showGlobalMessage(t('professionnels.emailRequis'), 'error');
+                        showGlobalMessage(t('professionnels.emailRequis'), 'error'); // Key: professionnels.emailRequis
                     }
                 };
             }
