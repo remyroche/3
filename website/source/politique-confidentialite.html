@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="{{global.charset}}">
+    <meta name="viewport" content="{{global.viewport}}">
+    <title>{{public.privacy.title}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-cream': '#F5EEDE',
+                        'brand-near-black': '#11120D',
+                        'brand-classic-gold': '#D4AF37',
+                        'brand-warm-taupe': '#A28C6A',
+                        'brand-earth-brown': '#7D6A4F',
+                        'brand-slate-blue-grey': '#6E7582',
+                        'brand-deep-sage-green': '#4B5A59',
+                        'brand-truffle-burgundy': '#8A3E3E',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {font-family: 'Inter', sans-serif; background-color: #F5EEDE; color: #7D6A4F;}
+        h1, h2, h3, .font-serif {font-family: 'Playfair Display', serif;}
+        .section-title { @apply text-3xl md:text-4xl lg:text-5xl font-serif text-brand-earth-brown mb-12 text-center;}
+        .prose { @apply max-w-none; }
+        .prose h2 { @apply text-2xl font-serif text-brand-near-black mt-8 mb-4; }
+        .prose p { @apply mb-4 leading-relaxed; }
+        .prose a { @apply text-brand-classic-gold hover:text-brand-earth-brown; }
+        .modal-message { @apply fixed bottom-5 right-5 bg-brand-deep-sage-green text-brand-cream p-4 rounded-lg shadow-xl z-[100] transition-all duration-500 ease-out opacity-0 translate-y-10; }
+        .modal-message.show { @apply opacity-100 translate-y-0; }
+    </style>
+</head>
+<body id="page-politique-confidentialite" class="antialiased">
+
+    <div id="header-placeholder"></div>
+
+    <main class="bg-brand-cream">
+        <section class="py-16">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h1 class="section-title">{{public.privacy.title}}</h1>
+                <div class="max-w-3xl mx-auto text-brand-earth-brown space-y-6 leading-relaxed prose lg:prose-xl">
+                    <p>{{public.privacy.p1}}</p>
+                    <h2>{{public.privacy.h2_collection}}</h2>
+                    <p>{{public.privacy.p2}}</p>
+                    <h2>{{public.privacy.h2_usage}}</h2>
+                    <p>{{public.privacy.p3}}</p>
+                    <h2>{{public.privacy.h2_sharing}}</h2>
+                    <p>{{public.privacy.p4}}</p>
+                    <h2>{{public.privacy.h2_security}}</h2>
+                    <p>{{public.privacy.p5}}</p>
+                    <h2>{{public.privacy.h2_rights}}</h2>
+                    <p>{{public.privacy.p6}} <a href="mailto:contact@maisontruvra.com">contact@maisontruvra.com</a>.</p>
+                    <p class="mt-4">{{public.privacy.p7}}</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="footer-placeholder"></div>
+
+    <div id="global-message-toast" style="display:none;" class="modal-message">
+        <p id="global-message-text"></p>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/product.js"></script> <script src="js/products.js"></script>
+    <script src="js/checkout.js"></script>
+    <script src="js/newsletter.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

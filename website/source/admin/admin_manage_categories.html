@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Manage Categories</title>
+    <link rel="stylesheet" href="js/css/admin_style.css">
+     <style>
+        main { padding: 20px; max-width: 900px; margin: auto; }
+        h2, h3 { color: #333; }
+        #categoryFormContainer, #categoriesTableContainer { margin-bottom: 30px; padding: 15px; background-color: #f9f9f9; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        form div { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="url"], textarea {
+            width: calc(100% - 22px); padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
+        }
+        input[type="checkbox"] { margin-right: 5px; vertical-align: middle; }
+        textarea { min-height: 80px; }
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        button:hover { background-color: #0056b3; }
+        button.delete { background-color: #dc3545; }
+        button.delete:hover { background-color: #c82333; }
+        button.small-button { padding: 5px 10px; font-size: 0.9em; }
+        #cancelCategoryEditButton { background-color: #6c757d; }
+        #cancelCategoryEditButton:hover { background-color: #545b62; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f0f0f0; }
+        tbody tr:nth-child(even) { background-color: #f9f9f9; }
+        small { font-size: 0.85em; color: #666; display: block; margin-top: 3px;}
+        .required { color: red; }
+        header { background-color: #343a40; padding: 15px 20px; color: white; margin-bottom: 20px; }
+        header h1 { margin: 0; font-size: 1.8em; display: inline-block; }
+        header nav { float: right; margin-top: 5px;}
+        header nav a { color: #f8f9fa; text-decoration: none; margin-left: 15px; padding: 5px 10px; border-radius: 4px; }
+        header nav a:hover, header nav a.active { background-color: #495057; }
+        footer { text-align: center; padding: 20px; margin-top: 30px; background-color: #f8f9f9; border-top: 1px solid #eee; font-size: 0.9em; color: #6c757d;}
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Admin Panel</h1>
+         <nav>
+            <a href="admin_dashboard.html">Dashboard</a>
+            <a href="admin_manage_inventory.html">Manage Products</a>
+            <a href="admin_manage_categories.html" class="active">Manage Categories</a>
+            <a href="admin_manage_orders.html">Manage Orders</a>
+            <a href="admin_manage_users.html">Manage Users</a>
+            <a href="#" id="adminLogoutLinkCategories">Logout</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Manage Categories</h2>
+
+        <div id="categoryFormContainer">
+            <h3><span id="categoryFormTitle">Add New Category</span></h3>
+            <form id="categoryForm">
+                <div>
+                    <label for="categoryCode">Category Code: <span class="required">*</span></label>
+                    <input type="text" id="categoryCode" name="category_code" required>
+                    <small>Unique code for the category (e.g., MIEL, HUILE, SAVON).</small>
+                </div>
+                <div>
+                    <label for="categoryName">Category Name: <span class="required">*</span></label>
+                    <input type="text" id="categoryName" name="name" required>
+                </div>
+                <div>
+                    <label for="categoryDescription">Description:</label>
+                    <textarea id="categoryDescription" name="description"></textarea>
+                </div>
+                <div>
+                    <label for="categoryImageUrl">Image URL:</label>
+                    <input type="url" id="categoryImageUrl" name="image_url" placeholder="https://example.com/category_image.jpg">
+                </div>
+                <div>
+                    <input type="checkbox" id="categoryIsActive" name="is_active" checked style="width: auto;">
+                    <label for="categoryIsActive" style="display: inline;">Is Active (visible on site)</label>
+                </div>
+                <button type="submit" id="saveCategoryButton">Save Category</button>
+                <button type="button" id="cancelCategoryEditButton" style="display:none;">Cancel Edit</button>
+            </form>
+        </div>
+
+        <div id="categoriesTableContainer">
+            <h3>Existing Categories</h3>
+            <table id="categoriesTable">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Active</th>
+                        <th>Products</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="categoriesTableBody">
+                    <tr><td colspan="6">Loading categories...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <footer>
+         <p>&copy; <span id="currentYearCategories"></span> Your Company - Admin Panel</p>
+    </footer>
+
+    <script src="js/admin_api.js"></script>
+    <script src="js/admin_ui.js"></script>
+    <script src="js/admin_categories.js"></script>
+    <script>
+        document.getElementById('currentYearCategories').textContent = new Date().getFullYear();
+        const logoutLinkCategories = document.getElementById('adminLogoutLinkCategories');
+        if(logoutLinkCategories) {
+            logoutLinkCategories.addEventListener('click', function(e) {
+                e.preventDefault();
+                localStorage.removeItem('admin_jwt_token');
+                if (typeof showAdminMessage === 'function') {
+                    showAdminMessage('You have been logged out.', 'info', 'Logout');
+                    setTimeout(() => window.location.href = 'admin_login.html', 1500);
+                } else {
+                    alert('Logged out.'); // Fallback
+                    window.location.href = 'admin_login.html';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

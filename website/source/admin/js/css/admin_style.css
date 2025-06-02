@@ -1,0 +1,792 @@
+/* General Body and Resets */
+body {
+    font-family: 'Inter', sans-serif; /* Assuming Inter is preferred, fallback to sans-serif */
+    margin: 0;
+    background-color: #F5F5F4; /* bg-stone-100 */
+    color: #44403C; /* text-stone-700 */
+    display: flex;
+    height: 100vh;
+    overflow-x: hidden; /* Prevent horizontal scroll on body */
+}
+
+* {
+    box-sizing: border-box;
+}
+
+a {
+    color: #D97706; /* amber-600 - Brand Accent */
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Layout: Sidebar and Main Content */
+.admin-layout-container { /* A wrapper for the flex layout if needed, or apply to body */
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+
+.admin-sidebar {
+    width: 16rem; /* w-64 */
+    background-color: #065F46; /* green-800 - Brand Primary Dark */
+    color: #E5E7EB; /* stone-200 - Light text on dark background */
+    padding: 1rem; /* p-4 */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.admin-sidebar-header {
+    padding: 1rem 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #047857; /* green-700 - Slightly lighter than bg */
+}
+
+.admin-sidebar-header .logo-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+    color: #fff;
+}
+
+.admin-sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.admin-sidebar nav ul li a,
+.admin-nav-link { /* For consistency with class used in HTML */
+    display: block;
+    color: #D1FAE5; /* green-100 - Light green text on dark green bg */
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem; /* rounded-md */
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    margin-bottom: 0.25rem; /* space-y-1 equivalent for li or a */
+    font-size: 0.9rem;
+}
+
+.admin-sidebar nav ul li a:hover,
+.admin-nav-link:hover {
+    background-color: #059669; /* green-700 */
+    color: #ECFDF5; /* green-50 */
+}
+
+.admin-sidebar nav ul li a.active,
+.admin-nav-link.active {
+    background-color: #D97706; /* amber-600 - Brand Accent */
+    color: #FFFFFF;
+    font-weight: 500;
+}
+
+.admin-sidebar nav ul li a i {
+    margin-right: 0.75rem;
+    width: 20px; /* For icon alignment */
+    text-align: center;
+}
+
+
+.admin-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto; /* Allow main content to scroll */
+}
+
+.admin-header {
+    background-color: #ffffff; /* bg-white */
+    padding: 1rem 1.5rem; /* p-4 based on HTML */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+.admin-header h1 {
+    font-size: 1.5rem; /* text-2xl */
+    font-weight: 600; /* font-semibold */
+    color: #292524; /* stone-800 */
+    margin: 0;
+}
+
+.admin-user-info {
+    display: flex;
+    align-items: center;
+}
+
+.admin-user-info #adminUserEmail, /* Matching ID from admin_dashboard.html */
+.admin-user-info #admin-username { /* Fallback if #admin-username is used elsewhere */
+    color: #57534E; /* stone-600 */
+    margin-right: 1rem;
+    font-size: 0.875rem;
+}
+
+.admin-content-area {
+    padding: 1.5rem; /* p-6 */
+    flex-grow: 1; /* Allow content area to take remaining space */
+}
+
+.admin-content-area section {
+    background-color: #ffffff; /* bg-white */
+    padding: 1.5rem; /* p-6 */
+    border-radius: 0.5rem; /* rounded-lg */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* shadow */
+    margin-bottom: 1.5rem; /* space-y-6 on main */
+}
+
+.admin-content-area section h2 {
+    font-size: 1.25rem; /* text-xl */
+    font-weight: 600; /* font-semibold */
+    color: #292524; /* stone-800 */
+    margin-bottom: 1rem; /* mb-4 */
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e5e7eb; /* border-gray-200 */
+}
+
+/* Tables */
+.admin-table-wrapper {
+    overflow-x: auto; /* For responsive tables */
+}
+
+.admin-table {
+    min-width: 100%; /* min-w-full */
+    border-collapse: collapse; /* For consistent borders */
+    divide-y: #e5e7eb; /* divide-gray-200 */
+}
+
+.admin-table thead {
+    background-color: #F0FDF4; /* green-50 - Light brand green */
+}
+
+.admin-table th {
+    padding: 0.75rem 1.5rem; /* px-6 py-3 */
+    text-align: left;
+    font-size: 0.75rem; /* text-xs */
+    font-weight: 500; /* font-medium */
+    color: #065F46; /* green-800 - Dark green text on light green bg */
+    text-transform: uppercase;
+    letter-spacing: 0.05em; /* tracking-wider */
+}
+
+.admin-table tbody {
+    background-color: #ffffff; /* bg-white */
+    divide-y: #e5e7eb; /* divide-gray-200 */
+}
+
+.admin-table td {
+    padding: 0.75rem 1.5rem; /* px-6 py-3 */
+    font-size: 0.875rem; /* text-sm */
+    color: #44403C; /* stone-700 */
+    white-space: nowrap; /* Default, can be overridden for specific columns */
+    border-bottom: 1px solid #e5e7eb; /* For browsers not supporting divide-y well */
+}
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table .action-buttons button,
+.admin-table .action-buttons a {
+    margin-right: 0.5rem;
+}
+.admin-table .action-buttons button:last-child,
+.admin-table .action-buttons a:last-child {
+    margin-right: 0;
+}
+
+/* Forms */
+.admin-form label {
+    display: block;
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500; /* font-medium */    
+    color: #292524; /* stone-800 */
+    margin-bottom: 0.25rem; /* mb-1 */
+}
+
+.admin-form input[type="text"],
+.admin-form input[type="email"],
+.admin-form input[type="password"],
+.admin-form input[type="number"],
+.admin-form input[type="date"],
+.admin-form input[type="file"],
+.admin-form select,
+.admin-form textarea,
+.form-input-admin /* Generic class for admin inputs */
+ {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem; /* py-2 px-3 */
+    font-size: 0.875rem; /* text-sm */
+    border: 1px solid #D6D3D1; /* stone-300 */
+    border-radius: 0.375rem; /* rounded-md */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-form input[type="text"]:focus,
+.admin-form input[type="email"]:focus,
+.admin-form input[type="password"]:focus,
+.admin-form input[type="number"]:focus,
+.admin-form input[type="date"]:focus,
+.admin-form input[type="file"]:focus,
+.admin-form select:focus,
+.admin-form textarea:focus,
+.form-input-admin:focus {
+    outline: none;
+    border-color: #D97706; /* amber-600 - Brand Accent */
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.3); /* amber focus ring */
+}
+.admin-form input[readonly],
+.form-input-admin[readonly] {
+    background-color: #F5F5F4; /* stone-100 */
+    cursor: not-allowed;
+}
+
+
+.admin-form .form-group {
+    margin-bottom: 1rem;
+}
+.admin-form .grid .form-group { /* If form groups are direct children of grid */
+    margin-bottom: 0;
+}
+
+
+.admin-form input[type="file"] {
+    padding: 0.375rem 0.75rem; /* Adjust padding for file input */
+}
+
+.admin-form input[type="checkbox"] {
+    height: 1rem; /* h-4 */
+    width: 1rem; /* w-4 */
+    border-radius: 0.25rem; /* rounded */
+    border-color: #D6D3D1; /* stone-300 */
+    color: #D97706; /* amber-600 - Brand Accent */
+}
+.admin-form input[type="checkbox"]:focus {
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.3); /* amber focus ring */
+}
+
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem; /* py-2 px-4 */
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500; /* font-medium */
+    border-radius: 0.375rem; /* rounded-md */
+    border: 1px solid transparent;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.3); /* amber focus ring - Brand Accent */
+}
+.btn i {
+    margin-right: 0.5rem;
+}
+
+.btn-primary { /* Brand primary - Green */
+    background-color: #10B981; /* green-500 */
+    color: #ffffff;
+}
+.btn-primary:hover {
+    background-color: #059669; /* green-700 */
+}
+
+.btn-secondary { /* Brand secondary - Stone */
+    background-color: #E7E5E4; /* stone-200 */
+    color: #44403C; /* stone-700 */
+    border-color: #D6D3D1; /* stone-300 */
+}
+.btn-secondary:hover {
+    background-color: #D6D3D1; /* stone-300 */
+}
+
+.btn-success {
+    background-color: #10b981; /* bg-green-500 */
+    color: #ffffff;
+}
+.btn-success:hover {
+    background-color: #059669; /* hover:bg-green-700 */
+}
+
+.btn-danger {
+    background-color: #ef4444; /* bg-red-500 */
+    color: #ffffff;
+}
+.btn-danger:hover {
+    background-color: #dc2626; /* hover:bg-red-700 */
+}
+
+.btn-warning {
+    background-color: #f59e0b; /* bg-yellow-500 */
+    color: #ffffff;
+}
+.btn-warning:hover {
+    background-color: #d97706; /* hover:bg-yellow-600 */
+}
+
+/* Admin Specific Button Styles (used in HTML) */
+.btn-admin-primary { /* Often green for "Add" or "Save" */
+    background-color: #10b981; color: #ffffff;
+}
+.btn-admin-primary:hover { background-color: #059669; }
+
+.btn-admin-secondary { /* Stone for "Edit", "Details" */
+    background-color: #A8A29E; color: #ffffff; /* stone-400 */
+}
+.btn-admin-secondary:hover { background-color: #78716C; } /* stone-500 */
+
+.btn-admin-danger { /* Red for "Delete" */
+    background-color: #ef4444; color: #ffffff;
+}
+.btn-admin-danger:hover { background-color: #dc2626; }
+
+.btn-admin-action { /* A generic action button, darker stone */
+    background-color: #78716C; color: #ffffff; /* stone-500 */
+}
+.btn-admin-action:hover { background-color: #57534E; } /* stone-600 */
+
+
+/* Modals */
+.admin-modal-overlay {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 50; /* Ensure it's above other content */
+    inset: 0;
+    overflow-y: auto;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    align-items: center; /* For vertical centering */
+    justify-content: center; /* For horizontal centering */
+}
+.admin-modal-overlay.active {
+    display: flex; /* Show when active */
+}
+
+.admin-modal-content {
+    background-color: #ffffff;
+    border-radius: 0.5rem; /* rounded-lg */
+    text-align: left;
+    overflow: hidden;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); /* shadow-xl */
+    transform: scale(0.95);
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    opacity: 0;
+    margin: 2rem; /* my-8 for sm, p-0 for sm */
+    width: 100%;
+}
+.admin-modal-overlay.active .admin-modal-content {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Specific modal sizes */
+.admin-modal-content.sm-max-w-lg { max-width: 32rem; } /* max-w-lg */
+.admin-modal-content.sm-max-w-xl { max-width: 36rem; }
+.admin-modal-content.sm-max-w-2xl { max-width: 42rem; }
+.admin-modal-content.sm-max-w-3xl { max-width: 48rem; }
+
+
+.admin-modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+.admin-modal-header h3 {
+    font-size: 1.125rem; /* text-lg */
+    line-height: 1.5rem; /* leading-6 */
+    font-weight: 500; /* font-medium */
+    color: #1C1917; /* stone-900 */
+    margin: 0;
+}
+
+.admin-modal-body {
+    padding: 1.5rem; /* p-6 */
+}
+
+.admin-modal-footer {
+    background-color: #f9fafb; /* bg-gray-50 */
+    padding: 0.75rem 1.5rem; /* px-4 py-3 sm:px-6 */
+    display: flex;
+    flex-direction: row-reverse; /* sm:flex sm:flex-row-reverse */
+}
+.admin-modal-footer button {
+    margin-left: 0.75rem; /* sm:ml-3 */
+}
+.admin-modal-footer button:first-child { /* The rightmost button */
+    margin-left: 0;
+}
+
+
+/* Toast / Global Messages */
+#admin-toast-container { /* Optional container if you want to position multiple toasts */
+    position: fixed;
+    bottom: 1.25rem; /* bottom-5 */
+    right: 1.25rem; /* right-5 */
+    z-index: 100;
+}
+
+#admin-message-toast { /* The actual toast element */
+    display: none; /* Hidden by default */
+    padding: 1rem; /* p-4 */
+    border-radius: 0.5rem; /* rounded-lg */
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); /* shadow-xl */
+    color: #ffffff;
+    min-width: 250px;
+    max-width: 400px;
+    /* Transition properties can be added here if show/hide is class-based */
+}
+#admin-message-toast.success { background-color: #10b981; } /* green-500 */
+#admin-message-toast.error   { background-color: #ef4444; } /* red-500 */
+#admin-message-toast.info    { background-color: #F59E0B; } /* amber-500 - Brand Accent for Info */
+
+
+/* Login Page Specific Styles */
+.admin-login-container {
+    background-color: #ffffff; /* bg-white */
+    padding: 2rem; /* p-8 */
+    border-radius: 0.5rem; /* rounded-lg */
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); /* shadow-xl */
+    width: 100%;
+    max-width: 28rem; /* max-w-md */
+}
+.admin-login-container .logo-container {
+    text-align: center;
+    margin-bottom: 2rem; /* mb-8 */
+}
+.admin-login-container .logo-container i { /* FontAwesome icon */
+    font-size: 3rem; /* fa-3x */
+    color: #065F46; /* green-800 - Brand Primary Dark */
+}
+.admin-login-container .logo-container h1 {
+    font-size: 1.875rem; /* text-3xl */
+    font-weight: 700; /* font-bold */
+    color: #1C1917; /* stone-900 */
+    margin-top: 0.5rem; /* mt-2 */
+}
+.admin-login-container .logo-container p {
+    color: #57534E; /* stone-600 */
+}
+.admin-login-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem; /* space-y-6 */
+}
+.admin-login-container .input-group {
+    position: relative;
+}
+.admin-login-container .input-group .icon {
+    position: absolute;
+    left: 0.75rem; /* pl-3 */
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #9ca3af; /* text-gray-400 */
+}
+.admin-login-container .input-group input {
+    padding-left: 2.5rem; /* pl-10 */
+}
+.admin-login-container #login-error-message { /* Corrected from #admin-login-message */
+    color: #ef4444; /* text-red-500 */
+    font-size: 0.875rem; /* text-sm */
+    text-align: center;
+    min-height: 1.25rem; /* Ensure space even if empty */
+}
+.admin-login-container .login-button { /* For the submit button */
+    background-color: #065F46; /* green-800 - Brand Primary Dark */
+    color: #ffffff;
+}
+.admin-login-container .login-button:hover {
+    background-color: #047857; /* green-700 */
+}
+.admin-login-container .back-to-site-link {
+    margin-top: 1.5rem; /* mt-6 */
+    text-align: center;
+    font-size: 0.875rem; /* text-sm */
+    color: #57534E; /* stone-600 */
+}
+.admin-login-container .back-to-site-link a {
+    font-weight: 500; /* font-medium */
+    color: #D97706; /* amber-600 - Brand Accent */
+}
+.admin-login-container .back-to-site-link a:hover {
+    color: #B45309; /* amber-700 */
+}
+
+/* Helper classes (if not using Tailwind or want overrides) */
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.mb-4 { margin-bottom: 1rem; }
+.mt-1 { margin-top: 0.25rem; }
+/* Add more utility classes as needed if Tailwind isn't used/configured for admin */
+.font-semibold { font-weight: 600; }
+.text-red-500 { color: #ef4444; }
+.text-red-600 { color: #dc2626; }
+.text-green-500 { color: #10b981; }
+.text-green-600 { color: #059669; }
+.text-green-700 { color: #047857; }
+.text-green-800 { color: #065f46; }
+.bg-green-100 { background-color: #d1fae5; }
+.text-amber-600 { color: #D97706; } /* amber-600 */
+.text-amber-700 { color: #B45309; } /* amber-700 */
+.bg-amber-100 { background-color: #FEF3C7; } /* amber-100 */
+.text-stone-600 { color: #57534E; }
+.text-stone-700 { color: #44403C; }
+.text-stone-800 { color: #292524; }
+.bg-stone-100 { background-color: #F5F5F4; }
+.bg-stone-200 { background-color: #E7E5E4; }
+
+.text-brand-near-black { color: #11120D; }
+.text-brand-classic-gold { color: #D4AF37; }
+.text-brand-warm-taupe { color: #A28C6A; }
+.text-brand-cream { color: #F5EEDE; }
+
+/* Styles for product form weight options */
+.weight-option-row {
+    background-color: #f9fafb; /* Light gray background for each option row */
+    border: 1px solid #e5e7eb;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    margin-bottom: 0.5rem;
+}
+.weight-option-row label {
+    font-size: 0.75rem; /* text-xs */
+}
+.weight-option-row input {
+    padding: 0.5rem; /* p-2 */
+    font-size: 0.875rem; /* text-sm */
+}
+.weight-option-row button { /* For the "Retirer" button */
+    align-self: flex-end; /* Align to bottom in its grid cell */
+}
+
+/* For product assets preview section */
+#product-assets-preview-section {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border: 1px dashed #ccc;
+    border-radius: 0.375rem;
+    background-color: #f9fafb;
+}
+#product-assets-preview-section h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+#product-assets-links p {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+#product-assets-links a {
+    word-break: break-all;
+}
+#product-assets-links img {
+    border: 1px solid #ddd;
+    border-radius: 0.25rem;
+    margin-top: 0.25rem;
+}
+
+/* Error message styling for form fields */
+.error-message {
+    color: #ef4444; /* text-red-500 */
+    font-size: 0.75rem; /* text-xs */
+    margin-top: 0.25rem; /* mt-1 */
+}
+input.border-red-500,
+select.border-red-500,
+textarea.border-red-500 {
+    border-color: #ef4444 !important; /* Ensure it overrides other border styles */
+}
+input.border-red-500:focus,
+select.border-red-500:focus,
+textarea.border-red-500:focus {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important; /* Red focus ring */
+}   
+
+
+/* website/source/admin/js/css/admin_style.css */
+/* Add or append these styles for the modal */
+
+body.admin-modal-open {
+    overflow: hidden; /* Prevent background scrolling when modal is open */
+}
+
+.admin-modal-overlay {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-modal-content {
+    background-color: #fefefe;
+    margin: auto; /* Auto margin for centering */
+    padding: 0; /* Padding will be handled by header/body/actions */
+    border: 1px solid #ccc;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    animation: adminModalOpen 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes adminModalOpen {
+    from {transform: scale(0.9); opacity: 0;}
+    to {transform: scale(1); opacity: 1;}
+}
+
+.admin-modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-modal-header h3 {
+    margin: 0;
+    font-size: 1.25em;
+    color: #333;
+}
+
+.admin-modal-close {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+}
+
+.admin-modal-close:hover,
+.admin-modal-close:focus {
+    color: #333;
+    text-decoration: none;
+}
+
+.admin-modal-body {
+    padding: 20px;
+    font-size: 1em;
+    color: #555;
+    line-height: 1.6;
+}
+.admin-modal-body p {
+    margin-top: 0;
+}
+.admin-modal-body strong {
+    color: #333;
+}
+
+
+.admin-modal-actions {
+    padding: 15px 20px;
+    text-align: right;
+    border-top: 1px solid #eee;
+    background-color: #f9f9f9;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.admin-modal-actions .admin-button { /* General button styling if not already present */
+    padding: 10px 20px;
+    margin-left: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: background-color 0.2s ease;
+}
+
+.admin-modal-actions .admin-button.primary {
+    background-color: #007bff;
+    color: white;
+}
+.admin-modal-actions .admin-button.primary:hover {
+    background-color: #0056b3;
+}
+
+.admin-modal-actions .admin-button.secondary {
+    background-color: #6c757d;
+    color: white;
+}
+.admin-modal-actions .admin-button.secondary:hover {
+    background-color: #545b62;
+}
+
+
+/* Message types styling */
+.admin-message-success .admin-modal-header { background-color: #d4edda; color: #155724; border-bottom-color: #c3e6cb;}
+.admin-message-success .admin-modal-header h3 { color: #155724; }
+
+.admin-message-error .admin-modal-header { background-color: #f8d7da; color: #721c24; border-bottom-color: #f5c6cb;}
+.admin-message-error .admin-modal-header h3 { color: #721c24; }
+
+.admin-message-warning .admin-modal-header { background-color: #fff3cd; color: #856404; border-bottom-color: #ffeeba;}
+.admin-message-warning .admin-modal-header h3 { color: #856404; }
+
+.admin-message-info .admin-modal-header { background-color: #d1ecf1; color: #0c5460; border-bottom-color: #bee5eb;}
+.admin-message-info .admin-modal-header h3 { color: #0c5460; }
+
+
+/* Styling for required fields in forms */
+.required {
+    color: red;
+    margin-left: 2px;
+}
+
+/* General Admin Button Styling (if not already defined elsewhere) */
+.admin-button, button { /* Apply to generic buttons too if needed */
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    border: 1px solid transparent;
+    margin: 2px;
+}
+.admin-button.primary, button[type="submit"] {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+.admin-button.primary:hover, button[type="submit"]:hover {
+    background-color: #0056b3;
+}
+.admin-button.secondary {
+    background-color: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+.admin-button.secondary:hover {
+    background-color: #5a6268;
+}
+.admin-button.delete, button.delete {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+.admin-button.delete:hover, button.delete:hover {
+    background-color: #c82333;
+}
+.small-button { /* For table action buttons */
+    padding: 4px 8px;
+    font-size: 0.85em;
+}

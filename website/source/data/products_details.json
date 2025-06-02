@@ -1,0 +1,50 @@
+{
+  "prod_001": {
+    "name": {
+      "fr": "Comté Affinage 12 Mois",
+      "en": "Comté Cheese - 12 Months Aged"
+    },
+    "category_id": "cat_003_sub",
+    "slug": "comte-affinage-12-mois",
+    "description_short": {
+      "fr": "Un Comté fruité avec un affinage de 12 mois, parfait pour les connaisseurs.",
+      "en": "A fruity Comté cheese aged for 12 months, perfect for connoisseurs."
+    },
+    "description_long": {
+      "fr": "Notre Comté AOP est sélectionné pour son affinage optimal de 12 mois, développant des arômes riches et une texture fondante. Idéal sur un plateau, en cuisine, ou avec un vin jaune du Jura.",
+      "en": "Our PDO Comté is selected for its optimal 12-month aging, developing rich aromas and a melting texture. Ideal on a cheese board, in cooking, or with a Vin Jaune from Jura."
+    },
+    "price_eur": 12.50,
+    "unit": {
+      "fr": "par 250g",
+      "en": "per 250g"
+    },
+    "stock_available": true,
+    "image_url": "/images/products/comte_12mois_detail.jpg",
+    "tags": ["aop", "fromage", "vache", "jura"]
+  },
+  "prod_002": {
+    "name": {
+      "fr": "Saucisson Sec Artisanal",
+      "en": "Artisanal Dry Sausage"
+    },
+    "category_id": "cat_002",
+    "slug": "saucisson-sec-artisanal",
+    "description_short": {
+      "fr": "Un saucisson sec traditionnel, préparé selon une recette ancestrale.",
+      "en": "A traditional dry sausage, prepared according to an ancestral recipe."
+    },
+    "description_long": {
+      "fr": "Ce saucisson sec est fabriqué artisanalement avec du porc de qualité supérieure et des épices naturelles. Son séchage lent lui confère une saveur incomparable. Parfait pour l'apéritif.",
+      "en": "This dry sausage is handcrafted with high-quality pork and natural spices. Its slow drying process gives it an incomparable flavor. Perfect for an appetizer."
+    },
+    "price_eur": 8.75,
+    "unit": {
+      "fr": "la pièce (env. 200g)",
+      "en": "per piece (approx. 200g)"
+    },
+    "stock_available": true,
+    "image_url": "/images/products/saucisson_sec_detail.jpg",
+    "tags": ["charcuterie", "porc", "artisanal", "apéritif"]
+  }
+}

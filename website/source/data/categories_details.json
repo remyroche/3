@@ -1,0 +1,137 @@
+{
+  "cat_001": {
+    "name": {
+      "fr": "Fromages Affinés",
+      "en": "Aged Cheeses"
+    },
+    "slug": "fromages-affines",
+    "description": {
+      "fr": "Une sélection de fromages affinés avec soin, offrant des saveurs complexes et des textures variées.",
+      "en": "A selection of carefully aged cheeses, offering complex flavors and varied textures."
+    },
+    "parent_id": null,
+    "image_url": "/images/categories/fromages_affines.jpg",
+    "species": {
+      "fr": "Vache, Chèvre, Brebis",
+      "en": "Cow, Goat, Sheep"
+    },
+    "main_ingredients": {
+      "fr": "Lait (Vache, Chèvre, Brebis), Sel, Ferments, Présure",
+      "en": "Milk (Cow, Goat, Sheep), Salt, Cultures, Rennet"
+    },
+    "ingredients_notes": {
+      "fr": "Lait cru ou pasteurisé, sel, ferments, présure. Certains peuvent contenir des noix ou des épices.",
+      "en": "Raw or pasteurized milk, salt, cultures, rennet. Some may contain nuts or spices."
+    },
+    "fresh_vs_preserved": {
+      "fr": "Affiné",
+      "en": "Aged"
+    },
+    "size_details": {
+      "fr": "Variable selon le fromage, voir fiche produit.",
+      "en": "Varies by cheese, see product sheet."
+    },
+    "category_notes": {
+      "fr": "Idéal pour les plateaux de fromages.",
+      "en": "Ideal for cheese platters."
+    },
+    "pairings": {
+      "fr": "Vins rouges corsés, confitures de figues, noix, pain aux céréales.",
+      "en": "Full-bodied red wines, fig jams, nuts, multigrain bread."
+    },
+    "weight_info": {
+      "fr": "Vendus à la coupe (par 100g) ou à la pièce.",
+      "en": "Sold by cut (per 100g) or by piece."
+    }
+  },
+  "cat_002": {
+    "name": {
+      "fr": "Charcuterie Artisanale",
+      "en": "Artisanal Deli Meats"
+    },
+    "slug": "charcuterie-artisanale",
+    "description": {
+      "fr": "Charcuteries fines issues de producteurs locaux et de traditions ancestrales.",
+      "en": "Fine deli meats from local producers and ancestral traditions."
+    },
+    "parent_id": null,
+    "image_url": "/images/categories/charcuterie_artisanale.jpg",
+    "species": {
+      "fr": "Porc, Canard, Sanglier",
+      "en": "Pork, Duck, Wild Boar"
+    },
+    "main_ingredients": {
+      "fr": "Viande (Porc, Canard, etc.), Sel, Épices",
+      "en": "Meat (Pork, Duck, etc.), Salt, Spices"
+    },
+    "ingredients_notes": {
+      "fr": "Viande, sel, poivre, épices naturelles. Sans nitrites ajoutés pour certaines sélections.",
+      "en": "Meat, salt, pepper, natural spices. No added nitrites for selected items."
+    },
+    "fresh_vs_preserved": {
+      "fr": "Séché/Cuit",
+      "en": "Cured/Cooked"
+    },
+    "size_details": {
+      "fr": "Tranché à la demande ou pièces entières.",
+      "en": "Sliced to order or whole pieces."
+    },
+    "category_notes": {
+      "fr": "Parfait pour l'apéritif ou les sandwichs gourmands.",
+      "en": "Perfect for appetizers or gourmet sandwiches."
+    },
+    "pairings": {
+      "fr": "Cornichons, pain de campagne, moutarde à l'ancienne, bières ambrées.",
+      "en": "Pickles, country bread, old-style mustard, amber ales."
+    },
+    "weight_info": {
+      "fr": "Tranchée à la demande, vendue par 100g.",
+      "en": "Sliced on demand, sold per 100g."
+    }
+  },
+  "cat_003_sub": {
+    "name": {
+      "fr": "Comté",
+      "en": "Comté Cheese"
+    },
+    "slug": "comte",
+    "description": {
+      "fr": "Fromage AOP au lait cru de vache, affinage minimum 12 mois.",
+      "en": "PDO cheese made from raw cow's milk, minimum 12 months aging."
+    },
+    "parent_id": "cat_001",
+    "image_url": "/images/categories/comte.jpg",
+    "species": {
+      "fr": "Vache (Montbéliarde, Simmental française)",
+      "en": "Cow (Montbéliarde, French Simmental)"
+    },
+    "main_ingredients": {
+      "fr": "Lait cru de vache Montbéliarde ou Simmental française, sel, ferments lactiques, présure.",
+      "en": "Raw cow's milk (Montbéliarde or French Simmental), salt, lactic cultures, rennet."
+    },
+    "ingredients_notes": {
+      "fr": "Lait cru de vache, sel, ferments lactiques, présure.",
+      "en": "Raw cow's milk, salt, lactic ferments, rennet."
+    },
+    "fresh_vs_preserved": {
+      "fr": "Affiné (minimum 12 mois)",
+      "en": "Aged (minimum 12 months)"
+    },
+    "size_details": {
+      "fr": "Vendu à la coupe.",
+      "en": "Sold by the cut."
+    },
+    "category_notes": {
+      "fr": "Un classique des fromages français, fruité et savoureux.",
+      "en": "A classic French cheese, fruity and flavorful."
+    },
+    "pairings": {
+      "fr": "Vin Jaune du Jura, noix, pain aux noix.",
+      "en": "Vin Jaune from Jura, walnuts, walnut bread."
+    },
+    "weight_info": {
+      "fr": "Vendu à la coupe, par 100g.",
+      "en": "Sold by cut, per 100g."
+    }
+  }
+}
