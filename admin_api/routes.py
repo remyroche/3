@@ -76,109 +76,98 @@ def admin_create_manual_invoice():
         # Validate b2b_user_id
         user = query_db("SELECT id, email, currency FROM users WHERE id = ? AND role = 'b2b_professional'", [b2b_user_id], db_conn=db, one=True)
         if not user:
-            return jsonify(message="Invalid B2B User ID or user is not a professional."), 404
+            return jsoni# Add these imports at the top of admin_api/routes.py if they don't exist
+from flask import Blueprint, request, jsonify, current_app
+from flask_jwt_extended import jwt_required, get_jwt
+# These datetime imports are needed if admin_create_manual_invoice still has any date logic,
+# but ideally, all date logic should be in the service.
+from datetime import datetime, timedelta 
 
-        # Initialize InvoiceService (it gets its own DB connection)
+from ..database import get_db_connection, query_db
+from ..services.invoice_service import InvoiceService # Make sure this path is correct
+
+# Assuming your admin_api_bp is initialized in admin_api/__init__.py
+# For example: admin_api_bp = Blueprint('admin_api', __name__, url_prefix='/api/admin')
+from . import admin_api_bp # Assuming a local __init__.py defines the blueprint
+
+
+# Helper to check for admin role from JWT claims
+def is_admin_user():
+    claims = get_jwt()
+    return claims.get('role') == 'admin'
+
+@admin_api_bp.route('/users/professionals', methods=['GET'])
+@jwt_required()
+def get_professional_users_list():
+    """
+    Admin endpoint to fetch a list of all B2B professional users.
+    """
+    if not is_admin_user():
+        return jsonify(message="Forbidden: Admin access required."), 403
+
+    db = get_db_connection()
+    try:
+        # Fetch users who are b2b_professional and active (or all, depending on admin needs)
+        professionals = query_db(
+            "SELECT id, email, first_name, last_name, company_name, professional_status FROM users WHERE role = 'b2b_professional' ORDER BY company_name, last_name, first_name",
+            db_conn=db
+        )
+        if professionals is None:
+            professionals = [] # Ensure it's a list even if query_db returns None on error
+
+        return jsonify([dict(row) for row in professionals]), 200
+    except Exception as e:
+        current_app.logger.error(f"Error fetching professional users for admin: {e}")
+        return jsonify(message="Failed to fetch professional users."), 500
+
+
+@admin_api_bp.route('/invoices/create', methods=['POST'])
+@jwt_required()
+def admin_create_manual_invoice():
+    """
+    Admin endpoint to manually create an invoice for a B2B user.
+    Expects: { b2b_user_id: int, line_items: [{description, quantity, unit_price}], notes: str (optional), currency: str (optional) }
+    """
+    if not is_admin_user():
+        return jsonify(message="Forbidden: Admin access required."), 403
+
+    data = request.json
+    b2b_user_id = data.get('b2b_user_id')
+    line_items_data = data.get('line_items')
+    notes = data.get('notes')
+    currency = data.get('currency', 'EUR') # Default to EUR if not provided by frontend
+
+    if not b2b_user_id or not line_items_data or not isinstance(line_items_data, list) or len(line_items_data) == 0:
+        return jsonify(message="Missing required fields: b2b_user_id and at least one line_item."), 400
+
+    # Basic validation for line items
+    for item_data in line_items_data:
+        if not all(k in item_data for k in ('description', 'quantity', 'unit_price')):
+            return jsonify(message="Each line item must have description, quantity, and unit_price."), 400
+        try:
+            # Ensure quantity and unit_price can be converted to appropriate types
+            int(item_data['quantity'])
+            float(item_data['unit_price'])
+        except ValueError:
+            return jsonify(message="Invalid quantity or unit_price in line items. Must be numbers."), 400
+
+
+    try:
         invoice_service = InvoiceService()
-        
-        # The current InvoiceService.create_invoice_from_order is tied to an existing order.
-        # We need a new method or to adapt it for manual line items.
-        # For now, let's assume we add a new method to InvoiceService: create_manual_invoice
-
-        # --- This part requires a new method in InvoiceService ---
-        # Example structure for the new method call:
-        # invoice_id = invoice_service.create_manual_invoice(
-        #     b2b_user_id=b2b_user_id,
-        #     user_currency=user.get('currency', 'EUR'), # Get currency from user or default
-        #     line_items_data=line_items_data,
-        #     notes=notes
-        # )
-        # --- End of new method call ---
-
-        # For this implementation, we'll directly insert into the DB,
-        # then call a simplified PDF generation.
-        # This is less ideal than having it all in InvoiceService but works for now.
-
-        db.execute("BEGIN") # Start transaction
-
-        invoice_number = invoice_service._generate_invoice_number() # Use existing helper
-        issue_date = datetime.now()
-        due_date = issue_date + timedelta(days=30)
-        
-        total_amount = sum(item['quantity'] * item['unit_price'] for item in line_items_data)
-
-        invoice_id = query_db(
-            """INSERT INTO invoices (b2b_user_id, invoice_number, issue_date, due_date, total_amount, currency, status, notes)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (b2b_user_id, invoice_number, issue_date.strftime("%Y-%m-%d"), due_date.strftime("%Y-%m-%d"), total_amount, user.get('currency', 'EUR'), 'draft', notes),
-            db_conn=db,
-            commit=False
+        invoice_id, invoice_number = invoice_service.create_manual_invoice(
+            b2b_user_id=b2b_user_id,
+            user_currency=currency, # Pass currency from request
+            line_items_data=line_items_data,
+            notes=notes
         )
-
-        for item_data in line_items_data:
-            if not all(k in item_data for k in ('description', 'quantity', 'unit_price')):
-                db.rollback()
-                return jsonify(message="Each line item must have description, quantity, and unit_price."), 400
-            
-            item_total = item_data['quantity'] * item_data['unit_price']
-            query_db(
-                """INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, total_price)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (invoice_id, item_data['description'], item_data['quantity'], item_data['unit_price'], item_total),
-                db_conn=db,
-                commit=False
-            )
-        
-        # Now, call a method to generate and save the PDF (simplified from InvoiceService)
-        # This part should ideally be refactored into InvoiceService for better DRY principle.
-        from flask import render_template
-        from weasyprint import HTML
-        import os
-
-        company_info = current_app.config.get('DEFAULT_COMPANY_INFO', {})
-        logo_path = company_info.get('logo_path')
-        if logo_path and os.path.exists(logo_path):
-            company_info['logo_path'] = f'file://{os.path.abspath(logo_path)}'
-
-        # Fetch the full user and invoice details again for the template
-        full_user_details = query_db("SELECT * FROM users WHERE id = ?", [b2b_user_id], db_conn=db, one=True)
-        full_invoice_details = query_db("SELECT * FROM invoices WHERE id = ?", [invoice_id], db_conn=db, one=True)
-        full_invoice_items = query_db("SELECT * FROM invoice_items WHERE invoice_id = ?", [invoice_id], db_conn=db)
-
-
-        context = {
-            "invoice": full_invoice_details,
-            "invoice_items": full_invoice_items,
-            "user": full_user_details,
-            # Manual invoices might not have a shipping address from an order
-            "shipping_address": None, 
-            "company": company_info
-        }
-        html_string = render_template('invoice_template.html', **context)
-        pdf_file = HTML(string=html_string).write_pdf()
-        
-        pdf_filename = f"{invoice_number}.pdf"
-        pdf_path_full = os.path.join(current_app.config['INVOICE_PDF_PATH'], pdf_filename)
-        
-        with open(pdf_path_full, 'wb') as f:
-            f.write(pdf_file)
-        
-        query_db(
-            "UPDATE invoices SET pdf_path = ?, status = ? WHERE id = ?",
-            (pdf_path_full, 'issued', invoice_id),
-            db_conn=db,
-            commit=False
-        )
-
-        db.commit() # Commit transaction
-
         return jsonify(success=True, message="Manual invoice created successfully.", invoice_id=invoice_id, invoice_number=invoice_number), 201
 
+    except ValueError as ve: # Catch specific errors from the service
+        current_app.logger.warning(f"Validation error creating manual invoice: {ve}")
+        return jsonify(message=str(ve)), 400 # Or 404 if user not found
     except Exception as e:
-        if db: db.rollback()
         current_app.logger.error(f"Admin API error creating manual invoice: {e}", exc_info=True)
         return jsonify(message=f"An internal error occurred: {str(e)}"), 500
-
 
 # --- Admin Authentication ---
 @admin_api_bp.route('/login', methods=['POST'])
