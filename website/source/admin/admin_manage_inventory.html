@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gérer l'Inventaire - Maison Trüvra Admin</title>
-    <link rel="stylesheet" href="css/admin_style.css"> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin_style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 font-sans">
-    <!-- COMMON ADMIN HEADER START -->
+<body id="page-admin-manage-inventory">
     <header class="bg-white shadow-md p-4 sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
-                <!-- "Back to Dashboard" Button: JS controls visibility. Hidden by default. -->
                 <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
                     <i class="fas fa-arrow-left mr-2"></i>
                     Retour au Tableau de Bord
@@ -29,344 +28,337 @@
         </div>
     </header>
 
-    <!-- COMMON ADMIN NAVIGATION START -->
     <nav class="bg-gray-800 text-white shadow-md">
         <div class="container mx-auto px-4">
-            <div class="flex items-center justify-start h-12 space-x-1">
+            <div class="flex items-center justify-start h-12 space-x-1 overflow-x-auto">
                 <a href="admin_dashboard.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Tableau de Bord</a>
                 <a href="admin_manage_products.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Produits</a>
                 <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 active">Inventaire</a>
+                <a href="admin_view_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voir Inventaire</a>
                 <a href="admin_manage_orders.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Commandes</a>
                 <a href="admin_manage_users.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Utilisateurs</a>
                 <a href="admin_manage_categories.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Catégories</a>
                 <a href="admin_invoices.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Factures</a>
+                <a href="admin_manage_reviews.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Avis</a>
             </div>
         </div>
     </nav>
-    <!-- COMMON ADMIN HEADER/NAVIGATION END -->
 
-    <main class="container mx-auto p-6 space-y-6">
+    <main class="admin-content-area container mx-auto p-6 space-y-6">
         <h1 class="text-3xl font-semibold text-gray-800 mb-6">Gestion de l'Inventaire</h1>
 
-        <!-- Section for Managing Product Offers/Variants (inventory.json like data) -->
-        <section class="bg-white p-6 rounded-lg shadow">
+        <section class="admin-form-container">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold text-gray-700">Gestion des Offres Produits / Variantes en Stock</h2>
-                <button id="open-inventory-modal-button" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                <h2 class="admin-form-title">Gestion des Offres Produits / Variantes en Stock</h2>
+                <button id="open-inventory-modal-button" class="btn btn-admin-primary">
                     <i class="fas fa-plus-circle mr-2"></i>Ajouter Variante/Offre
                 </button>
             </div>
             
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="admin-table min-w-full">
+                    <thead>
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Offre</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produit de Base</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description Variante (FR/EN)</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix Spécifique (€)</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantité Totale</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut Offre</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            <th>ID Offre</th>
+                            <th>Produit de Base</th>
+                            <th>Description Variante (FR/EN)</th>
+                            <th>Prix Spécifique (€)</th>
+                            <th>Quantité Totale</th>
+                            <th>Statut Offre</th>
+                            <th>SKU</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="inventory-table-body" class="bg-white divide-y divide-gray-200">
+                    <tbody id="inventory-table-body">
                         <tr><td colspan="8" class="text-center p-4">Chargement des offres produits...</td></tr>
                     </tbody>
                 </table>
             </div>
         </section>
 
-        <!-- Modal for Adding New Product Variants (Batch) or Editing a Single Variant -->
-        <div id="inventory-modal" class="hidden fixed z-[1050] inset-0 overflow-y-auto">
-            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div class="fixed inset-0 transition-opacity" aria-hidden="true"><div class="absolute inset-0 bg-gray-500 opacity-75"></div></div>
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full"> <!-- Increased max-width for batch add -->
-                    <form id="inventory-form">
-                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="inventory-modal-title">Gestion Article d'Inventaire</h3>
-                            <input type="hidden" id="inventory-item-id" name="inventory_item_id"> <!-- Used for single edit mode -->
-                            
-                            <div class="mt-4">
-                                <label for="inventory-product-id" class="block text-sm font-medium text-gray-700">Produit de Base</label>
-                                <select name="product_id" id="inventory-product-id" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                    <option value="">Sélectionner un produit...</option>
-                                    <!-- Options will be populated by JS -->
-                                </select>
-                                <div id="product-category-hint" class="text-xs text-gray-500 mt-1"></div>
-                            </div>
-
-                            <hr class="my-6">
-
-                            <!-- Section for BATCH ADDING new variants -->
-                            <div id="batch-add-variants-section" class="hidden">
-                                <h4 class="text-md font-medium text-gray-800 mb-3">Nouvelles Variantes à Ajouter:</h4>
-                                <div id="inventory-variants-container" class="space-y-4 max-h-96 overflow-y-auto pr-2">
-                                    <!-- Dynamic variant rows for batch add will be inserted here by JS -->
-                                    <!-- Example structure of one row (see admin_inventory.js addInventoryVariantRow function) -->
-                                </div>
-                                <button type="button" id="add-another-variant-button" class="mt-4 text-sm bg-indigo-500 hover:bg-indigo-700 text-white font-semibold py-2 px-3 rounded">
-                                    <i class="fas fa-plus mr-1"></i> Ajouter une autre variante
-                                </button>
-                            </div>
-
-                            <!-- Section for EDITING a SINGLE existing variant -->
-                            <div id="single-edit-variant-section" class="hidden space-y-3">
-                                <h4 class="text-md font-medium text-gray-800 mb-1">Détails de la Variante Existante:</h4>
-                                <div>
-                                    <label for="inventory-variant-desc-fr" class="block text-sm font-medium text-gray-700">Description Variante (FR)</label>
-                                    <input type="text" name="variant_description_fr" id="inventory-variant-desc-fr" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                </div>
-                                <div>
-                                    <label for="inventory-variant-desc-en" class="block text-sm font-medium text-gray-700">Description Variante (EN)</label>
-                                    <input type="text" name="variant_description_en" id="inventory-variant-desc-en" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                </div>
-                                <div>
-                                    <label for="inventory-specific-price" class="block text-sm font-medium text-gray-700">Prix Spécifique (€)</label>
-                                    <input type="number" name="specific_price_eur" id="inventory-specific-price" step="0.01" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                </div>
-                                <div>
-                                    <label for="inventory-stock-quantity" class="block text-sm font-medium text-gray-700">Quantité en Stock</label>
-                                    <input type="number" name="stock_quantity" id="inventory-stock-quantity" step="1" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                </div>
-                                <div>
-                                    <label for="inventory-status" class="block text-sm font-medium text-gray-700">Statut</label>
-                                    <select name="status" id="inventory-status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                        <option value="available">Disponible</option>
-                                        <option value="low_stock">Stock Faible</option>
-                                        <option value="out_of_stock">Épuisé</option>
-                                        <option value="discontinued">Discontinué</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="inventory-sku" class="block text-sm font-medium text-gray-700">SKU (Optionnel)</label>
-                                    <input type="text" name="sku" id="inventory-sku" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                </div>
-                                 <div>
-                                    <label for="inventory-notes" class="block text-sm font-medium text-gray-700">Notes Internes (Optionnel)</label>
-                                    <textarea name="notes" id="inventory-notes" rows="2" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                            <button type="submit" id="save-inventory-button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
-                                Enregistrer
-                            </button>
-                            <button type="button" id="close-inventory-modal-button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                                Annuler
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-                <section class="bg-white p-6 rounded-lg shadow">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-4">Réceptionner Stock Sérialisé</h2>
-                    <form id="receive-stock-form" class="space-y-4">
-                        <div>
-                            <label for="receive-product-id" class="block text-sm font-medium text-gray-700">Produit</label>
-                            <select id="receive-product-id" name="product_id" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                </select>
-                        </div>
-                        <div>
-                            <label for="receive-variant-id" class="block text-sm font-medium text-gray-700">Variante (Optionnel)</label>
-                            <select id="receive-variant-id" name="variant_id" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                <option value="">Aucune variante spécifique</option>
-                                </select>
-                        </div>
-                        <div>
-                            <label for="receive-quantity" class="block text-sm font-medium text-gray-700">Quantité Reçue</label>
-                            <input type="number" id="receive-quantity" name="quantity_received" required min="1" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label for="receive-batch-number" class="block text-sm font-medium text-gray-700">Numéro de Lot (Optionnel)</label>
-                            <input type="text" id="receive-batch-number" name="batch_number" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label for="receive-production-date" class="block text-sm font-medium text-gray-700">Date de Production (Optionnel)</label>
-                            <input type="date" id="receive-production-date" name="production_date" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label for="receive-expiry-date" class="block text-sm font-medium text-gray-700">Date d'Expiration (Optionnel)</label>
-                            <input type="date" id="receive-expiry-date" name="expiry_date" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label for="receive-cost-price" class="block text-sm font-medium text-gray-700">Prix d'Achat Unitaire (Optionnel)</label>
-                            <input type="number" id="receive-cost-price" name="cost_price" step="0.01" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label for="receive-notes" class="block text-sm font-medium text-gray-700">Notes (Optionnel)</label>
-                            <textarea id="receive-notes" name="notes" rows="2" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
-                        </div>
-                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                            <i class="fas fa-dolly-flatbed mr-2"></i>Réceptionner Stock
-                        </button>
-                    </form>
-                </section>
-
-                                <section class="bg-white p-6 rounded-lg shadow">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-4">État Actuel du Stock Agrégé</h2>
-                    <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="filter-agg-stock-product" class="block text-sm font-medium text-gray-700">Filtrer par Produit (Nom ou ID):</label>
-                            <input type="text" id="filter-agg-stock-product" placeholder="Nom ou ID du produit..." class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label for="filter-agg-stock-threshold" class="block text-sm font-medium text-gray-700">Afficher stock inférieur à:</label>
-                            <input type="number" id="filter-agg-stock-threshold" placeholder="Ex: 10" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                        </div>
+        <div id="inventory-modal" class="admin-modal-overlay">
+            <div class="admin-modal-content sm-max-w-2xl">
+                <form id="inventory-form" class="admin-form">
+                    <div class="admin-modal-header">
+                        <h3 id="inventory-modal-title" class="admin-form-title">Gestion Article d'Inventaire</h3>
+                        <button type="button" class="admin-modal-close" id="close-inventory-modal-button" aria-label="Close">&times;</button>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produit</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variante</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantité en Stock</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poids Total en Stock (g)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="aggregated-stock-table-body" class="bg-white divide-y divide-gray-200">
-                                <tr><td colspan="4" class="text-center p-4">Chargement du stock agrégé...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <section class="bg-white p-6 rounded-lg shadow">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-4">Ajuster Stock Agrégé (Non-Sérialisé)</h2>
-                    <form id="adjust-stock-form" class="space-y-4">
-                         <div>
-                            <label for="adjust-product-id" class="block text-sm font-medium text-gray-700">Produit</label>
-                            <select id="adjust-product-id" name="product_id" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                </select>
-                        </div>
+                    <div class="admin-modal-body space-y-4">
+                        <input type="hidden" id="inventory-item-id" name="inventory_item_id">
+                        
                         <div>
-                            <label for="adjust-variant-id" class="block text-sm font-medium text-gray-700">Variante (Optionnel)</label>
-                            <select id="adjust-variant-id" name="variant_id" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                <option value="">Aucune variante spécifique</option>
-                                </select>
-                        </div>
-                        <div>
-                            <label for="adjust-quantity" class="block text-sm font-medium text-gray-700">Quantité d'Ajustement (+/-)</label>
-                            <input type="number" id="adjust-quantity" name="adjustment_quantity" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                        </div>
-                         <div>
-                            <label for="adjust-weight" class="block text-sm font-medium text-gray-700">Poids d'Ajustement en grammes (+/-) (Pour type 'variable_weight')</label>
-                            <input type="number" id="adjust-weight" name="adjustment_weight_grams" step="0.1" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label for="adjust-reason" class="block text-sm font-medium text-gray-700">Raison de l'ajustement</label>
-                            <input type="text" id="adjust-reason" name="reason" required class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                        </div>
-                        <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">
-                           <i class="fas fa-exchange-alt mr-2"></i> Ajuster Stock Agrégé
-                        </button>
-                    </form>
-                </section>
-                
-                <section class="bg-white p-6 rounded-lg shadow mt-6">
-                    <h2 class="text-xl font-semibold text-gray-700 mb-4">Liste des Articles Sérialisés</h2>
-                    <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label for="filter-item-product" class="block text-sm font-medium text-gray-700">Filtrer par Produit:</label>
-                            <select id="filter-item-product" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                <option value="">Tous les produits</option>
-                                </select>
-                        </div>
-                        <div>
-                            <label for="filter-item-status" class="block text-sm font-medium text-gray-700">Filtrer par Statut:</label>
-                            <select id="filter-item-status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                <option value="">Tous les statuts</option>
-                                <option value="available">Disponible</option>
-                                <option value="allocated">Alloué</option>
-                                <option value="sold">Vendu</option>
-                                <option value="damaged">Endommagé</option>
-                                <option value="returned">Retourné</option>
-                                <option value="recalled">Rappelé</option>
-                                <option value="reserved_internal">Réservé (Interne)</option>
-                                <option value="missing">Manquant</option>
+                            <label for="inventory-product-id" class="form-label">Produit de Base</label>
+                            <select name="product_id" id="inventory-product-id" required class="form-input-admin">
+                                <option value="">Sélectionner un produit...</option>
                             </select>
+                            <div id="product-category-hint" class="form-text"></div>
                         </div>
-                        <div>
-                            <label for="search-item-uid" class="block text-sm font-medium text-gray-700">Rechercher par UID:</label>
-                            <input type="text" id="search-item-uid" placeholder="Entrer UID..." class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                        </div>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UID Article</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produit</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lot</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Prod.</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Exp.</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="serialized-items-table-body" class="bg-white divide-y divide-gray-200">
-                                <tr><td colspan="7" class="text-center p-4">Chargement des articles sérialisés...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
 
-    <div id="item-status-modal" class="hidden fixed z-[1050] inset-0 overflow-y-auto"> <!-- Ensure z-index is consistent or higher than inventory-modal if they can overlap -->
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity" aria-hidden="true"><div class="absolute inset-0 bg-gray-500 opacity-75"></div></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form id="update-item-status-form">
-                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="item-status-modal-title">Modifier Statut Article</h3>
-                        <input type="hidden" id="status-item-uid" name="item_uid">
-                        <div class="mt-4">
-                            <label for="item-new-status" class="block text-sm font-medium text-gray-700">Nouveau Statut</label>
-                            <select id="item-new-status" name="status" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                                <option value="available">Disponible</option>
-                                <option value="damaged">Endommagé</option>
-                                <option value="recalled">Rappelé</option>
-                                <option value="reserved_internal">Réservé (Interne)</option>
-                                <option value="missing">Manquant</option>
-                                </select>
+                        <hr class="my-6">
+
+                        <div id="batch-add-variants-section" class="hidden">
+                            <h4 class="text-md font-medium text-gray-800 mb-3">Nouvelles Variantes à Ajouter:</h4>
+                            <div id="inventory-variants-container" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                            </div>
+                            <button type="button" id="add-another-variant-button" class="btn btn-admin-secondary mt-4 text-sm">
+                                <i class="fas fa-plus mr-1"></i> Ajouter une autre variante
+                            </button>
                         </div>
-                        <div class="mt-4">
-                            <label for="item-status-notes" class="block text-sm font-medium text-gray-700">Notes (Raison du changement)</label>
-                            <textarea id="item-status-notes" name="notes" rows="3" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+
+                        <div id="single-edit-variant-section" class="hidden space-y-3">
+                            <h4 class="text-md font-medium text-gray-800 mb-1">Détails de la Variante Existante:</h4>
+                            <div>
+                                <label for="inventory-variant-desc-fr" class="form-label">Description Variante (FR)</label>
+                                <input type="text" name="variant_description_fr" id="inventory-variant-desc-fr" class="form-input-admin">
+                            </div>
+                            <div>
+                                <label for="inventory-variant-desc-en" class="form-label">Description Variante (EN)</label>
+                                <input type="text" name="variant_description_en" id="inventory-variant-desc-en" class="form-input-admin">
+                            </div>
+                            <div>
+                                <label for="inventory-specific-price" class="form-label">Prix Spécifique (€)</label>
+                                <input type="number" name="specific_price_eur" id="inventory-specific-price" step="0.01" class="form-input-admin">
+                            </div>
+                            <div>
+                                <label for="inventory-stock-quantity" class="form-label">Quantité en Stock</label>
+                                <input type="number" name="stock_quantity" id="inventory-stock-quantity" step="1" class="form-input-admin">
+                            </div>
+                            <div>
+                                <label for="inventory-status" class="form-label">Statut</label>
+                                <select name="status" id="inventory-status" class="form-input-admin">
+                                    <option value="available">Disponible</option>
+                                    <option value="low_stock">Stock Faible</option>
+                                    <option value="out_of_stock">Épuisé</option>
+                                    <option value="discontinued">Discontinué</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="inventory-sku" class="form-label">SKU (Optionnel)</label>
+                                <input type="text" name="sku" id="inventory-sku" class="form-input-admin">
+                            </div>
+                             <div>
+                                <label for="inventory-notes" class="form-label">Notes Internes (Optionnel)</label>
+                                <textarea name="notes" id="inventory-notes" rows="2" class="form-input-admin"></textarea>
+                            </div>
                         </div>
                     </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                            Mettre à jour Statut
+                    <div class="admin-modal-actions">
+                        <button type="submit" id="save-inventory-button" class="btn btn-admin-primary">
+                            Enregistrer
                         </button>
-                        <button type="button" id="close-item-status-modal-button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        <button type="button" id="cancel-inventory-modal-button" class="btn btn-admin-secondary">
                             Annuler
                         </button>
                     </div>
                 </form>
             </div>
         </div>
-    </div>
 
+        <section class="admin-form-container">
+            <h2 class="admin-form-title">Réceptionner Stock Sérialisé</h2>
+            <form id="receive-stock-form" class="admin-form space-y-4">
+                <div>
+                    <label for="receive-product-id" class="form-label">Produit</label>
+                    <select id="receive-product-id" name="product_id" required class="form-input-admin"></select>
+                </div>
+                <div>
+                    <label for="receive-variant-id" class="form-label">Variante (Optionnel)</label>
+                    <select id="receive-variant-id" name="variant_id" class="form-input-admin">
+                        <option value="">Aucune variante spécifique</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="receive-quantity" class="form-label">Quantité Reçue</label>
+                    <input type="number" id="receive-quantity" name="quantity_received" required min="1" class="form-input-admin">
+                </div>
+                <div>
+                    <label for="receive-batch-number" class="form-label">Numéro de Lot (Optionnel)</label>
+                    <input type="text" id="receive-batch-number" name="batch_number" class="form-input-admin">
+                </div>
+                <div>
+                    <label for="receive-production-date" class="form-label">Date de Production (Optionnel)</label>
+                    <input type="date" id="receive-production-date" name="production_date" class="form-input-admin">
+                </div>
+                <div>
+                    <label for="receive-expiry-date" class="form-label">Date d'Expiration (Optionnel)</label>
+                    <input type="date" id="receive-expiry-date" name="expiry_date" class="form-input-admin">
+                </div>
+                <div>
+                    <label for="receive-cost-price" class="form-label">Prix d'Achat Unitaire (Optionnel)</label>
+                    <input type="number" id="receive-cost-price" name="cost_price" step="0.01" class="form-input-admin">
+                </div>
+                <div>
+                    <label for="receive-notes" class="form-label">Notes (Optionnel)</label>
+                    <textarea id="receive-notes" name="notes" rows="2" class="form-input-admin"></textarea>
+                </div>
+                <button type="submit" class="btn btn-admin-primary">
+                    <i class="fas fa-dolly-flatbed mr-2"></i>Réceptionner Stock
+                </button>
+            </form>
+        </section>
 
-    <div id="global-message" class="hidden fixed bottom-5 right-5 p-4 rounded-md text-white z-50">
-        <span id="global-message-text"></span>
-        <button id="global-message-close" class="ml-4 text-xl font-bold">&times;</button>
-    </div>
+        <section class="admin-table-container">
+            <h2 class="admin-table-title">État Actuel du Stock Agrégé</h2>
+            <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="filter-agg-stock-product" class="form-label">Filtrer par Produit (Nom ou ID):</label>
+                    <input type="text" id="filter-agg-stock-product" placeholder="Nom ou ID du produit..." class="form-input-admin mt-1">
+                </div>
+                <div>
+                    <label for="filter-agg-stock-threshold" class="form-label">Afficher stock inférieur à:</label>
+                    <input type="number" id="filter-agg-stock-threshold" placeholder="Ex: 10" class="form-input-admin mt-1">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="admin-table min-w-full">
+                    <thead>
+                        <tr>
+                            <th>Produit</th>
+                            <th>Variante</th>
+                            <th>Quantité en Stock</th>
+                            <th>Poids Total en Stock (g)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="aggregated-stock-table-body">
+                        <tr><td colspan="4" class="text-center p-4">Chargement du stock agrégé...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-    <!-- Container for admin toasts -->
-    <div id="admin-toast-container" class="fixed bottom-0 right-0 p-4 space-y-2 z-[1051]"></div>
+        <section class="admin-form-container">
+            <h2 class="admin-form-title">Ajuster Stock Agrégé (Non-Sérialisé)</h2>
+            <form id="adjust-stock-form" class="admin-form space-y-4">
+                 <div>
+                    <label for="adjust-product-id" class="form-label">Produit</label>
+                    <select id="adjust-product-id" name="product_id" required class="form-input-admin"></select>
+                </div>
+                <div>
+                    <label for="adjust-variant-id" class="form-label">Variante (Optionnel)</label>
+                    <select id="adjust-variant-id" name="variant_id" class="form-input-admin">
+                        <option value="">Aucune variante spécifique</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="adjust-quantity" class="form-label">Quantité d'Ajustement (+/-)</label>
+                    <input type="number" id="adjust-quantity" name="adjustment_quantity" class="form-input-admin">
+                </div>
+                 <div>
+                    <label for="adjust-weight" class="form-label">Poids d'Ajustement en grammes (+/-) (Pour type 'variable_weight')</label>
+                    <input type="number" id="adjust-weight" name="adjustment_weight_grams" step="0.1" class="form-input-admin">
+                </div>
+                <div>
+                    <label for="adjust-reason" class="form-label">Raison de l'ajustement</label>
+                    <input type="text" id="adjust-reason" name="reason" required class="form-input-admin">
+                </div>
+                <button type="submit" class="btn btn-admin-primary">
+                   <i class="fas fa-exchange-alt mr-2"></i> Ajuster Stock Agrégé
+                </button>
+            </form>
+        </section>
+        
+        <section class="admin-table-container">
+            <h2 class="admin-table-title">Liste des Articles Sérialisés</h2>
+            <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="filter-item-product" class="form-label">Filtrer par Produit:</label>
+                    <select id="filter-item-product" class="form-input-admin mt-1">
+                        <option value="">Tous les produits</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-item-status" class="form-label">Filtrer par Statut:</label>
+                    <select id="filter-item-status" class="form-input-admin mt-1">
+                        <option value="">Tous les statuts</option>
+                        <option value="available">Disponible</option>
+                        <option value="allocated">Alloué</option>
+                        <option value="sold">Vendu</option>
+                        <option value="damaged">Endommagé</option>
+                        <option value="returned">Retourné</option>
+                        <option value="recalled">Rappelé</option>
+                        <option value="reserved_internal">Réservé (Interne)</option>
+                        <option value="missing">Manquant</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="search-item-uid" class="form-label">Rechercher par UID:</label>
+                    <input type="text" id="search-item-uid" placeholder="Entrer UID..." class="form-input-admin mt-1">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="admin-table min-w-full">
+                    <thead>
+                        <tr>
+                            <th>UID Article</th>
+                            <th>Produit</th>
+                            <th>Statut</th>
+                            <th>Lot</th>
+                            <th>Date Prod.</th>
+                            <th>Date Exp.</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="serialized-items-table-body">
+                        <tr><td colspan="7" class="text-center p-4">Chargement des articles sérialisés...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-    <script src="js/admin_config.js"></script> <!-- Load config first -->
-    <script src="js/admin_ui.js"></script>     <!-- Load UI functions next -->
+        <div id="item-status-modal" class="admin-modal-overlay">
+            <div class="admin-modal-content sm-max-w-lg">
+                <form id="update-item-status-form" class="admin-form">
+                    <div class="admin-modal-header">
+                        <h3 id="item-status-modal-title" class="admin-form-title">Modifier Statut Article</h3>
+                        <button type="button" class="admin-modal-close" id="close-item-status-modal-button" aria-label="Close">&times;</button>
+                    </div>
+                    <div class="admin-modal-body space-y-4">
+                        <input type="hidden" id="status-item-uid" name="item_uid">
+                        <div>
+                            <label for="item-new-status" class="form-label">Nouveau Statut</label>
+                            <select id="item-new-status" name="status" required class="form-input-admin">
+                                <option value="available">Disponible</option>
+                                <option value="damaged">Endommagé</option>
+                                <option value="recalled">Rappelé</option>
+                                <option value="reserved_internal">Réservé (Interne)</option>
+                                <option value="missing">Manquant</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="item-status-notes" class="form-label">Notes (Raison du changement)</label>
+                            <textarea id="item-status-notes" name="notes" rows="3" class="form-input-admin"></textarea>
+                        </div>
+                    </div>
+                    <div class="admin-modal-actions">
+                        <button type="submit" class="btn btn-admin-primary">
+                            Mettre à jour Statut
+                        </button>
+                        <button type="button" id="cancel-item-status-modal-button" class="btn btn-admin-secondary">
+                            Annuler
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="admin-toast-container"></div>
+    </main>
+
+    <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
+        <p>&copy; <span id="currentYearManageInv"></span> Maison Trüvra - Admin Panel</p>
+    </footer>
+
+    <script src="js/admin_config.js"></script>
+    <script src="js/admin_ui.js"></script>    
     <script src="js/admin_api.js"></script>    
     <script src="js/admin_auth.js"></script>
-    <script src="js/admin_main.js"></script>    <!-- Main admin script -->
-    <script src="js/admin_inventory.js"></script> <!-- Page-specific script -->
+    <script src="js/admin_main.js"></script>
+    <script src="js/admin_inventory.js"></script>
+    <script>
+        const currentYearSpanManageInv = document.getElementById('currentYearManageInv');
+        if (currentYearSpanManageInv) {
+            currentYearSpanManageInv.textContent = new Date().getFullYear();
+        }
+    </script>
 </body>
 </html>
