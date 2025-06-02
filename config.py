@@ -111,11 +111,24 @@ class Config:
     INITIAL_ADMIN_PASSWORD = os.environ.get('INITIAL_ADMIN_PASSWORD')
 
 
+    # Add MySQL Configuration
+    MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
+    MYSQL_USER = os.environ.get('MYSQL_USER', 'your_mysql_user')
+    MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', 'your_mysql_password')
+    MYSQL_DB = os.environ.get('MYSQL_DB', 'maison_truvra_mysql')
+    MYSQL_CURSORCLASS = 'DictCursor' # To get results as dictionaries
+
+    # If you were to use Flask-SQLAlchemy, it would be:
+    # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
+    #    f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}/{MYSQL_DB}"
+    # SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # ...
+
 class DevelopmentConfig(Config):
     DEBUG = True
     LOG_LEVEL = 'DEBUG'
     JWT_COOKIE_SECURE = False # HTTP for local dev
-    DATABASE_PATH = os.environ.get('DEV_DATABASE_PATH', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'dev_maison_truvra.sqlite3'))
+    # DATABASE_PATH = os.environ.get('DATABASE_PATH', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'maison_truvra.sqlite3'))
     # Use MailHog or similar for local email testing
     MAIL_SERVER = os.environ.get('DEV_MAIL_SERVER', 'localhost') 
     MAIL_PORT = int(os.environ.get('DEV_MAIL_PORT', 1025))      
@@ -131,7 +144,7 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     TESTING = True
     DEBUG = True 
-    DATABASE_PATH = os.environ.get('TEST_DATABASE_PATH', 'sqlite:///:memory:') 
+    # DATABASE_PATH = os.environ.get('DATABASE_PATH', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'maison_truvra.sqlite3'))
     JWT_COOKIE_SECURE = False
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=5)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(minutes=10)
