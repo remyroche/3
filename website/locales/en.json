@@ -597,4 +597,19 @@
     "invoicesPro.table.telecharger": "Download",
     "invoicesPro.pasDeFactures": "You have no invoices at the moment.",
     "invoicesPro.erreurChargement": "Could not load your invoices. Please try again later."
+
+"invoiceStatus.paid": "Paid",
+    "invoiceStatus.issued": "Issued",
+    "invoiceStatus.pending_payment": "Pending Payment",
+    "invoiceStatus.draft": "Draft",
+    "invoiceStatus.cancelled": "Cancelled",
+    "invoiceStatus.overdue": "Overdue",
+    "invoiceStatus.processing": "Processing",
+    "invoiceStatus.shipped": "Shipped",
+    "invoiceStatus.delivered": "Delivered",
+    "invoiceStatus.completed": "Completed",
+    "invoiceStatus.refunded": "Refunded",
+    "invoiceStatus.partially_refunded": "Partially Refunded",
+    "invoiceStatus.on_hold": "On Hold",
+    "invoiceStatus.failed": "Failed"
 }
