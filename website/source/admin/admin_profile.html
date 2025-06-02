@@ -1,0 +1,149 @@
+<!-- website/source/admin/admin_profile.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Profil - Maison Trüvra Admin</title>
+    <link rel="stylesheet" href="css/admin_style.css"> <!-- Ensure this path is correct -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        #totp-qr-code-container img { margin: 1rem auto; display: block; border: 1px solid #ccc; }
+        .manual-setup-key { 
+            font-family: monospace; 
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+            padding: 0.25rem 0.5rem; 
+            border-radius: 0.25rem; 
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body id="page-admin-profile" class="bg-gray-100">
+    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Retour au Tableau de Bord
+                </a>
+                <div id="admin-header-title-area">
+                     <h1 class="text-xl font-semibold text-gray-700">Maison Trüvra - Admin</h1>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="admin-user-greeting" class="text-gray-700 text-sm mr-2"></span>
+                <button id="admin-logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-sm flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <nav class="bg-gray-800 text-white shadow-md">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-start h-12 space-x-1 overflow-x-auto">
+                <a href="admin_dashboard.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Tableau de Bord</a>
+                <a href="admin_manage_products.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Produits</a>
+                <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Inventaire</a>
+                <a href="admin_view_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voir Inventaire</a>
+                <a href="admin_manage_orders.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Commandes</a>
+                <a href="admin_manage_users.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Utilisateurs</a>
+                <a href="admin_manage_categories.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Catégories</a>
+                <a href="admin_invoices.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Factures</a>
+                <a href="admin_manage_reviews.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Avis</a>
+                <a href="admin_profile.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 active">Mon Profil</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="admin-content-area container mx-auto p-6 space-y-6">
+        <h1 class="text-3xl font-semibold text-gray-800 mb-6">Mon Profil Administrateur</h1>
+
+        <section id="admin-profile-details" class="admin-form-container">
+            <h2 class="admin-form-title">Informations du Compte</h2>
+            <div class="space-y-3 text-sm text-gray-700">
+                <p><strong>Email:</strong> <span id="profile-email">Chargement...</span></p>
+                <p><strong>Nom:</strong> <span id="profile-name">Chargement...</span></p>
+                <p><strong>Rôle:</strong> <span id="profile-role">Chargement...</span></p>
+            </div>
+        </section>
+
+        <section id="admin-totp-management" class="admin-form-container">
+            <h2 class="admin-form-title">Authentification à Deux Facteurs (2FA / TOTP)</h2>
+            <div id="totp-status-section">
+                <p class="text-sm">Statut 2FA: <strong id="totp-current-status" class="text-gray-700">Chargement...</strong></p>
+                <button id="manage-totp-button" class="btn btn-admin-secondary mt-3 text-sm">Gérer 2FA</button>
+            </div>
+
+            <!-- Section to initiate TOTP setup (password prompt) -->
+            <div id="totp-initiate-section" class="hidden mt-4 pt-4 border-t border-gray-200">
+                <h3 class="text-md font-semibold text-gray-700 mb-2">Activer l'Authentification à Deux Facteurs</h3>
+                <p class="text-xs text-gray-600 mb-3">Pour des raisons de sécurité, veuillez confirmer votre mot de passe actuel.</p>
+                <div class="mb-3">
+                    <label for="current-password-for-totp" class="form-label">Mot de passe actuel:</label>
+                    <input type="password" id="current-password-for-totp" class="form-input-admin">
+                </div>
+                <button id="initiate-totp-setup-button" class="btn btn-admin-primary text-sm">Continuer la configuration 2FA</button>
+                <button id="cancel-totp-initiate-button" class="btn btn-admin-secondary text-sm ml-2">Annuler</button>
+            </div>
+            
+            <!-- Section to display QR code and verify TOTP -->
+            <div id="totp-qr-code-section" class="hidden mt-4 pt-4 border-t border-gray-200">
+                <h3 class="text-md font-semibold text-gray-700 mb-2">Configurer votre Application d'Authentification</h3>
+                <p class="text-xs text-gray-600 mb-2">Scannez ce code QR avec votre application d'authentification (Google Authenticator, Authy, etc.).</p>
+                <div id="totp-qr-code-container" class="my-4 p-2 border border-gray-300 inline-block bg-white rounded">
+                    <!-- QR Code will be rendered here by JavaScript -->
+                </div>
+                <p class="text-xs text-gray-600 mb-1">Ou entrez manuellement cette clé :</p>
+                <p id="totp-manual-key" class="manual-setup-key text-sm mb-3 p-2 bg-gray-100 rounded"></p>
+                <div class="mb-3">
+                    <label for="totp-verification-code" class="form-label">Entrez le code à 6 chiffres de votre application:</label>
+                    <input type="text" id="totp-verification-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" class="form-input-admin text-center w-1/2" autocomplete="one-time-code">
+                </div>
+                <button id="verify-enable-totp-button" class="btn btn-admin-primary text-sm">Vérifier et Activer 2FA</button>
+                <button id="cancel-totp-qr-button" class="btn btn-admin-secondary text-sm ml-2">Annuler</button>
+            </div>
+
+            <!-- Section to disable TOTP -->
+            <div id="totp-disable-section" class="hidden mt-4 pt-4 border-t border-gray-200">
+                <h3 class="text-md font-semibold text-gray-700 mb-2">Désactiver l'Authentification à Deux Facteurs</h3>
+                 <p class="text-xs text-gray-600 mb-3">Pour désactiver 2FA, veuillez entrer votre mot de passe actuel et un code TOTP valide.</p>
+                <div class="mb-3">
+                    <label for="current-password-for-disable" class="form-label">Mot de passe actuel:</label>
+                    <input type="password" id="current-password-for-disable" class="form-input-admin">
+                </div>
+                <div class="mb-3">
+                    <label for="current-totp-for-disable" class="form-label">Code TOTP actuel:</label>
+                    <input type="text" id="current-totp-for-disable" inputmode="numeric" pattern="[0-9]*" maxlength="6" class="form-input-admin text-center w-1/2" autocomplete="one-time-code">
+                </div>
+                <button id="disable-totp-button" class="btn btn-admin-danger text-sm">Désactiver 2FA</button>
+                <button id="cancel-totp-disable-button" class="btn btn-admin-secondary text-sm ml-2">Annuler</button>
+            </div>
+            <div id="totp-message-area" class="text-sm mt-3"></div>
+        </section>
+
+    </main>
+    
+    <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
+        <p>&copy; <span id="currentYearAdminProfile"></span> Maison Trüvra - Admin Panel</p>
+    </footer>
+
+    <div id="admin-toast-container"></div>
+
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+    <script src="js/admin_config.js"></script> 
+    <script src="js/admin_ui.js"></script>     
+    <script src="js/admin_api.js"></script>
+    <script src="js/admin_auth.js"></script>
+    <script src="js/admin_main.js"></script>    
+    <script src="js/admin_profile.js"></script>   
+    <script>
+        const currentYearSpanAdminProfile = document.getElementById('currentYearAdminProfile');
+        if (currentYearSpanAdminProfile) {
+            currentYearSpanAdminProfile.textContent = new Date().getFullYear();
+        }
+    </script>
+</body>
+</html>
