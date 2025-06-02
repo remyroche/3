@@ -1,226 +1,170 @@
-import sqlite3
+# backend/database.py
 import os
 import click
-from flask import current_app, g
+from flask import current_app
 from flask.cli import with_appcontext
 from werkzeug.security import generate_password_hash
-import datetime 
 
-# --- Database Initialization and Connection Management ---
+# Import the db instance and models from your application structure
+# This assumes db is initialized in backend/__init__.py and models are in backend/models.py
+from . import db # Or from .models import db if you define it there
+from .models import User, Category, Product # Import other models as needed
 
-def get_db_connection():
-    if 'db_conn' not in g or g.db_conn is None:
-        try:
-            db_path = current_app.config['DATABASE_PATH']
-            os.makedirs(os.path.dirname(db_path), exist_ok=True)
-            g.db_conn = sqlite3.connect(
-                db_path,
-                detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
-            )
-            g.db_conn.row_factory = sqlite3.Row
-            g.db_conn.execute("PRAGMA foreign_keys = ON;")
-            current_app.logger.debug(f"Database connection established to {db_path}")
-        except sqlite3.Error as e:
-            current_app.logger.error(f"Database connection error: {e}")
-            raise
-        except Exception as e:
-            current_app.logger.error(f"An unexpected error occurred while connecting to the database: {e}")
-            raise
-    return g.db_conn
+# The old get_db_connection, close_db_connection, query_db, init_db_schema
+# are no longer needed when using Flask-SQLAlchemy as it manages connections and sessions.
 
-def close_db_connection(e=None):
-    db_conn = g.pop('db_conn', None)
-    if db_conn is not None:
-        try:
-            db_conn.close()
-            current_app.logger.debug("Database connection closed.")
-        except Exception as e:
-            current_app.logger.error(f"Error closing database connection: {e}")
+def populate_initial_data_sqlalchemy():
+    """Populates the database with initial data using SQLAlchemy models."""
+    if not current_app:
+        print("Error: Application context is not available. Cannot populate data.")
+        return
 
-def init_db_schema(db_conn=None):
-    connection_managed_internally = False
-    if db_conn is None:
-        if not current_app:
-            raise RuntimeError("Application context is required to get a database connection.")
-        db_conn = get_db_connection()
-        connection_managed_internally = True
-    try:
-        schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
-        if not os.path.exists(schema_path):
-            current_app.logger.error(f"Schema file not found at {schema_path}")
-            raise FileNotFoundError(f"Schema file not found: {schema_path}")
-        with open(schema_path, 'r') as f:
-            sql_script = f.read()
-        cursor = db_conn.cursor()
-        cursor.executescript(sql_script)
-        db_conn.commit()
-        current_app.logger.info("Database schema initialized successfully from schema.sql.")
-    except sqlite3.Error as e:
-        current_app.logger.error(f"Error initializing database schema: {e}")
-        if db_conn and connection_managed_internally: db_conn.rollback()
-        raise
-    except FileNotFoundError as e: 
-        current_app.logger.error(f"Schema file error: {e}")
-        raise
-    except Exception as e:
-        current_app.logger.error(f"Unexpected error during schema initialization: {e}")
-        if db_conn and connection_managed_internally and hasattr(db_conn, 'rollback'): db_conn.rollback()
-        raise
+    with current_app.app_context():
+        # --- Admin User ---
+        admin_email = current_app.config.get('INITIAL_ADMIN_EMAIL')
+        admin_password = current_app.config.get('INITIAL_ADMIN_PASSWORD')
 
-def populate_initial_data(db_conn=None):
-    connection_managed_internally = False
-    if db_conn is None:
-        if not current_app:
-            raise RuntimeError("Application context is required to populate initial data.")
-        db_conn = get_db_connection()
-        connection_managed_internally = True
-    
-    cursor = db_conn.cursor()
-    populated_something = False
-
-    try:
-        # Secure initial admin creation:
-        # Admin credentials should be set via environment variables for production.
-        admin_email_env = current_app.config.get('INITIAL_ADMIN_EMAIL')
-        admin_password_env = current_app.config.get('INITIAL_ADMIN_PASSWORD')
-
-        if admin_email_env and admin_password_env:
-            cursor.execute("SELECT COUNT(*) FROM users WHERE email = ? AND role = 'admin'", (admin_email_env,))
-            if cursor.fetchone()[0] == 0:
-                cursor.execute(
-                    """INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, is_verified, professional_status) 
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (admin_email_env, generate_password_hash(admin_password_env), "Admin", "Trüvra", 'admin', True, True, 'approved')
+        if admin_email and admin_password:
+            if not User.query.filter_by(email=admin_email, role='admin').first():
+                admin = User(
+                    email=admin_email,
+                    first_name="Admin",
+                    last_name="Trüvra",
+                    role='admin',
+                    is_active=True,
+                    is_verified=True, # Admins are typically pre-verified
+                    professional_status='approved' # If admin can also be a B2B user
                 )
-                current_app.logger.info(f"Admin user created from environment variables: {admin_email_env}.")
-                populated_something = True
+                admin.set_password(admin_password) # Use the method from the User model
+                db.session.add(admin)
+                current_app.logger.info(f"Admin user '{admin_email}' created via SQLAlchemy.")
             else:
-                current_app.logger.info(f"Admin user {admin_email_env} already exists.")
+                current_app.logger.info(f"Admin user '{admin_email}' already exists.")
         else:
             current_app.logger.warning(
-                "INITIAL_ADMIN_EMAIL or INITIAL_ADMIN_PASSWORD environment variables not set. "
-                "Initial admin user will not be created automatically. "
-                "Please create an admin user manually or set these environment variables."
+                "INITIAL_ADMIN_EMAIL or INITIAL_ADMIN_PASSWORD not set in config. "
+                "Initial admin user will not be created automatically."
             )
-            # Fallback for development if defaults were previously used and admin still exists:
-            legacy_admin_email = current_app.config.get('ADMIN_EMAIL', 'admin@maisontruvra.com')
-            cursor.execute("SELECT COUNT(*) FROM users WHERE email = ? AND role = 'admin'", (legacy_admin_email,))
-            if cursor.fetchone()[0] == 0 and config_by_name.get(os.getenv('FLASK_ENV')) == DevelopmentConfig :
-                 current_app.logger.warning(f"Attempting to create admin with ADMIN_EMAIL (legacy dev default). THIS IS INSECURE FOR PRODUCTION.")
-                 # This block could be removed entirely to force env var usage.
-                 # admin_password_config = current_app.config.get('ADMIN_PASSWORD', 'SecureAdminP@ss1') # Legacy default
-                 # cursor.execute(
-                 #    """INSERT INTO users (email, password_hash, first_name, last_name, role, is_active, is_verified, professional_status) 
-                 #       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                 #    (legacy_admin_email, generate_password_hash(admin_password_config), "Admin", "Trüvra", 'admin', True, True, 'approved')
-                 # )
-                 # current_app.logger.info(f"Legacy default admin user created: {legacy_admin_email}. CHANGE THIS PASSWORD.")
-                 # populated_something = True
 
-
-        cursor.execute("SELECT COUNT(*) FROM categories")
-        if cursor.fetchone()[0] == 0:
-            initial_categories = [
-                ('Truffes Fraîches', 'Découvrez nos truffes fraîches de saison.', None, 'truffes-fraiches', 'CAT-TF'),
-                ('Huiles Truffées', 'Huiles d\'olive extra vierge infusées aux arômes de truffe.', None, 'huiles-truffees', 'CAT-HT'),
-                ('Sauces Truffées', 'Sauces gourmandes pour sublimer vos plats.', None, 'sauces-truffees', 'CAT-ST'),
-                ('Coffrets Cadeaux', 'Des assortiments parfaits pour offrir.', None, 'coffrets-cadeaux', 'CAT-CG'),
-                ('Autre', 'Autres délices truffés.', None, 'autre', 'CAT-AUTRE')
+        # --- Categories ---
+        if Category.query.count() == 0:
+            initial_categories_data = [
+                {'name': 'Truffes Fraîches', 'description': 'Découvrez nos truffes fraîches de saison.', 'category_code': 'CAT-TF', 'slug': 'truffes-fraiches', 'is_active': True},
+                {'name': 'Huiles Truffées', 'description': 'Huiles d\'olive extra vierge infusées aux arômes de truffe.', 'category_code': 'CAT-HT', 'slug': 'huiles-truffees', 'is_active': True},
+                {'name': 'Sauces Truffées', 'description': 'Sauces gourmandes pour sublimer vos plats.', 'category_code': 'CAT-ST', 'slug': 'sauces-truffees', 'is_active': True},
+                {'name': 'Coffrets Cadeaux', 'description': 'Des assortiments parfaits pour offrir.', 'category_code': 'CAT-CG', 'slug': 'coffrets-cadeaux', 'is_active': True},
+                {'name': 'Autre', 'description': 'Autres délices truffés.', 'category_code': 'CAT-AUTRE', 'slug': 'autre', 'is_active': True}
             ]
-            cursor.executemany(
-                "INSERT INTO categories (name, description, parent_id, slug, category_code) VALUES (?, ?, ?, ?, ?)",
-                initial_categories
-            )
-            current_app.logger.info(f"{len(initial_categories)} initial categories populated.")
-            populated_something = True
-
-        if populated_something:
-            if connection_managed_internally: db_conn.commit()
-            current_app.logger.info("Initial data populated where applicable.")
+            for cat_data in initial_categories_data:
+                category = Category(**cat_data) # Unpack dictionary into model constructor
+                db.session.add(category)
+            current_app.logger.info(f"{len(initial_categories_data)} initial categories populated via SQLAlchemy.")
         else:
-            current_app.logger.info("No new initial data was populated.")
+            current_app.logger.info("Categories table already has data. Skipping initial population.")
+        
+        # --- Example Product (Optional) ---
+        # if Product.query.count() == 0:
+        #     cat_tf = Category.query.filter_by(slug='truffes-fraiches').first()
+        #     if cat_tf:
+        #         example_product = Product(
+        #             name="Truffe Noire d'Hiver (Exemple)",
+        #             description="Une truffe noire d'hiver exceptionnelle.",
+        #             category_id=cat_tf.id,
+        #             product_code="PROD-TNH-EX01",
+        #             sku_prefix="TNHEX", # Example
+        #             type='simple', # or 'variable_weight'
+        #             base_price=150.00,
+        #             currency='EUR',
+        #             is_active=True,
+        #             slug='truffe-noire-hiver-exemple',
+        #             aggregate_stock_quantity=10 
+        #         )
+        #         db.session.add(example_product)
+        #         current_app.logger.info("Example product added.")
 
-    except sqlite3.IntegrityError as ie:
-        if connection_managed_internally: db_conn.rollback()
-        current_app.logger.warning(f"Integrity error during data population (likely data already exists): {ie}")
-    except Exception as e:
-        if connection_managed_internally: db_conn.rollback()
-        current_app.logger.error(f"Error populating initial data: {e}", exc_info=True)
-        raise
+        try:
+            db.session.commit()
+            current_app.logger.info("Initial data (if any) committed successfully via SQLAlchemy.")
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error committing initial data: {e}", exc_info=True)
+            raise
 
-@click.command('init-db')
+@click.command('seed-db')
 @with_appcontext
-def init_db_command():
-    db_conn = get_db_connection()
-    init_db_schema(db_conn)
-    click.echo('Initialized the database schema from schema.sql.')
-    populate_initial_data(db_conn)
-    click.echo('Populated initial data (if applicable).')
-
-def query_db(query, args=(), one=False, commit=False, db_conn=None):
-    connection_provided = db_conn is not None
-    if not connection_provided:
-        db_conn = get_db_connection()
-    cursor = None
-    try:
-        cursor = db_conn.cursor()
-        cursor.execute(query, args)
-        if commit: 
-            if not connection_provided: 
-                 db_conn.commit()
-            return cursor.lastrowid if "insert" in query.lower() else cursor.rowcount
-        rv = cursor.fetchall()
-        return (rv[0] if rv else None) if one else rv
-    except sqlite3.Error as e:
-        current_app.logger.error(f"Database query error: {e} \nQuery: {query} \nArgs: {args}")
-        if db_conn and commit and not connection_provided: db_conn.rollback()
-        raise 
-    except Exception as e:
-        current_app.logger.error(f"An unexpected error occurred during query_db: {e}")
-        if db_conn and commit and not connection_provided: db_conn.rollback()
-        raise
+def seed_db_command():
+    """Seeds the database with initial data using SQLAlchemy models."""
+    populate_initial_data_sqlalchemy()
+    click.echo('Database seeded with initial data (SQLAlchemy).')
 
 def register_db_commands(app):
-    app.cli.add_command(init_db_command)
-    app.teardown_appcontext(close_db_connection)
-    app.logger.info("Database commands registered and teardown context set.")
+    """Registers database-related CLI commands."""
+    app.cli.add_command(seed_db_command)
+    # The 'init-db' command is now effectively handled by Flask-Migrate's `flask db upgrade`
+    # You might remove the old init_db_command or adapt it if needed for very specific first-time setup
+    # not covered by migrations (though migrations should handle schema creation).
+    app.logger.info("SQLAlchemy DB seed command registered.")
 
-def record_stock_movement(db_conn, product_id, movement_type, quantity_change=None, weight_change_grams=None,
-                          variant_id=None, serialized_item_id=None, reason=None,
-                          related_order_id=None, related_user_id=None, notes=None):
-    if db_conn is None:
-        current_app.logger.error("record_stock_movement called without a database connection.")
-        raise ValueError("A database connection (db_conn) is required for record_stock_movement.")
-    sql = """
-        INSERT INTO stock_movements (
-            product_id, variant_id, serialized_item_id, movement_type,
-            quantity_change, weight_change_grams, reason,
-            related_order_id, related_user_id, notes, movement_date 
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+
+# --- Utility functions that were in database.py, now adapted or to be replaced ---
+
+def record_stock_movement(
+    db_session, product_id, movement_type, quantity_change=None, weight_change_grams=None,
+    variant_id=None, serialized_item_id=None, reason=None,
+    related_order_id=None, related_user_id=None, notes=None
+):
     """
-    args = (
-        product_id, variant_id, serialized_item_id, movement_type,
-        quantity_change, weight_change_grams, reason,
-        related_order_id, related_user_id, notes
+    Records a stock movement using SQLAlchemy session.
+    Note: The db_session should be passed in, typically from the route handler.
+    The calling function is responsible for db.session.commit().
+    """
+    from .models import StockMovement # Local import to avoid circular dependency at module level
+
+    if not db_session:
+        current_app.logger.error("record_stock_movement called without a SQLAlchemy db session.")
+        raise ValueError("A SQLAlchemy db session is required for record_stock_movement.")
+
+    movement = StockMovement(
+        product_id=product_id,
+        variant_id=variant_id,
+        serialized_item_id=serialized_item_id,
+        movement_type=movement_type,
+        quantity_change=quantity_change,
+        weight_change_grams=weight_change_grams,
+        reason=reason,
+        related_order_id=related_order_id,
+        related_user_id=related_user_id,
+        notes=notes
+        # movement_date is defaulted in the model
     )
-    try:
-        cursor = db_conn.cursor()
-        cursor.execute(sql, args)
-        current_app.logger.debug(f"Stock movement prepared for recording (pending commit): {movement_type} for product ID {product_id}")
-        return cursor.lastrowid
-    except sqlite3.Error as e:
-        current_app.logger.error(f"Failed to prepare stock movement record: {e}. Query: {sql}, Args: {args}")
-        raise
-    except Exception as e:
-        current_app.logger.error(f"Unexpected error preparing stock movement record: {e}")
-        raise
+    db_session.add(movement)
+    current_app.logger.debug(f"Stock movement object created for recording: {movement_type} for product ID {product_id}")
+    # The calling function should commit the session.
+    return movement # Returning the object might be useful
 
-def get_product_id_from_code(product_code, db_conn=None):
+def get_product_id_from_code(product_code, db_session=None):
+    """Fetches product ID using product_code with SQLAlchemy."""
+    from .models import Product # Local import
     if not product_code: return None
-    product_row = query_db("SELECT id FROM products WHERE product_code = ?", [product_code], db_conn=db_conn, one=True)
-    return product_row['id'] if product_row else None
+    
+    # If db_session is not provided, this implies it's called outside a request context
+    # or where db.session is not readily available. This is less ideal.
+    # For calls within request handlers, db.session should be used directly.
+    if db_session:
+        product = db_session.query(Product.id).filter_by(product_code=product_code.upper()).first()
+    else: # Fallback, assumes app context is available for db.session
+        product = Product.query.with_entities(Product.id).filter_by(product_code=product_code.upper()).first()
+        
+    return product.id if product else None
 
-def get_category_id_from_code(category_code, db_conn=None):
+def get_category_id_from_code(category_code, db_session=None):
+    """Fetches category ID using category_code with SQLAlchemy."""
+    from .models import Category # Local import
     if not category_code: return None
-    category_row = query_db("SELECT id FROM categories WHERE category_code = ?", [category_code], db_conn=db_conn, one=True)
-    return category_row['id'] if category_row else None
+
+    if db_session:
+        category = db_session.query(Category.id).filter_by(category_code=category_code.upper()).first()
+    else:
+        category = Category.query.with_entities(Category.id).filter_by(category_code=category_code.upper()).first()
+        
+    return category.id if category else None
