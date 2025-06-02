@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="css/admin_style.css"> 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body id="page-admin-manage-users" class="bg-gray-100 font-sans"> <header class="bg-white shadow-md p-4 sticky top-0 z-50">
+<body id="page-admin-manage-users">
+    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
                 <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
@@ -44,8 +45,8 @@
     </nav>
     <main class="admin-content-area container mx-auto p-6 space-y-6">
         <h1 class="text-3xl font-semibold text-gray-800 mb-6">Gestion des Utilisateurs</h1>
-        <section class="admin-form-container bg-white p-6 rounded-lg shadow">
-            <h2 class="admin-form-title text-xl font-semibold text-gray-700 mb-4">Filtres Utilisateurs</h2>
+        <section class="admin-form-container">
+            <h2 class="admin-form-title">Filtres Utilisateurs</h2>
             <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label for="filter-user-role" class="form-label">Rôle:</label>
@@ -57,7 +58,8 @@
                     </select>
                 </div>
                 <div>
-                    <label for="filter-user-is-active" class="form-label">Statut Actif:</label> <select id="filter-user-is-active" class="form-input-admin mt-1">
+                    <label for="filter-user-is-active" class="form-label">Statut Actif:</label>
+                    <select id="filter-user-is-active" class="form-input-admin mt-1">
                         <option value="">Tous</option>
                         <option value="true">Actif</option>
                         <option value="false">Inactif</option>
@@ -68,10 +70,11 @@
                     <input type="text" id="search-user-email" placeholder="Email, Nom, ID..." class="form-input-admin mt-1">
                 </div>
             </div>
+             <button id="apply-user-filters-button" class="btn btn-admin-primary">Appliquer Filtres</button>
         </section>
 
-        <section class="admin-table-container bg-white p-6 rounded-lg shadow">
-            <h2 class="admin-table-title text-xl font-semibold text-gray-700 mb-4">Liste des Utilisateurs</h2>
+        <section class="admin-table-container">
+            <h2 class="admin-table-title">Liste des Utilisateurs</h2>
             <div class="overflow-x-auto">
                 <table class="admin-table min-w-full">
                     <thead>
@@ -94,9 +97,11 @@
         </section>
     </main>
 
-    <div id="user-edit-modal" class="admin-modal-overlay"> <div class="admin-modal-content sm-max-w-lg"> <form id="user-edit-form" class="admin-form">
+    <div id="user-edit-modal" class="admin-modal-overlay">
+        <div class="admin-modal-content sm-max-w-lg">
+            <form id="user-edit-form" class="admin-form">
                 <div class="admin-modal-header">
-                    <h3 id="user-edit-modal-title">Modifier Utilisateur</h3>
+                    <h3 id="user-edit-modal-title" class="admin-form-title">Modifier Utilisateur</h3>
                     <button type="button" class="admin-modal-close" id="close-user-edit-modal-button" aria-label="Close">&times;</button>
                 </div>
                 <div class="admin-modal-body space-y-4">
@@ -179,10 +184,10 @@
     </div>
     
     <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
-        <p>&copy; <span id="currentYearManageUsers">2024</span> Maison Trüvra - Admin Panel</p>
+        <p>&copy; <span id="currentYearManageUsers"></span> Maison Trüvra - Admin Panel</p>
     </footer>
 
-    <div id="admin-toast-container" class="fixed bottom-0 right-0 p-4 space-y-2 z-[1051]"></div>
+    <div id="admin-toast-container"></div>
 
     <script src="js/admin_config.js"></script> 
     <script src="js/admin_ui.js"></script>     
