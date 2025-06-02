@@ -20,6 +20,7 @@ from ..utils import (
 
 auth_bp = Blueprint('auth_bp', __name__, url_prefix='/api/auth') # Corrected prefix
 
+
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.json
@@ -33,7 +34,7 @@ def register():
     vat_number = data.get('vat_number')
     siret_number = data.get('siret_number')
 
-    audit_logger = current_app.audit_log_service # Assuming audit_logger is set on current_app
+    audit_logger = current_app.audit_log_service 
 
     if not email or not password:
         audit_logger.log_action(action='register_fail', email=email, details="Email and password are required.", status='failure', ip_address=request.remote_addr)
@@ -41,9 +42,22 @@ def register():
     if not is_valid_email(email):
         audit_logger.log_action(action='register_fail', email=email, details="Invalid email format.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Invalid email format", success=False), 400
+
+    # --- UPDATED PASSWORD VALIDATION ---
     if len(password) < 8:
         audit_logger.log_action(action='register_fail_weak_password', email=email, details="Password too short.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Password must be at least 8 characters long.", success=False), 400
+    if not re.search(r"[A-Z]", password):
+        audit_logger.log_action(action='register_fail_weak_password', email=email, details="Password missing uppercase letter.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Password must contain at least one uppercase letter.", success=False), 400
+    if not re.search(r"[a-z]", password):
+        audit_logger.log_action(action='register_fail_weak_password', email=email, details="Password missing lowercase letter.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Password must contain at least one lowercase letter.", success=False), 400
+    if not re.search(r"[0-9]", password):
+        audit_logger.log_action(action='register_fail_weak_password', email=email, details="Password missing a digit.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Password must contain at least one digit.", success=False), 400
+    # --- END OF UPDATED PASSWORD VALIDATION ---
+
     if role not in ['b2c_customer', 'b2b_professional']:
         audit_logger.log_action(action='register_fail', email=email, details="Invalid role specified.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Invalid role specified", success=False), 400
@@ -58,10 +72,10 @@ def register():
         
         professional_status = None
         if role == 'b2b_professional':
-            if not company_name or not siret_number:
+            if not company_name or not siret_number: # Assuming SIRET is a key identifier for B2B
                 audit_logger.log_action(action='register_fail_b2b', email=email, details="Company name and SIRET are required for B2B.", status='failure', ip_address=request.remote_addr)
                 return jsonify(message="Company name and SIRET number are required for professional accounts.", success=False), 400
-            professional_status = 'pending'
+            professional_status = 'pending' # B2B accounts start as pending approval
 
         new_user = User(
             email=email,
@@ -74,15 +88,16 @@ def register():
             vat_number=vat_number,
             siret_number=siret_number,
             professional_status=professional_status,
-            is_active=True, # New users are active by default, verification handles access
-            is_verified=False
+            is_active=True, # New users are active by default, verification handles access to certain features
+            is_verified=False # Email not verified yet
         )
         new_user.set_password(password) # Use the method from the User model
         
         db.session.add(new_user)
         db.session.commit()
 
-        # verification_link = url_for('auth_bp.verify_email_route_get', token=verification_token, _external=True) # Assuming a GET route for verification
+        # Placeholder for sending verification email
+        # verification_link = url_for('auth_bp.verify_email_route_get', token=verification_token, _external=True) 
         # current_app.logger.info(f"SIMULATED: Verification email to {email} with link: {verification_link}")
         # send_email(to_email=email, subject="Verify Your Email - Maison Trüvra", body_html=f"<p>Please verify your email: <a href='{verification_link}'>{verification_link}</a></p>")
         audit_logger.log_action(user_id=new_user.id, action='verification_email_sent_simulated', target_type='user', target_id=new_user.id, status='success', ip_address=request.remote_addr)
@@ -90,11 +105,12 @@ def register():
         audit_logger.log_action(user_id=new_user.id, action='register_success', target_type='user', target_id=new_user.id, details=f"User {email} registered as {role}.", status='success', ip_address=request.remote_addr)
         return jsonify(message="User registered successfully. Please check your email to verify your account.", user_id=new_user.id, success=True), 201
 
-    except Exception as e: # Catch broader exceptions, SQLAlchemy might raise different ones
+    except Exception as e: # Catch broader exceptions
         db.session.rollback()
         current_app.logger.error(f"Error during registration for {email}: {e}", exc_info=True)
         audit_logger.log_action(action='register_fail_server_error', email=email, details=str(e), status='failure', ip_address=request.remote_addr)
         return jsonify(message="Registration failed due to a server error", success=False), 500
+        
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
