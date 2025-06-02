@@ -123,60 +123,149 @@ async function handleLogin(event) {
     }
 }
 
+// Function to validate password complexity on the client side (optional, but good for UX)
+function validatePasswordComplexity(password) {
+    if (password.length < 8) {
+        return "Le mot de passe doit comporter au moins 8 caractères."; // Password must be at least 8 characters long.
+    }
+    if (!/[A-Z]/.test(password)) {
+        return "Le mot de passe doit contenir au moins une lettre majuscule."; // Password must contain at least one uppercase letter.
+    }
+    if (!/[a-z]/.test(password)) {
+        return "Le mot de passe doit contenir au moins une lettre minuscule."; // Password must contain at least one lowercase letter.
+    }
+    if (!/[0-9]/.test(password)) {
+        return "Le mot de passe doit contenir au moins un chiffre."; // Password must contain at least one digit.
+    }
+    return null; // Password is valid
+}
+
+
+
+
 async function handleRegistrationForm(event) {
     event.preventDefault();
     const form = event.target;
-    clearFormErrors(form);
+    clearFormErrors(form); // Assuming clearFormErrors is defined in ui.js
     
-    const emailField = form.querySelector('#register-email'); 
+    const emailField = form.querySelector('#register-email'); // Ensure these IDs match your HTML
     const passwordField = form.querySelector('#register-password');
     const confirmPasswordField = form.querySelector('#register-confirm-password');
     const nomField = form.querySelector('#register-nom');
     const prenomField = form.querySelector('#register-prenom');
-    
+    // Add fields for B2B registration if they are part of this form
+    const companyNameField = form.querySelector('#register-company-name');
+    const siretNumberField = form.querySelector('#register-siret-number');
+    const vatNumberField = form.querySelector('#register-vat-number');
+    const roleSelectField = form.querySelector('#register-role-type'); // Assuming a select field for role
+
+    const registrationMessageElement = document.getElementById('registration-message'); // For displaying general form messages
+    if (registrationMessageElement) registrationMessageElement.textContent = '';
+
     let isValid = true;
 
-    if (!emailField.value || !validateEmail(emailField.value)) {
-        setFieldError(emailField, t('public.js.newsletter_invalid_email')); isValid = false;
+    // --- Client-Side Basic Validation ---
+    if (!emailField || !emailField.value || !validateEmail(emailField.value)) { // validateEmail from ui.js
+        setFieldError(emailField, t('public.js.newsletter_invalid_email')); // Key from your locales
+        isValid = false;
     }
-    if (!nomField.value.trim()) {
-        setFieldError(nomField, t('public.js.lastname_required')); isValid = false; // New key: public.js.lastname_required
+    if (!nomField || !nomField.value.trim()) {
+        setFieldError(nomField, t('public.js.lastname_required')); // Key from your locales
+        isValid = false;
     }
-    if (!prenomField.value.trim()) {
-        setFieldError(prenomField, t('public.js.firstname_required')); isValid = false; // New key: public.js.firstname_required
-    }
-    if (passwordField.value.length < 8) {
-        setFieldError(passwordField, t('public.js.password_min_chars')); isValid = false; // New key: public.js.password_min_chars (e.g., "Password must be at least 8 characters.")
-    }
-    if (passwordField.value !== confirmPasswordField.value) {
-        setFieldError(confirmPasswordField, t('public.js.passwords_do_not_match')); isValid = false; // New key: public.js.passwords_do_not_match
+    if (!prenomField || !prenomField.value.trim()) {
+        setFieldError(prenomField, t('public.js.firstname_required')); // Key from your locales
+        isValid = false;
     }
 
+    // Client-side password complexity check for immediate feedback
+    if (passwordField) {
+        const passwordComplexityError = validatePasswordComplexity(passwordField.value);
+        if (passwordComplexityError) {
+            setFieldError(passwordField, passwordComplexityError); // Show specific error
+            isValid = false;
+        } else if (confirmPasswordField && passwordField.value !== confirmPasswordField.value) {
+            setFieldError(confirmPasswordField, t('public.js.passwords_do_not_match')); // Key from your locales
+            isValid = false;
+        }
+    } else {
+         isValid = false; // Password field is essential
+    }
+
+
+    const role = roleSelectField ? roleSelectField.value : 'b2c_customer';
+    let registrationData = {
+        email: emailField ? emailField.value : '',
+        password: passwordField ? passwordField.value : '',
+        first_name: prenomField ? prenomField.value : '',
+        last_name: nomField ? nomField.value : '',
+        role: role
+    };
+
+    if (role === 'b2b_professional') {
+        if (!companyNameField || !companyNameField.value.trim()) {
+            setFieldError(companyNameField, "Le nom de l'entreprise est requis pour les comptes B2B.");
+            isValid = false;
+        }
+        if (!siretNumberField || !siretNumberField.value.trim()) {
+            setFieldError(siretNumberField, "Le numéro SIRET est requis pour les comptes B2B.");
+            isValid = false;
+        }
+        registrationData.company_name = companyNameField ? companyNameField.value : '';
+        registrationData.siret_number = siretNumberField ? siretNumberField.value : '';
+        registrationData.vat_number = vatNumberField ? vatNumberField.value : '';
+    }
+
+
     if (!isValid) {
-        showGlobalMessage(t('public.js.fix_form_errors'), "error"); // New key: public.js.fix_form_errors
+        if (registrationMessageElement) registrationMessageElement.textContent = t('public.js.fix_form_errors');
+        else showGlobalMessage(t('public.js.fix_form_errors'), "error");
         return;
     }
 
-    showGlobalMessage(t('public.js.creating_account'), "info"); // New key: public.js.creating_account
+    showGlobalMessage(t('public.js.creating_account'), "info"); 
+
     try {
-        const result = await makeApiRequest('/auth/register', 'POST', {
-            email: emailField.value,
-            password: passwordField.value,
-            nom: nomField.value,
-            prenom: prenomField.value
-        });
+        // API_BASE_URL and makeApiRequest should be defined (e.g. in api.js)
+        const result = await makeApiRequest('/auth/register', 'POST', registrationData);
+        
         if (result.success) {
-            showGlobalMessage(result.message || t('public.js.registration_success'), "success"); // New key: public.js.registration_success
+            showGlobalMessage(result.message || t('public.js.registration_success'), "success");
             form.reset();
-            // Potentially redirect or switch to login view
+            if (registrationMessageElement) registrationMessageElement.textContent = result.message || t('public.js.registration_success');
+            // Optionally redirect or switch to login view
+            // Example: document.getElementById('login-form-section').style.display = 'block';
+            //          document.getElementById('registration-form-section').style.display = 'none';
         } else {
-            showGlobalMessage(result.message || t('global.error_generic'), "error");
+            // Display specific error message from backend
+            if (registrationMessageElement) {
+                registrationMessageElement.textContent = result.message || t('global.error_generic');
+            } else {
+                showGlobalMessage(result.message || t('global.error_generic'), "error");
+            }
+            // If the error is password-related and the backend sends a specific field error,
+            // you could try to highlight the password field again.
+            if (result.message && result.message.toLowerCase().includes('password') && passwordField) {
+                setFieldError(passwordField, result.message);
+            }
         }
     } catch (error) {
         console.error("Registration error:", error);
-        showGlobalMessage(error.data?.message || t('global.error_generic'), "error");
+        // Display specific error message from backend if available in error.data
+        const errorMessage = error.data?.message || t('global.error_generic');
+        if (registrationMessageElement) {
+            registrationMessageElement.textContent = errorMessage;
+        } else {
+            showGlobalMessage(errorMessage, "error");
+        }
+        // If the error is password-related and the backend sends a specific field error,
+        // you could try to highlight the password field again from error.data.message.
+        if (error.data?.message && error.data.message.toLowerCase().includes('password') && passwordField) {
+            setFieldError(passwordField, error.data.message);
+        }
     }
 }
+
 
 function displayAccountDashboard() {
     const loginRegisterSection = document.getElementById('login-register-section');
