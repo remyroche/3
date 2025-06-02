@@ -4,6 +4,12 @@
 function initializeLangSwitcher() {
     const currentLang = document.documentElement.lang || 'fr'; 
     const pathSegments = window.location.pathname.split('/');
+    let pageName = pathSegments.pop() || 'index.html'; // website/js/main.js
+// Main script for initializing the frontend application and page-specific logic.
+
+function initializeLangSwitcher() {
+    const currentLang = document.documentElement.lang || 'fr'; 
+    const pathSegments = window.location.pathname.split('/');
     let pageName = pathSegments.pop() || 'index.html'; 
     if (pageName === currentLang && pathSegments.length > 0) { 
         pageName = 'index.html';
@@ -14,19 +20,15 @@ function initializeLangSwitcher() {
         const currentPathname = window.location.pathname;
         let baseHref = currentPathname;
 
-        // Logic to switch between /fr/ and /en/ paths
-        // Assumes build structure like /dist/{lang}/page.html or just /{lang}/page.html
         const langPathRegex = /^\/(fr|en)\//;
         if (langPathRegex.test(currentPathname)) {
             baseHref = currentPathname.replace(langPathRegex, `/${linkLang}/`);
-        } else if (currentPathname.startsWith(`/${currentLang}/`)) { // case like /fr
+        } else if (currentPathname.startsWith(`/${currentLang}/`)) { 
              baseHref = currentPathname.replace(`/${currentLang}/`, `/${linkLang}/`);
-        } else { // If no lang in path (e.g. root, or dev serving from source)
-             // This might need to be smarter if your dev and prod URL structures differ significantly without lang prefix
+        } else { 
              baseHref = `/${linkLang}${currentPathname.startsWith('/') ? '' : '/'}${pageName}`;
         }
         
-        // Ensure baseHref points to a file, not just a directory, if pageName is index.html
         if (baseHref.endsWith(`/${linkLang}/`)) {
             baseHref += 'index.html';
         }
@@ -56,13 +58,13 @@ function initializeLangSwitcher() {
 async function loadHeader() {
     const headerPlaceholder = document.getElementById('header-placeholder');
     if (!headerPlaceholder) {
-        console.error(t('public.js.loading_header_error_console')); // New key for console
+        console.error(t('public.js.loading_header_error_console')); 
         return;
     }
     try {
         const response = await fetch('header.html'); 
         if (!response.ok) {
-            throw new Error(`${t('public.js.loading_header_error_status')} ${response.status}`); // New key
+            throw new Error(`${t('public.js.loading_header_error_status')} ${response.status}`); 
         }
         const headerHtml = await response.text();
         headerPlaceholder.innerHTML = headerHtml;
@@ -75,21 +77,21 @@ async function loadHeader() {
         initializeLangSwitcher();
 
     } catch (error) {
-        console.error("Failed to load header:", error); // Dev-facing
-        headerPlaceholder.innerHTML = `<p class='text-center text-red-500'>${t('public.js.loading_header_error_user')}</p>`; // New key for user
+        console.error("Failed to load header:", error); 
+        headerPlaceholder.innerHTML = `<p class='text-center text-red-500'>${t('public.js.loading_header_error_user')}</p>`; 
     }
 }
 
 async function loadFooter() {
     const footerPlaceholder = document.getElementById('footer-placeholder');
     if (!footerPlaceholder) {
-        console.error(t('public.js.loading_footer_error_console')); // New key for console
+        console.error(t('public.js.loading_footer_error_console')); 
         return;
     }
     try {
         const response = await fetch('footer.html'); 
         if (!response.ok) {
-            throw new Error(`${t('public.js.loading_footer_error_status')} ${response.status}`); // New key
+            throw new Error(`${t('public.js.loading_footer_error_status')} ${response.status}`); 
         }
         const footerHtml = await response.text();
         footerPlaceholder.innerHTML = footerHtml;
@@ -105,8 +107,8 @@ async function loadFooter() {
         }
 
     } catch (error) {
-        console.error("Failed to load footer:", error); // Dev-facing
-        footerPlaceholder.innerHTML = `<p class='text-center text-red-500'>${t('public.js.loading_footer_error_user')}</p>`; // New key for user
+        console.error("Failed to load footer:", error); 
+        footerPlaceholder.innerHTML = `<p class='text-center text-red-500'>${t('public.js.loading_footer_error_user')}</p>`; 
     }
 }
 
@@ -132,9 +134,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Specific logic for index page if any
     } else if (bodyId === 'page-nos-produits') {
         // This page is handled by nos-produits.js which self-initializes with dynamic data
-        // If there were static parts of this page needing JS init, it would go here.
     } else if (bodyId === 'page-produit-detail') {
-        if (typeof loadProductDetail === 'function') loadProductDetail(); // from products.js
+        if (typeof loadProductDetail === 'function') loadProductDetail(); 
         const addToCartDetailButton = document.getElementById('add-to-cart-button');
         if (addToCartDetailButton && typeof handleAddToCartFromDetail === 'function') {
             addToCartDetailButton.addEventListener('click', (event) => {
@@ -143,37 +144,51 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
     } else if (bodyId === 'page-panier') {
-        if (typeof initCartPage === 'function') { // from cart.js
+        if (typeof initCartPage === 'function') { 
             initCartPage(); 
         }
     } else if (bodyId === 'page-compte') {
-        if (typeof displayAccountDashboard === 'function') displayAccountDashboard(); // from auth.js
+        if (typeof displayAccountDashboard === 'function') displayAccountDashboard(); 
         const loginForm = document.getElementById('login-form');
-        if (loginForm && typeof handleLogin === 'function') { // from auth.js
+        if (loginForm && typeof handleLogin === 'function') { 
             loginForm.addEventListener('submit', handleLogin); 
         }
-        const createAccountButton = document.querySelector('#login-register-section button.btn-secondary');
+        
+        // Attach registration form handler
+        const registrationForm = document.getElementById('registration-form'); // Ensure this ID matches your form in compte.html
+        if (registrationForm && typeof handleRegistrationForm === 'function') {
+            registrationForm.addEventListener('submit', handleRegistrationForm);
+        }
+
+        const createAccountButton = document.querySelector('#login-register-section button.btn-secondary'); // More specific selector if needed
         if(createAccountButton && typeof showGlobalMessage === 'function'){
             createAccountButton.addEventListener('click', (e) => {
                 e.preventDefault();
-                showGlobalMessage(t('public.js.registration_feature_not_implemented'), 'info'); // Key: public.js.registration_feature_not_implemented
+                // Instead of a toast, this button might toggle visibility of the registration form
+                // Or, if it's a separate page, it would be an <a> tag.
+                // For now, keeping the toast as per original logic if registration is not on the same view.
+                // If registration form is on the same page, you'd toggle its display here.
+                // Example: document.getElementById('registration-form-section').style.display = 'block';
+                //          document.getElementById('login-form-section').style.display = 'none';
+                showGlobalMessage(t('public.js.registration_feature_not_implemented'), 'info'); 
             });
         }
          const forgotPasswordLink = document.querySelector('#login-form a[href="#"]'); 
         if (forgotPasswordLink) {
             forgotPasswordLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                showGlobalMessage(t('public.js.password_reset_not_implemented'), 'info'); // Key: public.js.password_reset_not_implemented
+                showGlobalMessage(t('public.js.password_reset_not_implemented'), 'info'); 
             });
         }
     } else if (bodyId === 'page-paiement') { 
-        if (typeof initializeCheckoutPage === 'function') initializeCheckoutPage(); // from checkout.js
+        if (typeof initializeCheckoutPage === 'function') initializeCheckoutPage(); 
     } else if (bodyId === 'page-confirmation-commande') {
-        if (typeof initializeConfirmationPage === 'function') initializeConfirmationPage(); // from checkout.js
+        if (typeof initializeConfirmationPage === 'function') initializeConfirmationPage(); 
     } else if (bodyId === 'page-professionnels') {
         // Logic is in professionnels.js, which should self-initialize
     }
 
+    // Modal close listeners
     document.querySelectorAll('.modal-overlay').forEach(modalOverlay => {
         modalOverlay.addEventListener('click', function(event) {
             if (event.target === modalOverlay && typeof closeModal === 'function') { 
@@ -190,6 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // Listen for authentication state changes
     document.addEventListener('authStateChanged', (event) => {
         const currentBodyId = document.body.id;
         if (typeof updateLoginState === 'function') updateLoginState(); 
@@ -200,7 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (currentBodyId === 'page-compte') {
             if (typeof displayAccountDashboard === 'function') displayAccountDashboard(); 
         } else if (currentBodyId === 'page-professionnels') {
-            if (typeof updateProfessionalView === 'function') updateProfessionalView(); // from professionnels.js
+            if (typeof updateProfessionalView === 'function') updateProfessionalView(); 
         }
     });
 });
