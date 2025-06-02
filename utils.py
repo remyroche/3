@@ -1,5 +1,4 @@
 # backend/utils.py
-
 import re
 import smtplib 
 import os
@@ -11,9 +10,13 @@ from flask_jwt_extended import verify_jwt_in_request, get_jwt, get_jwt_identity
 from functools import wraps
 from unidecode import unidecode
 from datetime import datetime, timezone, timedelta
-from .database import get_db_connection, query_db 
 
-# --- Email Validation and Sending ---
+# Import db and models for generate_static_json_files
+from . import db 
+from .models import Product, Category, ProductWeightOption, ProductImage, ProductLocalization, CategoryLocalization
+
+# ... (other utility functions remain the same) ...
+
 def is_valid_email(email):
     if not email:
         return False
@@ -21,6 +24,7 @@ def is_valid_email(email):
     return re.match(regex, email) is not None
 
 def send_email_alert(subject, body, recipient_email=None):
+    # (Keep existing send_email_alert logic)
     current_app.logger.warning(f"Attempting to send email via basic smtplib (not recommended for production). Subject: {subject}")
     if not current_app.config.get('MAIL_SERVER'):
         current_app.logger.error("Mail server not configured. Cannot send email alert.")
@@ -53,7 +57,6 @@ def send_email_alert(subject, body, recipient_email=None):
         current_app.logger.error(f"Basic smtplib failed to send email alert '{subject}' to {mail_recipient}: {e}", exc_info=True)
         return False
 
-# --- Decorators for Route Protection ---
 def admin_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
@@ -61,7 +64,9 @@ def admin_required(fn):
         except Exception as e:
             current_app.logger.warning(f"Admin access denied for {request.path}: JWT verification failed - {e}")
             return jsonify(message="Access token is missing or invalid."), 401
+        # g.is_admin is set in @app.before_request in __init__.py
         if hasattr(g, 'is_admin') and g.is_admin: return fn(*args, **kwargs)
+        # Fallback check on claims if g.is_admin wasn't set for some reason (shouldn't happen)
         claims = get_jwt()
         if claims.get('role') == 'admin': return fn(*args, **kwargs)
         else:
@@ -78,7 +83,9 @@ def staff_or_admin_required(fn):
             current_app.logger.warning(f"Staff/Admin access denied for {request.path}: JWT verification failed - {e}")
             return jsonify(message="Access token is missing or invalid."), 401
         allowed_roles = ['admin', 'staff'] 
+        # g.current_user_role is set in @app.before_request
         if hasattr(g, 'current_user_role') and g.current_user_role in allowed_roles: return fn(*args, **kwargs)
+        # Fallback check on claims
         claims = get_jwt()
         if claims.get('role') in allowed_roles: return fn(*args, **kwargs)
         else:
@@ -87,7 +94,6 @@ def staff_or_admin_required(fn):
     wrapper.__name__ = fn.__name__
     return wrapper
 
-# --- File Handling ---
 def allowed_file(filename, allowed_extensions_config_key='ALLOWED_EXTENSIONS'):
     allowed_extensions = current_app.config.get(allowed_extensions_config_key, {'png', 'jpg', 'jpeg', 'gif', 'pdf'})
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
@@ -96,13 +102,11 @@ def get_file_extension(filename):
     if '.' in filename: return filename.rsplit('.', 1)[1].lower()
     return ''
 
-# --- String Manipulation ---
 def generate_slug(text):
     if not text: return ""
     text = unidecode(str(text)); text = re.sub(r'[^\w\s-]', '', text).strip().lower(); text = re.sub(r'[-\s]+', '-', text)
     return text
 
-# --- Date and Time Formatting/Parsing ---
 def format_datetime_for_display(dt_obj_or_str, fmt='%Y-%m-%d %H:%M:%S'):
     if not dt_obj_or_str: return None
     dt_obj = None
@@ -143,46 +147,50 @@ def format_datetime_for_storage(dt_obj=None):
     else: dt_obj = dt_obj.astimezone(timezone.utc) 
     return dt_obj.isoformat(timespec='seconds') 
 
-# --- Static JSON Generation for Build Process ---
 def generate_static_json_files():
     if not current_app:
         print("Cannot generate static files: Flask app context is not available.")
         return
+
     with current_app.app_context():
-        current_app.logger.info("Starting generation of static JSON files for products and categories.")
-        db = get_db_connection()
+        current_app.logger.info("Starting generation of static JSON files for products and categories using SQLAlchemy.")
         
         try:
-            products_data = query_db(
-                """SELECT p.id, p.name, p.slug, p.sku_prefix, p.description, p.base_price, p.currency, 
-                          p.main_image_url, p.type, p.is_featured, p.brand, c.name as category_name, c.slug as category_slug
-                   FROM products p 
-                   LEFT JOIN categories c ON p.category_id = c.id 
-                   WHERE p.is_active = TRUE 
-                   ORDER BY p.name""", db_conn=db)
-            products_list = [dict(row) for row in products_data] if products_data else []
-            for product in products_list:
-                if product.get('main_image_url'):
-                    # Use 'serve_public_asset' for URLs in static JSONs
-                    product['main_image_full_url'] = url_for('serve_public_asset', filepath=product['main_image_url'], _external=True)
-                if product['type'] == 'variable_weight':
-                    options_data = query_db(
-                        """SELECT id as option_id, weight_grams, price, sku_suffix, aggregate_stock_quantity as stock_quantity, is_active
-                           FROM product_weight_options WHERE product_id = ? AND is_active = TRUE ORDER BY weight_grams""", 
-                        [product['id']], db_conn=db)
-                    product['variants'] = [dict(opt) for opt in options_data] if options_data else []
-                else: product['stock_quantity'] = product.get('aggregate_stock_quantity', 0)
-                images_data = query_db(
-                    "SELECT image_url, alt_text FROM product_images WHERE product_id = ? AND is_primary = FALSE ORDER BY id", 
-                    [product['id']], db_conn=db)
-                product['additional_images'] = []
-                if images_data:
-                    for img_row in images_data:
-                        img_dict = dict(img_row)
-                        if img_dict.get('image_url'):
-                            # Use 'serve_public_asset' for URLs in static JSONs
-                            img_dict['image_full_url'] = url_for('serve_public_asset', filepath=img_dict['image_url'], _external=True)
-                        product['additional_images'].append(img_dict)
+            products_models = Product.query.filter_by(is_active=True).order_by(Product.name).all()
+            products_list = []
+            for p_model in products_models:
+                product_dict = {
+                    'id': p_model.id, 'name': p_model.name, 'slug': p_model.slug, 
+                    'sku_prefix': p_model.sku_prefix, 'description': p_model.description, 
+                    'base_price': p_model.base_price, 'currency': p_model.currency,
+                    'main_image_url': p_model.main_image_url, 'type': p_model.type, 
+                    'is_featured': p_model.is_featured, 'brand': p_model.brand,
+                    'category_name': p_model.category.name if p_model.category else None,
+                    'category_slug': p_model.category.slug if p_model.category else None,
+                    'main_image_full_url': None, # Will be populated next
+                    'weight_options': [], 'additional_images': [],
+                    'aggregate_stock_quantity': p_model.aggregate_stock_quantity # Added for simple products
+                }
+                if p_model.main_image_url:
+                    try: product_dict['main_image_full_url'] = url_for('serve_public_asset', filepath=p_model.main_image_url, _external=True)
+                    except Exception as e_url: current_app.logger.warning(f"Could not generate URL for product image {p_model.main_image_url}: {e_url}")
+
+                if p_model.type == 'variable_weight':
+                    options_models = p_model.weight_options.filter_by(is_active=True).order_by(ProductWeightOption.weight_grams).all()
+                    product_dict['weight_options'] = [
+                        {'option_id': opt.id, 'weight_grams': opt.weight_grams, 'price': opt.price, 
+                         'sku_suffix': opt.sku_suffix, 'aggregate_stock_quantity': opt.aggregate_stock_quantity} 
+                        for opt in options_models
+                    ]
+                
+                for img_model in p_model.images.filter_by(is_primary=False).order_by(ProductImage.id).all(): # Exclude primary from additional
+                    img_dict = {'id': img_model.id, 'image_url': img_model.image_url, 'alt_text': img_model.alt_text, 'image_full_url': None}
+                    if img_model.image_url:
+                        try: img_dict['image_full_url'] = url_for('serve_public_asset', filepath=img_model.image_url, _external=True)
+                        except Exception as e_img_url: current_app.logger.warning(f"Could not generate URL for additional image {img_model.image_url}: {e_img_url}")
+                    product_dict['additional_images'].append(img_dict)
+                products_list.append(product_dict)
+
             data_dir = os.path.join(current_app.root_path, 'website', 'source', 'data')
             os.makedirs(data_dir, exist_ok=True)
             products_file_path = os.path.join(data_dir, 'products_details.json')
@@ -193,18 +201,34 @@ def generate_static_json_files():
             current_app.logger.error(f"Failed to generate products_details.json: {e}", exc_info=True)
 
         try:
-            categories_data = query_db(
-                "SELECT id, name, slug, description, image_url, parent_id FROM categories WHERE is_active = TRUE ORDER BY name", db_conn=db)
-            categories_list = [dict(row) for row in categories_data] if categories_data else []
-            for category in categories_list:
-                 if category.get('image_url'):
-                    # Use 'serve_public_asset' for URLs in static JSONs
-                    category['image_full_url'] = url_for('serve_public_asset', filepath=category['image_url'], _external=True)
-            data_dir = os.path.join(current_app.root_path, 'website', 'source', 'data') # Ensure data_dir is defined here too
+            categories_models = Category.query.filter_by(is_active=True).order_by(Category.name).all()
+            categories_list = []
+            for cat_model in categories_models:
+                cat_dict = {
+                    'id': cat_model.id, 'name': cat_model.name, 'slug': cat_model.slug, 
+                    'category_code': cat_model.category_code, # Added category_code
+                    'description': cat_model.description, 'image_url': cat_model.image_url, 
+                    'parent_id': cat_model.parent_id, 'image_full_url': None
+                }
+                if cat_model.image_url:
+                    try: cat_dict['image_full_url'] = url_for('serve_public_asset', filepath=cat_model.image_url, _external=True)
+                    except Exception as e_url: current_app.logger.warning(f"Could not generate URL for category image {cat_model.image_url}: {e_url}")
+                
+                # Include localized fields if available, example for name and description
+                loc_fr = CategoryLocalization.query.filter_by(category_id=cat_model.id, lang_code='fr').first()
+                loc_en = CategoryLocalization.query.filter_by(category_id=cat_model.id, lang_code='en').first()
+                cat_dict['name_fr'] = loc_fr.name_fr if loc_fr and loc_fr.name_fr else cat_model.name
+                cat_dict['name_en'] = loc_en.name_en if loc_en and loc_en.name_en else cat_model.name
+                cat_dict['description_fr'] = loc_fr.description_fr if loc_fr and loc_fr.description_fr else cat_model.description
+                cat_dict['description_en'] = loc_en.description_en if loc_en and loc_en.description_en else cat_model.description
+                # Add other localized fields as needed for categories_details.json
+
+                categories_list.append(cat_dict)
+            
+            data_dir = os.path.join(current_app.root_path, 'website', 'source', 'data') # Ensure data_dir definition
             os.makedirs(data_dir, exist_ok=True)
             categories_file_path = os.path.join(data_dir, 'categories_details.json')
             with open(categories_file_path, 'w', encoding='utf-8') as f:
-                json.dump(categories_list, f, ensure_ascii=False, indent=4)
-            current_app.logger.info(f"Successfully generated {categories_file_path}")
+                json.dump(categories_list, f, ensure_ascii=False, indent
         except Exception as e:
             current_app.logger.error(f"Failed to generate categories_details.json: {e}", exc_info=True)
