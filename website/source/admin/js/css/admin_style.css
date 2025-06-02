@@ -23,101 +23,90 @@ a:hover {
     text-decoration: underline;
 }
 
-/* --- Styles for Newer Admin Page Structure (e.g., admin_manage_categories.html) --- */
+/* --- Common Admin Page Structure (Tailwind-based header/nav) --- */
 
-/* Common Admin Header (Tailwind-based pages) */
-header.bg-white { /* Styles for the main admin header bar if not using Tailwind */
-    /* Tailwind classes like bg-white shadow-md p-4 sticky top-0 z-50 are preferred */
+header.bg-white { 
+    /* Primarily styled by Tailwind: bg-white shadow-md p-4 sticky top-0 z-50 */
 }
-/* ... other specific header styles if needed ... */
+header.bg-white #admin-header-title-area h1 { 
+    /* Tailwind: text-xl font-semibold text-gray-700 */
+}
+header.bg-white #admin-user-greeting { 
+    /* Tailwind: text-gray-700 text-sm mr-2 */
+}
+header.bg-white #admin-logout-button { 
+    /* Tailwind: bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-sm flex items-center */
+}
+header.bg-white #admin-logout-button i { 
+    /* Tailwind: mr-2 */
+}
 
-/* Common Admin Navigation (Tailwind-based pages) */
+nav.bg-gray-800 { 
+    /* Tailwind: bg-gray-800 text-white shadow-md */
+}
 nav.bg-gray-800 .admin-nav-link {
     color: #E5E7EB; 
     transition: background-color 0.2s ease, color 0.2s ease;
     /* Tailwind: px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 */
+    white-space: nowrap; /* Prevent nav links from wrapping */
 }
 nav.bg-gray-800 .admin-nav-link:hover {
     background-color: #4B5563; /* gray-700 */
     color: #FFFFFF;
 }
 nav.bg-gray-800 .admin-nav-link.active {
-    background-color: #374151; /* gray-900 */
+    background-color: #1F2937; /* gray-800 or slightly darker than nav bg */
     color: #FFFFFF;
     font-weight: 500;
 }
+/* Ensure horizontal scrolling for nav if it overflows */
+nav.bg-gray-800 .container > div { /* The flex container for nav links */
+    overflow-x: auto;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+nav.bg-gray-800 .container > div::-webkit-scrollbar { /* Chrome, Safari, Opera */
+    display: none;
+}
 
-/* Main Content Area (Tailwind-based pages) */
+
 main.admin-content-area { 
     flex-grow: 1; 
     /* Tailwind: container mx-auto p-6 space-y-6 */
 }
-main.admin-content-area h2.admin-page-title { /* For main page titles if not using Tailwind directly */
-    font-size: 1.5rem; /* text-2xl */
-    font-weight: 600; /* font-semibold */
-    color: #1F2937; /* gray-800 */
-    margin-bottom: 1.5rem; /* mb-6 */
+main.admin-content-area h1.text-3xl { /* Main page title, like "Gestion des Utilisateurs" */
+    /* Tailwind: text-3xl font-semibold text-gray-800 mb-6 */
+}
+main.admin-content-area h2.text-2xl { /* Section titles within main content */
+    /* Tailwind: text-2xl font-semibold text-gray-800 (often with mb-6) */
+}
+
+
+.admin-footer {
+    margin-top: auto; 
+    /* Tailwind: text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600 */
 }
 
 
 /* --- Styles from Older Admin Pages (admin_panel, admin_manage_products_inventory, admin_dashboard) --- */
-/* These might be redundant if those pages are updated to use the newer structure and Tailwind */
+/* These are for content areas if they don't use the Tailwind structure fully. */
+/* The legacy header/footer styles are removed as the HTML structure was updated. */
 
-.legacy-admin-header {
-    background-color: #343a40;
-    padding: 15px 20px;
-    color: white;
-    margin-bottom: 20px;
-    display: flex; /* Added for better alignment */
-    justify-content: space-between; /* Added */
-    align-items: center; /* Added */
-}
-.legacy-admin-header h1 {
-    margin: 0;
-    font-size: 1.8em;
-    display: inline-block;
-}
-.legacy-admin-header nav {
-    /* float: right; Removed float */
-    /* margin-top: 5px; Adjusted by flex align-items */
-}
-.legacy-admin-header nav a {
-    color: #f8f9fa;
-    text-decoration: none;
-    margin-left: 15px;
-    padding: 5px 10px;
-    border-radius: 4px;
-}
-.legacy-admin-header nav a:hover,
-.legacy-admin-header nav a.active {
-    background-color: #495057;
-}
-
-main.admin-content-area-legacy {
+main.admin-content-area-legacy { /* Applied to main tag of older pages */
     padding: 20px;
-    max-width: 1200px;
-    margin-left: auto; /* Centering */
-    margin-right: auto; /* Centering */
+    max-width: 1200px; /* Or use Tailwind's container mx-auto */
+    margin-left: auto; 
+    margin-right: auto; 
     flex-grow: 1;
 }
-main.admin-content-area-legacy h2.admin-page-title, /* For titles in legacy pages */
-.admin-content-area-legacy h2 { /* General h2 for legacy main */
+main.admin-content-area-legacy h2.admin-page-title,
+.admin-content-area-legacy h2 { 
     color: #333;
-    font-size: 1.5rem; /* text-2xl */
-    font-weight: 600; /* font-semibold */
-    margin-bottom: 1.5rem; /* mb-6 */
+    font-size: 1.5rem; 
+    font-weight: 600; 
+    margin-bottom: 1.5rem; 
 }
 
-
-.legacy-admin-footer {
-    text-align: center;
-    padding: 20px;
-    margin-top: auto; /* Push to bottom */
-    background-color: #f8f9f9;
-    border-top: 1px solid #eee;
-    font-size: 0.9em;
-    color: #6c757d;
-}
 
 /* Styles for dashboard cards (from admin_dashboard.html) */
 .dashboard-header {
@@ -125,8 +114,8 @@ main.admin-content-area-legacy h2.admin-page-title, /* For titles in legacy page
     padding-bottom: 15px;
     border-bottom: 1px solid #eee;
 }
-.dashboard-header h2 { /* Already covered by .admin-page-title or main.admin-content-area-legacy h2 */
-    color: #333;
+.dashboard-header h2 { 
+    color: #333; /* Overrides general h2 if needed */
 }
 .dashboard-summary {
     display: flex;
@@ -144,7 +133,7 @@ main.admin-content-area-legacy h2.admin-page-title, /* For titles in legacy page
 }
 .summary-card h3 {
     margin-top: 0;
-    color: #007bff; /* Consider using a brand color */
+    color: #007bff; 
     font-size: 1.1rem;
     margin-bottom: 0.5rem;
 }
@@ -156,14 +145,14 @@ main.admin-content-area-legacy h2.admin-page-title, /* For titles in legacy page
 }
 .summary-card a {
     text-decoration: none;
-    color: #0056b3; /* Darker blue for links */
+    color: #0056b3; 
     font-size: 0.9em;
 }
 .summary-card a:hover {
     text-decoration: underline;
 }
 
-.quick-links ul {
+.quick-links ul { /* Styles for quick links on dashboard */
     list-style: none;
     padding: 0;
 }
@@ -181,42 +170,45 @@ main.admin-content-area-legacy h2.admin-page-title, /* For titles in legacy page
 }
 
 
-/* --- Common Admin Form & Table Styles (Consolidated) --- */
+/* --- Common Admin Form & Table Styles (Consolidated & Refined) --- */
 
 /* Form Container Styling */
-.admin-form-container {
-    background-color: #f9f9f9; /* Light gray for form sections */
-    padding: 1.5rem; /* p-6 */
-    border-radius: 0.5rem; /* rounded-lg */
-    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1); /* shadow-md */
+.admin-form-container, 
+.admin-section-container { /* Generic container for sections */
+    background-color: #ffffff; /* Changed from #f9f9f9 to white for consistency with Tailwind sections */
+    padding: 1.5rem; 
+    border-radius: 0.5rem; 
+    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1); 
     margin-bottom: 1.5rem; 
 }
-.admin-form-container .admin-form-title, /* For h3 inside form containers */
-.admin-form-container h3 {
-    font-size: 1.25rem; /* text-xl */
-    font-weight: 600; /* font-semibold */
-    color: #1F2937; /* gray-800 */
-    margin-bottom: 1rem; /* mb-4 */
+.admin-form-container .admin-form-title, 
+.admin-section-container .admin-section-title {
+    font-size: 1.25rem; 
+    font-weight: 600; 
+    color: #1F2937; 
+    margin-bottom: 1rem; 
+    padding-bottom: 0.5rem; /* Add a bottom border like other section titles */
+    border-bottom: 1px solid #E5E7EB; /* gray-200 */
 }
 
 /* General Admin Form Styling */
 .admin-form {
     /* space-y-4 can be applied in HTML if using Tailwind */
 }
-.admin-form div:not(.form-checkbox-group):not(.form-actions) { /* Add spacing for direct div children unless they are special groups */
+.admin-form div:not(.form-checkbox-group):not(.form-actions):not(.grid) { /* Avoid adding margin to grid containers */
     margin-bottom: 1rem;
 }
 .admin-form .form-label {
     display: block;
     font-size: 0.875rem; 
     font-weight: 500; 
-    color: #374151; /* gray-700 */
+    color: #374151; 
     margin-bottom: 0.25rem; 
 }
 .admin-form .form-label-inline { 
     display: inline;
     margin-left: 0.5rem; 
-    font-weight: normal; /* Typically checkbox labels are not bold */
+    font-weight: normal; 
 }
 
 .admin-form .form-input-admin,
@@ -226,17 +218,23 @@ main.admin-content-area-legacy h2.admin-page-title, /* For titles in legacy page
 .admin-form input[type="number"],
 .admin-form input[type="date"],
 .admin-form input[type="url"],
+.admin-form input[type="file"], /* Added file input */
 .admin-form select,
 .admin-form textarea {
     display: block;
     width: 100%;
-    padding: 0.625rem 0.75rem; /* Adjusted padding */
+    padding: 0.625rem 0.75rem; 
     font-size: 0.875rem; 
-    border: 1px solid #D1D5DB; /* gray-300 */
+    border: 1px solid #D1D5DB; 
     border-radius: 0.375rem; 
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); 
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: #fff; /* Ensure inputs are white */
 }
+.admin-form input[type="file"].form-input-admin {
+    padding: 0.375rem 0.75rem; /* Specific padding for file inputs if needed */
+}
+
 .admin-form .form-input-admin:focus,
 .admin-form input[type="text"]:focus,
 .admin-form input[type="email"]:focus,
@@ -244,180 +242,150 @@ main.admin-content-area-legacy h2.admin-page-title, /* For titles in legacy page
 .admin-form input[type="number"]:focus,
 .admin-form input[type="date"]:focus,
 .admin-form input[type="url"]:focus,
+.admin-form input[type="file"]:focus,
 .admin-form select:focus,
 .admin-form textarea:focus {
     outline: none;
-    border-color: #4F46E5; /* indigo-600 */
+    border-color: #4F46E5; 
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3); 
 }
 .admin-form textarea.form-input-admin {
     min-height: 80px;
 }
+.admin-form .form-input-admin.bg-gray-100 { /* For readonly inputs */
+    background-color: #F3F4F6; /* Tailwind gray-100 */
+    cursor: not-allowed;
+}
 
-.admin-form .form-checkbox-group { /* For checkbox + label container */
+
+.admin-form .form-checkbox-group { 
     display: flex;
     align-items: center;
     margin-bottom: 1rem;
 }
 .admin-form .form-checkbox-admin {
-    height: 1rem; 
-    width: 1rem; 
-    border-radius: 0.25rem; 
-    border-color: #D1D5DB; 
-    color: #4F46E5; 
-    vertical-align: middle; /* Ensure alignment */
+    height: 1rem; width: 1rem; border-radius: 0.25rem; 
+    border-color: #D1D5DB; color: #4F46E5; 
+    vertical-align: middle; 
 }
 .admin-form .form-checkbox-admin:focus {
     box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3); 
 }
 
 .admin-form .form-text { 
-    font-size: 0.75rem; 
-    color: #6B7280; /* gray-500 */
-    display: block;
-    margin-top: 0.25rem; 
+    font-size: 0.75rem; color: #6B7280; 
+    display: block; margin-top: 0.25rem; 
 }
-.admin-form .required {
-    color: #EF4444; 
-    margin-left: 2px;
-}
-.admin-form .form-actions { /* Container for submit/cancel buttons */
-    margin-top: 1.5rem; /* Add some space before action buttons */
-    display: flex;
-    gap: 0.5rem; /* Space between buttons */
+.admin-form .required { color: #EF4444; margin-left: 2px; }
+.admin-form .form-actions { 
+    margin-top: 1.5rem; display: flex; gap: 0.5rem; 
 }
 
 
 /* Tables */
 .admin-table-container { 
-    background-color: #ffffff;
-    padding: 1.5rem;
-    border-radius: 0.5rem;
+    background-color: #ffffff; padding: 1.5rem; border-radius: 0.5rem;
     box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1);
     margin-bottom: 1.5rem;
 }
-.admin-table-container .admin-table-title, /* For h3 inside table containers */
+.admin-table-container .admin-table-title, 
 .admin-table-container h3 {
-    font-size: 1.25rem; 
-    font-weight: 600; 
-    color: #1F2937; 
-    margin-bottom: 1rem; 
+    font-size: 1.25rem; font-weight: 600; color: #1F2937; 
+    margin-bottom: 1rem; padding-bottom: 0.5rem; 
+    border-bottom: 1px solid #E5E7EB; 
 }
 .admin-table {
-    width: 100%; /* Changed from min-width for better control */
-    border-collapse: collapse; 
-    margin-top: 1rem; /* Added margin from h3 */
+    width: 100%; border-collapse: collapse; margin-top: 1rem; 
 }
-.admin-table thead {
-    background-color: #F9FAFB; 
-}
+.admin-table thead { background-color: #F9FAFB; }
 .admin-table th {
-    padding: 0.75rem 1rem; /* Adjusted padding */
-    text-align: left;
-    font-size: 0.75rem; 
-    font-weight: 500; 
-    color: #6B7280; /* gray-500 */
-    text-transform: uppercase;
-    letter-spacing: 0.05em; 
-    border-bottom: 1px solid #E5E7EB; 
+    padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; 
+    font-weight: 500; color: #6B7280; text-transform: uppercase;
+    letter-spacing: 0.05em; border-bottom: 1px solid #E5E7EB; 
 }
-.admin-table tbody {
-    background-color: #ffffff; 
-}
-.admin-table tbody tr:nth-child(even) {
-    background-color: #F9FAFB; 
-}
+.admin-table tbody { background-color: #ffffff; }
+.admin-table tbody tr:nth-child(even) { background-color: #F9FAFB; }
 .admin-table td {
-    padding: 0.75rem 1rem; /* Adjusted padding */
-    font-size: 0.875rem; 
-    color: #374151; 
-    white-space: nowrap; 
+    padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; 
+    /* white-space: nowrap; Consider removing nowrap for better responsiveness on some columns */
     border-bottom: 1px solid #E5E7EB; 
 }
-.admin-table tbody tr:last-child td {
-    border-bottom: none;
+.admin-table tbody tr:last-child td { border-bottom: none; }
+
+.admin-table .action-buttons .btn { /* Ensure buttons in table cells are styled correctly */
+    margin-right: 0.25rem; /* Reduced margin for table buttons */
 }
-.admin-table .action-buttons button,
-.admin-table .action-buttons a {
-    margin-right: 0.5rem;
-}
-.admin-table .action-buttons button:last-child,
-.admin-table .action-buttons a:last-child {
-    margin-right: 0;
-}
+.admin-table .action-buttons .btn:last-child { margin-right: 0; }
 
 
-/* Buttons (General .btn class and specific admin ones) */
+/* Buttons */
 .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.625rem 1.25rem; /* Slightly larger default padding */
-    font-size: 0.875rem; 
-    font-weight: 500; 
-    border-radius: 0.375rem; 
-    border: 1px solid transparent;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0.625rem 1.25rem; font-size: 0.875rem; font-weight: 500; 
+    border-radius: 0.375rem; border: 1px solid transparent;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); 
     cursor: pointer;
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
 }
-.btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4); 
-}
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-.btn i { 
-    margin-right: 0.5rem;
-}
+.btn:focus { outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn i { margin-right: 0.5rem; }
 
-.btn-admin-primary {
-    background-color: #4F46E5; 
-    color: #ffffff;
-}
+.btn-admin-primary { background-color: #4F46E5; color: #ffffff; }
 .btn-admin-primary:hover { background-color: #4338CA; }
-
-.btn-admin-secondary {
-    background-color: #6B7280; 
-    color: #ffffff;
-}
+.btn-admin-secondary { background-color: #6B7280; color: #ffffff; }
 .btn-admin-secondary:hover { background-color: #4B5563; }
-
-.btn-admin-danger, .btn.delete { 
-    background-color: #EF4444; 
-    color: #ffffff;
-}
+.btn-admin-danger, .btn.delete { background-color: #EF4444; color: #ffffff; }
 .btn-admin-danger:hover, .btn.delete:hover { background-color: #DC2626; }
-
-.btn.small-button { 
-    padding: 0.375rem 0.75rem; 
-    font-size: 0.75rem; 
-}
-
-
-/* Admin Footer (for newer Tailwind-based pages) */
-.admin-footer {
-    margin-top: auto; 
-    /* Tailwind: text-center py-4 mt-6 bg-gray-200 text-sm text-gray-600 */
-}
+.btn.small-button { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
 
 
 /* Login Page Specific Styles */
-body#page-admin-login { 
-    /* Handled by Tailwind */
+body#page-admin-login { /* Styles for the login page body */
+    /* Tailwind classes bg-gray-100 flex items-center justify-center h-screen handle this */
 }
-.admin-login-container {
-    /* Handled by Tailwind */
+.admin-login-container { /* Styles for the login form box */
+    /* Tailwind classes bg-white p-8 rounded-lg shadow-xl w-full max-w-md handle this */
 }
-/* ... other login styles are mostly Tailwind ... */
+.admin-login-container .logo-container { /* Styles for logo/title area on login page */
+    /* Tailwind classes text-center mb-8 handle this */
+}
+.admin-login-container .logo-container i { /* FontAwesome icon on login */
+    /* Tailwind classes fa-3x text-gray-700 handle this */
+}
+.admin-login-container .logo-container h1 {
+    /* Tailwind classes text-3xl font-bold text-gray-800 mt-2 handle this */
+}
+.admin-login-container .logo-container p {
+    /* Tailwind classes text-gray-600 handle this */
+}
+.admin-login-container form#admin-login-form { /* Target specific form ID */
+    /* Tailwind class space-y-6 handles spacing */
+}
+.admin-login-container .input-group { position: relative; }
+.admin-login-container .input-group .icon {
+    position: absolute; left: 0.75rem; top: 50%;
+    transform: translateY(-50%); pointer-events: none;
+    color: #9CA3AF; /* gray-400 */
+}
+.admin-login-container .input-group input.form-input-admin { padding-left: 2.5rem; }
 .admin-login-container #login-error-message {
     min-height: 1.25rem; 
+    /* Tailwind classes hidden text-red-500 text-sm text-center handle visibility and color */
+}
+.admin-login-container .login-button { /* Class for the login submit button */
+    /* Tailwind classes w-full flex justify-center py-2 px-4 ... bg-indigo-600 hover:bg-indigo-700 ... handle this */
+}
+.admin-login-container .back-to-site-link {
+    /* Tailwind classes mt-6 text-center text-sm text-gray-500 handle this */
+}
+.admin-login-container .back-to-site-link a {
+    /* Tailwind classes font-medium text-indigo-600 hover:text-indigo-500 handle this */
 }
 
 
 /* Modals */
+/* Modal styles are largely unchanged from admin_style_css_v3, they are already quite generic */
 .admin-modal-overlay {
     display: none; position: fixed; z-index: 1050; 
     inset: 0; overflow-y: auto; background-color: rgba(0, 0, 0, 0.6); 
@@ -514,4 +482,25 @@ input.border-red-500:focus, select.border-red-500:focus, textarea.border-red-500
 .form-input-admin.error-field:focus {
     border-color: #EF4444 !important;
     box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Ensure specific Tailwind utilities override these if used directly in HTML */
+.hidden { display: none !important; }
+.sr-only { /* Screen reader only, from Tailwind */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+.container { /* Basic container, Tailwind's is more responsive */
+    width: 100%;
+    /* padding-right: 1rem; /* px-4 */
+    /* padding-left: 1rem;  /* px-4 */
+    /* margin-right: auto; */
+    /* margin-left: auto; */
 }
