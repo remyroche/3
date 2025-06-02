@@ -7,19 +7,21 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     first_name TEXT,
     last_name TEXT,
-    role TEXT NOT NULL DEFAULT 'b2c_customer' CHECK(role IN ('b2c_customer', 'b2b_professional', 'admin')),
+    role TEXT NOT NULL DEFAULT 'b2c_customer' CHECK(role IN ('b2c_customer', 'b2b_professional', 'admin', 'staff')), -- Added 'staff' role
     is_active BOOLEAN DEFAULT TRUE,
     is_verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Will be updated by trigger
-    company_name TEXT, -- For B2B
-    vat_number TEXT, -- For B2B
-    siret_number TEXT, -- For B2B
-    professional_status TEXT, -- pending, approved, rejected (For B2B)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    company_name TEXT, 
+    vat_number TEXT, 
+    siret_number TEXT, 
+    professional_status TEXT, 
     reset_token TEXT,
     reset_token_expires_at TIMESTAMP,
     verification_token TEXT,
-    verification_token_expires_at TIMESTAMP
+    verification_token_expires_at TIMESTAMP,
+    totp_secret TEXT, -- For MFA/TOTP
+    is_totp_enabled BOOLEAN DEFAULT FALSE -- For MFA/TOTP
 );
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_professional_status ON users(professional_status);
@@ -43,7 +45,7 @@ CREATE TABLE IF NOT EXISTS categories (
     category_code TEXT UNIQUE NOT NULL, 
     parent_id INTEGER, 
     slug TEXT UNIQUE NOT NULL, 
-    is_active BOOLEAN DEFAULT TRUE, -- Added is_active for categories
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
     FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL
@@ -52,8 +54,6 @@ CREATE INDEX IF NOT EXISTS idx_categories_category_code ON categories(category_c
 CREATE INDEX IF NOT EXISTS idx_categories_parent_id ON categories(parent_id);
 CREATE INDEX IF NOT EXISTS idx_categories_is_active ON categories(is_active);
 
-
--- Trigger to update 'updated_at' timestamp on categories table
 CREATE TRIGGER IF NOT EXISTS trigger_categories_updated_at
 AFTER UPDATE ON categories
 FOR EACH ROW
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS products (
     name TEXT NOT NULL,
     description TEXT,
     category_id INTEGER,
-    product_code TEXT UNIQUE NOT NULL, -- Main unique code for the product, serves as SKU base
+    product_code TEXT UNIQUE NOT NULL,
     brand TEXT, 
     type TEXT NOT NULL DEFAULT 'simple' CHECK(type IN ('simple', 'variable_weight')),
     base_price REAL, 
@@ -92,7 +92,6 @@ CREATE INDEX IF NOT EXISTS idx_products_type ON products(type);
 CREATE INDEX IF NOT EXISTS idx_products_is_active_is_featured ON products(is_active, is_featured);
 CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
 
--- Trigger to update 'updated_at' timestamp on products table
 CREATE TRIGGER IF NOT EXISTS trigger_products_updated_at
 AFTER UPDATE ON products
 FOR EACH ROW
@@ -118,7 +117,7 @@ CREATE TABLE IF NOT EXISTS product_weight_options (
     product_id INTEGER NOT NULL,
     weight_grams REAL NOT NULL, 
     price REAL NOT NULL, 
-    sku_suffix TEXT NOT NULL, -- Suffix to be appended to products.product_code
+    sku_suffix TEXT NOT NULL, 
     aggregate_stock_quantity INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
@@ -183,7 +182,7 @@ CREATE TABLE IF NOT EXISTS stock_movements (
     product_id INTEGER NOT NULL,
     variant_id INTEGER, 
     serialized_item_id INTEGER, 
-    movement_type TEXT NOT NULL CHECK(movement_type IN ('initial_stock', 'sale', 'return', 'adjustment_in', 'adjustment_out', 'damage', 'production', 'recall', 'transfer_in', 'transfer_out', 'receive_serialized', 'import_csv_new')), -- Added new types
+    movement_type TEXT NOT NULL CHECK(movement_type IN ('initial_stock', 'sale', 'return', 'adjustment_in', 'adjustment_out', 'damage', 'production', 'recall', 'transfer_in', 'transfer_out', 'receive_serialized', 'import_csv_new')),
     quantity_change INTEGER, 
     weight_change_grams REAL, 
     reason TEXT,
@@ -405,7 +404,7 @@ CREATE TABLE IF NOT EXISTS newsletter_subscriptions (
     subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE,
     source TEXT, 
-    consent TEXT NOT NULL DEFAULT 'Y' -- Added consent field
+    consent TEXT NOT NULL DEFAULT 'Y'
 );
 CREATE INDEX IF NOT EXISTS idx_newsletter_subscriptions_is_active ON newsletter_subscriptions(is_active);
 
@@ -428,12 +427,11 @@ END;
 CREATE TABLE IF NOT EXISTS product_localizations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     product_id INTEGER NOT NULL,
-    lang_code TEXT NOT NULL CHECK(lang_code IN ('fr', 'en')), -- Add more as needed
-    name_fr TEXT, -- Name in French
-    name_en TEXT, -- Name in English
+    lang_code TEXT NOT NULL CHECK(lang_code IN ('fr', 'en')), 
+    name_fr TEXT, 
+    name_en TEXT, 
     description_fr TEXT,
     description_en TEXT,
-    -- Add other translatable fields like short_description, ideal_uses, pairing_suggestions etc.
     short_description_fr TEXT,
     short_description_en TEXT,
     ideal_uses_fr TEXT,
@@ -456,7 +454,6 @@ CREATE TABLE IF NOT EXISTS category_localizations (
     name_en TEXT,
     description_fr TEXT,
     description_en TEXT,
-    -- Add other translatable category fields if any (e.g., species, ingredients from your JSON)
     species_fr TEXT,
     species_en TEXT,
     main_ingredients_fr TEXT,
@@ -478,7 +475,6 @@ CREATE TABLE IF NOT EXISTS category_localizations (
 );
 CREATE INDEX IF NOT EXISTS idx_category_localizations_category_id_lang ON category_localizations(category_id, lang_code);
 
-
 -- Generated Assets Table
 CREATE TABLE IF NOT EXISTS generated_assets (
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -493,4 +489,3 @@ CREATE TABLE IF NOT EXISTS generated_assets (
 CREATE INDEX IF NOT EXISTS idx_generated_assets_related_item_uid ON generated_assets(related_item_uid);
 CREATE INDEX IF NOT EXISTS idx_generated_assets_asset_type ON generated_assets(asset_type);
 CREATE INDEX IF NOT EXISTS idx_generated_assets_related_product_id ON generated_assets(related_product_id);
-
