@@ -1,10 +1,9 @@
-# backend/models.py
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone, timedelta
 import enum
-import pyotp # For TOTP functionality
-from flask import current_app # For accessing config like TOTP_ISSUER_NAME
+import pyotp 
+from flask import current_app 
 
 db = SQLAlchemy()
 
@@ -55,22 +54,42 @@ class User(db.Model):
 
     def generate_totp_secret(self):
         self.totp_secret = pyotp.random_base32()
+        # Do not enable TOTP yet, just generate the secret. Enable upon verification.
+        # self.is_totp_enabled = False 
         return self.totp_secret
 
     def get_totp_uri(self, issuer_name=None):
         if not self.totp_secret:
-            return None
+            # It's good practice to generate it if it doesn't exist when URI is requested for setup
+            self.generate_totp_secret() 
+            # The caller (e.g., route handler) should ensure this gets saved if it's a new secret.
+            
         effective_issuer_name = issuer_name or current_app.config.get('TOTP_ISSUER_NAME', 'Maison Truvra')
+        
+        # Ensure totp_secret is available after potential generation
+        if not self.totp_secret:
+             # This case should ideally not be hit if generate_totp_secret works
+            raise ValueError("TOTP secret could not be generated or retrieved for URI creation.")
+
         return pyotp.totp.TOTP(self.totp_secret).provisioning_uri(
             name=self.email, 
             issuer_name=effective_issuer_name
         )
 
-    def verify_totp(self, code_attempt):
-        if not self.totp_secret or not self.is_totp_enabled:
+    def verify_totp(self, code_attempt, for_time=None, window=1):
+        """
+        Verifies a TOTP code against the user's secret.
+        Allows checking against a specific time and window for flexibility.
+        Returns True if valid, False otherwise.
+        """
+        if not self.totp_secret: # Cannot verify if no secret is set
             return False 
+        # is_totp_enabled check should be done by the caller before attempting verification for login,
+        # but for setup, we verify against the secret even if not yet enabled.
+        
         totp_instance = pyotp.TOTP(self.totp_secret)
-        return totp_instance.verify(code_attempt)
+        return totp_instance.verify(code_attempt, for_time=for_time, window=window)
+
 
     def to_dict(self): 
         return {
@@ -83,6 +102,30 @@ class User(db.Model):
 
     def __repr__(self):
         return f'<User {self.email}>'
+
+class Category(db.Model):
+    __tablename__ = 'categories'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.Text)
+    image_url = db.Column(db.String(255))
+    category_code = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey('categories.id'), index=True)
+    slug = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    products = db.relationship('Product', backref='category', lazy='dynamic')
+    children = db.relationship('Category', backref=db.backref('parent', remote_side=[id]), lazy='dynamic')
+    localizations = db.relationship('CategoryLocalization', backref='category', lazy='dynamic', cascade="all, delete-orphan")
+    def to_dict(self):
+        return {
+            "id": self.id, "name": self.name, "description": self.description, 
+            "image_url": self.image_url, "category_code": self.category_code,
+            "parent_id": self.parent_id, "slug": self.slug, "is_active": self.is_active,
+            "product_count": self.products.filter_by(is_active=True).count()
+        }
+    def __repr__(self): return f'<Category {self.name}>'
 
 class Category(db.Model):
     __tablename__ = 'categories'
