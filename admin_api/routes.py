@@ -1,78 +1,299 @@
 # backend/admin_api/routes.py
 import os
 import uuid
-from werkzeug.utils import secure_filename
-from werkzeug.security import check_password_hash # For admin login
-from flask import request, jsonify, current_app, url_for, send_from_directory, abort as flask_abort
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
-from sqlalchemy import func, or_, and_ # For OR conditions in SQLAlchemy queries
-from datetime import datetime, timezone
+import requests # For SimpleLogin OAuth calls
+from urllib.parse import urlencode # For building query strings
 
-from .. import db # Import SQLAlchemy instance from backend/__init__.py
-from ..models import ( # Import all necessary models
+from werkzeug.utils import secure_filename
+# werkzeug.security.check_password_hash is not used directly here, User.check_password is used
+from flask import request, jsonify, current_app, url_for, redirect, session # Added session for temp storage
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
+from sqlalchemy import func, or_, and_
+from datetime import datetime, timezone, timedelta
+
+from .. import db
+from ..models import (
     User, Category, Product, ProductImage, ProductWeightOption,
     Order, OrderItem, Review, Setting, SerializedInventoryItem,
     StockMovement, Invoice, InvoiceItem, ProfessionalDocument,
-    ProductLocalization, CategoryLocalization, GeneratedAsset # Ensure all models are imported
+    ProductLocalization, CategoryLocalization, GeneratedAsset
 )
 from ..utils import (
     admin_required, staff_or_admin_required, format_datetime_for_display, parse_datetime_from_iso,
     generate_slug, allowed_file, get_file_extension, format_datetime_for_storage,
-    generate_static_json_files # This function will also need to use SQLAlchemy models
+    generate_static_json_files
 )
-from ..services.invoice_service import InvoiceService # Ensure this service is SQLAlchemy-aware
-from ..database import record_stock_movement # Assuming this is adapted for SQLAlchemy or replaced
+from ..services.invoice_service import InvoiceService
+from ..database import record_stock_movement
 
 from . import admin_api_bp
 
-# Helper to check for admin role from JWT claims (can be used internally or rely on @admin_required)
-def _is_admin_user():
-    claims = get_jwt()
-    return claims.get('role') == 'admin'
+# Temporary storage for user ID during TOTP verification.
+# In a real app, use Flask session or a more secure temporary token mechanism.
+# For simplicity here, we'll use Flask's session. Ensure SECRET_KEY is strong.
+# This requires `session` to be imported from `flask`.
+
+def _create_admin_session(admin_user):
+    """Helper to create JWT and user info for successful admin login."""
+    identity = admin_user.id
+    additional_claims = {
+        "role": admin_user.role, "email": admin_user.email, "is_admin": True,
+        "first_name": admin_user.first_name, "last_name": admin_user.last_name
+    }
+    access_token = create_access_token(identity=identity, additional_claims=additional_claims)
+    user_info_to_return = admin_user.to_dict() # Use the to_dict method
+    return jsonify(success=True, message="Admin login successful!", token=access_token, user=user_info_to_return), 200
 
 @admin_api_bp.route('/login', methods=['POST'])
-def admin_login():
+def admin_login_step1_password():
     data = request.json
     email = data.get('email')
     password = data.get('password')
     audit_logger = current_app.audit_log_service
 
     if not email or not password:
-        audit_logger.log_action(action='admin_login_fail', email=email, details="Email and password required.", status='failure', ip_address=request.remote_addr)
-        return jsonify(message="Email and password are required", success=False), 400
+        audit_logger.log_action(action='admin_login_fail_step1', email=email, details="Email and password required.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Email and password are required", success=False, totp_required=False), 400
 
     try:
         admin_user = User.query.filter_by(email=email, role='admin').first()
 
-        if admin_user and admin_user.check_password(password): # Assuming User model has check_password
+        if admin_user and admin_user.check_password(password):
             if not admin_user.is_active:
-                audit_logger.log_action(user_id=admin_user.id, action='admin_login_fail_inactive', target_type='user_admin', target_id=admin_user.id, details="Admin account is inactive.", status='failure', ip_address=request.remote_addr)
-                return jsonify(message="Admin account is inactive. Please contact support.", success=False), 403
+                audit_logger.log_action(user_id=admin_user.id, action='admin_login_fail_inactive_step1', target_type='user_admin', target_id=admin_user.id, details="Admin account is inactive.", status='failure', ip_address=request.remote_addr)
+                return jsonify(message="Admin account is inactive. Please contact support.", success=False, totp_required=False), 403
 
+            if admin_user.is_totp_enabled and admin_user.totp_secret:
+                # Password correct, TOTP enabled. Store user_id temporarily and ask for TOTP.
+                # Using Flask session for temporary storage.
+                session['pending_totp_admin_id'] = admin_user.id
+                session['pending_totp_admin_email'] = admin_user.email # For logging
+                session.permanent = True # Make it last for the configured timeout
+                current_app.permanent_session_lifetime = current_app.config.get('TOTP_LOGIN_STATE_TIMEOUT', timedelta(minutes=5))
+
+                audit_logger.log_action(user_id=admin_user.id, action='admin_login_totp_required', target_type='user_admin', target_id=admin_user.id, status='pending', ip_address=request.remote_addr)
+                return jsonify(message="Password verified. Please enter your TOTP code.", success=True, totp_required=True, email=admin_user.email), 200 # Indicate TOTP is next
+            else:
+                # Password correct, TOTP not enabled. Log in directly.
+                audit_logger.log_action(user_id=admin_user.id, action='admin_login_success_no_totp', target_type='user_admin', target_id=admin_user.id, status='success', ip_address=request.remote_addr)
+                return _create_admin_session(admin_user)
+        else:
+            audit_logger.log_action(action='admin_login_fail_credentials_step1', email=email, details="Invalid admin credentials.", status='failure', ip_address=request.remote_addr)
+            return jsonify(message="Invalid admin email or password", success=False, totp_required=False), 401
+
+    except Exception as e:
+        current_app.logger.error(f"Error during admin login step 1 for {email}: {e}", exc_info=True)
+        audit_logger.log_action(action='admin_login_fail_server_error_step1', email=email, details=str(e), status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Admin login failed due to a server error", success=False, totp_required=False), 500
+
+@admin_api_bp.route('/login/verify-totp', methods=['POST'])
+def admin_login_step2_verify_totp():
+    data = request.json
+    totp_code = data.get('totp_code')
+    # email_from_request = data.get('email') # Client might send email for context
+
+    audit_logger = current_app.audit_log_service
+    
+    pending_admin_id = session.get('pending_totp_admin_id')
+    pending_admin_email = session.get('pending_totp_admin_email') # For logging
+
+    if not pending_admin_id:
+        audit_logger.log_action(action='admin_totp_verify_fail_no_pending_state', details="No pending TOTP login state found in session.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Login session expired or invalid. Please start over.", success=False), 400
+    
+    if not totp_code:
+        audit_logger.log_action(user_id=pending_admin_id, action='admin_totp_verify_fail_no_code', email=pending_admin_email, details="TOTP code missing.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="TOTP code is required.", success=False), 400
+
+    try:
+        admin_user = User.query.get(pending_admin_id)
+        if not admin_user or not admin_user.is_active or admin_user.role != 'admin':
+            session.pop('pending_totp_admin_id', None)
+            session.pop('pending_totp_admin_email', None)
+            audit_logger.log_action(user_id=pending_admin_id, action='admin_totp_verify_fail_user_invalid', email=pending_admin_email, details="Admin user not found, inactive, or not admin role during TOTP.", status='failure', ip_address=request.remote_addr)
+            return jsonify(message="Invalid user state for TOTP verification.", success=False), 403
+
+        if admin_user.verify_totp(totp_code):
+            session.pop('pending_totp_admin_id', None)
+            session.pop('pending_totp_admin_email', None)
+            audit_logger.log_action(user_id=admin_user.id, action='admin_login_success_totp_verified', target_type='user_admin', target_id=admin_user.id, status='success', ip_address=request.remote_addr)
+            return _create_admin_session(admin_user)
+        else:
+            # Do not clear session yet, allow retries (rate limit this endpoint heavily)
+            audit_logger.log_action(user_id=admin_user.id, action='admin_totp_verify_fail_invalid_code', email=pending_admin_email, details="Invalid TOTP code.", status='failure', ip_address=request.remote_addr)
+            return jsonify(message="Invalid TOTP code.", success=False), 401
+            
+    except Exception as e:
+        current_app.logger.error(f"Error during admin TOTP verification for {pending_admin_email}: {e}", exc_info=True)
+        audit_logger.log_action(user_id=pending_admin_id, action='admin_totp_verify_fail_server_error', email=pending_admin_email, details=str(e), status='failure', ip_address=request.remote_addr)
+        return jsonify(message="TOTP verification failed due to a server error.", success=False), 500
+
+
+# --- SimpleLogin SSO Routes ---
+@admin_api_bp.route('/login/simplelogin/initiate', methods=['GET'])
+def simplelogin_initiate():
+    """Initiates the OAuth flow by redirecting the user to SimpleLogin."""
+    client_id = current_app.config.get('SIMPLELOGIN_CLIENT_ID')
+    redirect_uri = current_app.config.get('SIMPLELOGIN_REDIRECT_URI_ADMIN')
+    authorize_url = current_app.config.get('SIMPLELOGIN_AUTHORIZE_URL')
+    scopes = current_app.config.get('SIMPLELOGIN_SCOPES')
+
+    if not all([client_id, redirect_uri, authorize_url, scopes]):
+        current_app.logger.error("SimpleLogin OAuth settings are not fully configured in the backend.")
+        return jsonify(message="SimpleLogin SSO is not configured correctly on the server.", success=False), 500
+
+    # Generate a state parameter for CSRF protection (recommended)
+    # For simplicity, not implemented here but crucial for production.
+    # session['oauth_state'] = secrets.token_urlsafe(16)
+
+    params = {
+        'response_type': 'code',
+        'client_id': client_id,
+        'redirect_uri': redirect_uri,
+        'scope': scopes,
+        # 'state': session['oauth_state'] # Add state here
+    }
+    auth_redirect_url = f"{authorize_url}?{urlencode(params)}"
+    current_app.logger.info(f"Redirecting admin to SimpleLogin for authentication: {auth_redirect_url}")
+    return redirect(auth_redirect_url)
+
+
+@admin_api_bp.route('/login/simplelogin/callback', methods=['GET'])
+def simplelogin_callback():
+    """Handles the callback from SimpleLogin after user authentication."""
+    auth_code = request.args.get('code')
+    # state_returned = request.args.get('state') # Verify state here against session['oauth_state']
+
+    audit_logger = current_app.audit_log_service
+
+    if not auth_code:
+        audit_logger.log_action(action='simplelogin_callback_fail_no_code', details="No authorization code received from SimpleLogin.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="SimpleLogin authentication failed (no code).", success=False), 400
+
+    # Exchange authorization code for access token
+    token_url = current_app.config['SIMPLELOGIN_TOKEN_URL']
+    payload = {
+        'grant_type': 'authorization_code',
+        'code': auth_code,
+        'redirect_uri': current_app.config['SIMPLELOGIN_REDIRECT_URI_ADMIN'],
+        'client_id': current_app.config['SIMPLELOGIN_CLIENT_ID'],
+        'client_secret': current_app.config['SIMPLELOGIN_CLIENT_SECRET'],
+    }
+    try:
+        token_response = requests.post(token_url, data=payload)
+        token_response.raise_for_status() # Raise an exception for HTTP errors
+        token_data = token_response.json()
+        sl_access_token = token_data.get('access_token')
+
+        if not sl_access_token:
+            audit_logger.log_action(action='simplelogin_callback_fail_no_access_token', details="No access token from SimpleLogin.", status='failure', ip_address=request.remote_addr)
+            return jsonify(message="Failed to get access token from SimpleLogin.", success=False), 500
+
+        # Fetch user info from SimpleLogin
+        userinfo_url = current_app.config['SIMPLELOGIN_USERINFO_URL']
+        headers = {'Authorization': f'Bearer {sl_access_token}'}
+        userinfo_response = requests.get(userinfo_url, headers=headers)
+        userinfo_response.raise_for_status()
+        sl_user_info = userinfo_response.json()
+        
+        sl_email = sl_user_info.get('email')
+        # sl_name = sl_user_info.get('name') # Optional
+        # sl_sub = sl_user_info.get('sub') # SimpleLogin user ID
+
+        if not sl_email:
+            audit_logger.log_action(action='simplelogin_callback_fail_no_email', details="No email in userinfo from SimpleLogin.", status='failure', ip_address=request.remote_addr)
+            return jsonify(message="Could not retrieve email from SimpleLogin.", success=False), 500
+
+        # Find or provision admin user in your database
+        admin_user = User.query.filter_by(email=sl_email, role='admin').first()
+
+        if admin_user and admin_user.is_active:
+            # User exists and is an active admin, log them in
+            audit_logger.log_action(user_id=admin_user.id, action='admin_login_success_simplelogin', target_type='user_admin', target_id=admin_user.id, details=f"Admin {sl_email} logged in via SimpleLogin.", status='success', ip_address=request.remote_addr)
+            
+            # Create your application's session/JWT
+            _, status_code = _create_admin_session(admin_user) # We only need the JSON response part
+            
+            # Redirect to admin dashboard with token (or set cookie if JWT_TOKEN_LOCATION includes 'cookies')
+            # For simplicity, redirecting and letting frontend JS handle token from response if needed,
+            # or assuming cookie-based JWT session is set by _create_admin_session.
+            # If using header-based JWT, the frontend needs a way to get this token after redirect.
+            # A common pattern is to redirect to a frontend page that then makes a request to get the token,
+            # or pass the token as a query parameter (less secure).
+            # If JWT_TOKEN_LOCATION includes 'cookies' and JWT_COOKIE_CSRF_PROTECT is True,
+            # Flask-JWT-Extended will set the cookies automatically on the response from _create_admin_session.
+            # The redirect below assumes cookies are used or frontend handles it.
+            
+            admin_dashboard_url = url_for('admin_dashboard_frontend_route', _external=True) # Define this route if you have a separate frontend router
+            if not admin_dashboard_url or admin_dashboard_url == '/': # Fallback if not defined
+                 admin_dashboard_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_dashboard.html'
+            
+            # Create the response from _create_admin_session
+            response_data, _ = _create_admin_session(admin_user)
+            # Manually create a redirect response and set cookies if needed by Flask-JWT-Extended
+            # This is a bit complex if not using Flask-Login for session management directly after OAuth.
+            # For now, let's assume the JWT is set as a cookie by `create_access_token`
+            # if `JWT_TOKEN_LOCATION` includes `cookies`.
+            # The `_create_admin_session` returns a jsonify response. We need to make it a redirect.
+
+            # Simplest redirect assuming cookies are set by create_access_token
+            final_response = redirect(admin_dashboard_url)
+            # If create_access_token is configured to set cookies, it will do so on the response.
+            # We need to ensure the JWT cookies are set on this redirect response.
+            # Flask-JWT-Extended does this automatically if JWT_TOKEN_LOCATION includes 'cookies'.
+            # The token from _create_admin_session is in its JSON body.
+            # We need to call create_access_token again here or pass the response object to set cookies.
+
+            # Re-creating token to ensure cookies are set on the redirect response
             identity = admin_user.id
             additional_claims = {
                 "role": admin_user.role, "email": admin_user.email, "is_admin": True,
                 "first_name": admin_user.first_name, "last_name": admin_user.last_name
             }
             access_token = create_access_token(identity=identity, additional_claims=additional_claims)
+            # If using cookies, Flask-JWT-Extended will set them on the response object `final_response`
+            # if this function is decorated with @jwt_required or similar, or if done manually.
+            # Since this is a callback, we might need to manually set cookies if not automatic.
+            # However, `create_access_token` itself doesn't set cookies; it returns the token.
+            # The response from `_create_admin_session` *would* set cookies if it were returned directly.
             
-            audit_logger.log_action(user_id=admin_user.id, action='admin_login_success', target_type='user_admin', target_id=admin_user.id, status='success', ip_address=request.remote_addr)
+            # For simplicity, let's assume the frontend will handle a token passed via query param after redirect.
+            # This is less secure than cookies or server-side sessions post-OAuth.
+            # A better approach is to redirect to a page that then fetches user info using the JWT.
+            # Or, if JWTs are in cookies, the redirect itself is fine.
             
-            user_info_to_return = {
-                "id": admin_user.id, "email": admin_user.email, 
-                "prenom": admin_user.first_name, "nom": admin_user.last_name,
-                "role": admin_user.role, "is_admin": True
-            }
-            return jsonify(success=True, message="Admin login successful!", token=access_token, user=user_info_to_return), 200
+            # Assuming JWT is in cookies:
+            # Create the token which will be set in cookies by Flask-JWT-Extended on the response
+            create_access_token(identity=admin_user.id, additional_claims={
+                "role": admin_user.role, "email": admin_user.email, "is_admin": True,
+                "first_name": admin_user.first_name, "last_name": admin_user.last_name
+            })
+            # The redirect response will have the JWT cookies set by Flask-JWT-Extended
+            return final_response
+
         else:
-            audit_logger.log_action(action='admin_login_fail_credentials', email=email, details="Invalid admin credentials.", status='failure', ip_address=request.remote_addr)
-            return jsonify(message="Invalid admin email or password", success=False), 401
+            audit_logger.log_action(action='simplelogin_callback_fail_user_not_admin_or_inactive', email=sl_email, details="User found but not an active admin.", status='failure', ip_address=request.remote_addr)
+            # Redirect to login page with an error message
+            login_page_url = url_for('admin_login_frontend_route', error="sso_admin_not_found", _external=True) # Define this route
+            if not login_page_url or login_page_url == '/':
+                login_page_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_login.html?error=sso_admin_not_found'
+            return redirect(login_page_url)
 
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"SimpleLogin OAuth request failed: {e}", exc_info=True)
+        audit_logger.log_action(action='simplelogin_callback_fail_request_exception', details=str(e), status='failure', ip_address=request.remote_addr)
+        return jsonify(message=f"Communication error with SimpleLogin: {e}", success=False), 502 # Bad Gateway
     except Exception as e:
-        current_app.logger.error(f"Error during admin login for {email}: {e}", exc_info=True)
-        audit_logger.log_action(action='admin_login_fail_server_error', email=email, details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message="Admin login failed due to a server error", success=False), 500
+        current_app.logger.error(f"Error during SimpleLogin callback: {e}", exc_info=True)
+        audit_logger.log_action(action='simplelogin_callback_fail_server_error', details=str(e), status='failure', ip_address=request.remote_addr)
+        return jsonify(message=f"An unexpected error occurred during SimpleLogin SSO: {e}", success=False), 500
 
+
+# --- Dashboard ---
+# (get_dashboard_stats and other routes remain the same)
+# Ensure you have placeholder routes for 'admin_dashboard_frontend_route' and 'admin_login_frontend_route'
+# if you use url_for with them, or construct URLs manually.
+# For simplicity, I'll assume frontend handles query params on admin_login.html for errors.
 @admin_api_bp.route('/dashboard/stats', methods=['GET'])
 @admin_required
 def get_dashboard_stats():
@@ -95,12 +316,31 @@ def get_dashboard_stats():
             "pending_b2b_applications": pending_b2b_applications,
             "success": True
         }
+    current_admin_id = get_jwt_identity()
+    audit_logger = current_app.audit_log_service
+    try:
+        total_users = db.session.query(func.count(User.id)).scalar()
+        total_products = Product.query.filter_by(is_active=True).count()
+        pending_order_statuses = ('paid', 'processing', 'awaiting_shipment')
+        pending_orders = Order.query.filter(Order.status.in_(pending_order_statuses)).count()
+        total_categories = Category.query.filter_by(is_active=True).count()
+        pending_b2b_applications = User.query.filter_by(role='b2b_professional', professional_status='pending').count()
+        
+        stats = {
+            "total_users": total_users,
+            "total_products": total_products,
+            "pending_orders": pending_orders,
+            "total_categories": total_categories,
+            "pending_b2b_applications": pending_b2b_applications,
+            "success": True
+        }
         audit_logger.log_action(user_id=current_admin_id, action='get_dashboard_stats', status='success', ip_address=request.remote_addr)
-        return jsonify(stats=stats), 200 # Return as object with 'stats' key
+        return jsonify(stats=stats), 200
     except Exception as e:
         current_app.logger.error(f"Error fetching dashboard stats: {e}", exc_info=True)
         audit_logger.log_action(user_id=current_admin_id, action='get_dashboard_stats_fail', details=str(e), status='failure', ip_address=request.remote_addr)
         return jsonify(message="Failed to fetch dashboard statistics", success=False), 500
+
 
 # --- Category Management ---
 @admin_api_bp.route('/categories', methods=['POST'])
@@ -162,30 +402,25 @@ def create_category():
 
 @admin_api_bp.route('/categories', methods=['GET'])
 @admin_required
+@admin_api_bp.route('/categories', methods=['GET'])
+@admin_required
 def get_categories():
     try:
         categories_models = Category.query.order_by(Category.name).all()
         categories_data = []
-        for cat in categories_models:
-            cat_dict = {
-                "id": cat.id, "name": cat.name, "description": cat.description, "parent_id": cat.parent_id,
-                "slug": cat.slug, "image_url": cat.image_url, "category_code": cat.category_code,
-                "is_active": cat.is_active, 
-                "created_at": format_datetime_for_display(cat.created_at),
-                "updated_at": format_datetime_for_display(cat.updated_at),
-                "product_count": cat.products.filter_by(is_active=True).count(),
-                "image_full_url": None
-            }
-            if cat.image_url:
-                try: # Use the public asset route for images that might be displayed on the frontend via admin data
-                    cat_dict['image_full_url'] = url_for('serve_public_asset', filepath=cat.image_url, _external=True)
+        for cat_model in categories_models:
+            cat_dict = cat_model.to_dict() # Assuming to_dict method exists
+            if cat_model.image_url:
+                try:
+                    cat_dict['image_full_url'] = url_for('serve_public_asset', filepath=cat_model.image_url, _external=True)
                 except Exception as e_url:
-                    current_app.logger.warning(f"Could not generate URL for category image {cat.image_url}: {e_url}")
+                    current_app.logger.warning(f"Could not generate URL for category image {cat_model.image_url}: {e_url}")
             categories_data.append(cat_dict)
         return jsonify(categories=categories_data, success=True), 200
     except Exception as e:
         current_app.logger.error(f"Error fetching categories for admin: {e}", exc_info=True)
         return jsonify(message=f"Failed to fetch categories: {str(e)}", success=False), 500
+
 
 @admin_api_bp.route('/categories/<int:category_id>', methods=['GET'])
 @admin_required
