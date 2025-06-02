@@ -920,6 +920,142 @@ def simplelogin_callback():
         login_page_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_login.html?error=sso_server_error'
         return redirect(login_page_url)
 
+
+# --- TOTP Setup Routes ---
+@admin_api_bp.route('/totp/setup-initiate', methods=['POST'])
+@admin_required
+@limiter.limit(lambda: current_app.config.get('ADMIN_TOTP_SETUP_RATELIMITS', "5 per 10 minutes"))
+def totp_setup_initiate():
+    current_admin_id = get_jwt_identity()
+    data = request.json
+    password = data.get('password')
+    audit_logger = current_app.audit_log_service
+
+    admin_user = User.query.get(current_admin_id)
+    if not admin_user or admin_user.role != 'admin':
+        return jsonify(message="Admin user not found or invalid.", success=False), 403
+
+    if not password or not admin_user.check_password(password):
+        audit_logger.log_action(user_id=current_admin_id, action='totp_setup_initiate_fail_password', details="Incorrect password for TOTP setup.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Incorrect current password.", success=False), 401
+
+    try:
+        # Generate a new secret. If one exists but TOTP is not enabled, this will overwrite it,
+        # which is generally desired for a fresh setup.
+        new_secret = admin_user.generate_totp_secret()
+        # Store the new secret temporarily in the session for verification step
+        session['pending_totp_secret_for_setup'] = new_secret 
+        session['pending_totp_user_id_for_setup'] = admin_user.id
+        session.permanent = True
+        current_app.permanent_session_lifetime = current_app.config.get('TOTP_SETUP_SECRET_TIMEOUT', timedelta(minutes=10))
+        
+        # Do NOT save the secret to DB yet, only after verification.
+        # The user.generate_totp_secret() method just creates it in memory on the instance.
+        
+        provisioning_uri = admin_user.get_totp_uri() # This will use the newly generated in-memory secret
+        if not provisioning_uri:
+             raise Exception("Could not generate provisioning URI.")
+
+        audit_logger.log_action(user_id=current_admin_id, action='totp_setup_initiate_success', details="TOTP secret generated, provisioning URI provided.", status='success', ip_address=request.remote_addr)
+        return jsonify(
+            message="TOTP setup initiated. Scan the QR code and verify.",
+            totp_provisioning_uri=provisioning_uri,
+            totp_manual_secret=new_secret, # Send secret for manual entry
+            success=True
+        ), 200
+    except Exception as e:
+        current_app.logger.error(f"Error initiating TOTP setup for admin {current_admin_id}: {e}", exc_info=True)
+        audit_logger.log_action(user_id=current_admin_id, action='totp_setup_initiate_fail_exception', details=str(e), status='failure', ip_address=request.remote_addr)
+        return jsonify(message=f"Failed to initiate TOTP setup: {str(e)}", success=False), 500
+
+
+@admin_api_bp.route('/totp/setup-verify', methods=['POST'])
+@admin_required
+@limiter.limit(lambda: current_app.config.get('ADMIN_TOTP_SETUP_RATELIMITS', "5 per 10 minutes"))
+def totp_setup_verify_and_enable():
+    current_admin_id = get_jwt_identity()
+    data = request.json
+    totp_code = data.get('totp_code')
+    audit_logger = current_app.audit_log_service
+
+    pending_secret = session.get('pending_totp_secret_for_setup')
+    pending_user_id = session.get('pending_totp_user_id_for_setup')
+
+    if not pending_secret or not pending_user_id or pending_user_id != current_admin_id:
+        audit_logger.log_action(user_id=current_admin_id, action='totp_setup_verify_fail_no_pending_state', details="No pending TOTP setup state found or user mismatch.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="TOTP setup session expired or invalid. Please start over.", success=False), 400
+    
+    if not totp_code:
+        return jsonify(message="TOTP code is required for verification.", success=False), 400
+
+    admin_user = User.query.get(current_admin_id)
+    if not admin_user: # Should not happen if JWT is valid
+        return jsonify(message="Admin user not found.", success=False), 404
+    
+    # Use the temporary secret from session for verification
+    temp_totp_instance = pyotp.TOTP(pending_secret)
+    if temp_totp_instance.verify(totp_code):
+        try:
+            admin_user.totp_secret = pending_secret # Now save the verified secret
+            admin_user.is_totp_enabled = True
+            admin_user.updated_at = datetime.now(timezone.utc)
+            db.session.commit()
+
+            session.pop('pending_totp_secret_for_setup', None)
+            session.pop('pending_totp_user_id_for_setup', None)
+            
+            audit_logger.log_action(user_id=current_admin_id, action='totp_setup_verify_success', details="TOTP enabled successfully.", status='success', ip_address=request.remote_addr)
+            return jsonify(message="Two-Factor Authentication (TOTP) enabled successfully!", success=True), 200
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error saving TOTP setup for admin {current_admin_id}: {e}", exc_info=True)
+            audit_logger.log_action(user_id=current_admin_id, action='totp_setup_verify_fail_db_error', details=str(e), status='failure', ip_address=request.remote_addr)
+            return jsonify(message="Failed to save TOTP settings.", success=False), 500
+    else:
+        audit_logger.log_action(user_id=current_admin_id, action='totp_setup_verify_fail_invalid_code', details="Invalid TOTP code during setup.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Invalid TOTP code. Please try again.", success=False), 400
+
+
+@admin_api_bp.route('/totp/disable', methods=['POST'])
+@admin_required
+@limiter.limit(lambda: current_app.config.get('ADMIN_TOTP_SETUP_RATELIMITS', "5 per 10 minutes"))
+def totp_disable():
+    current_admin_id = get_jwt_identity()
+    data = request.json
+    password = data.get('password')
+    totp_code = data.get('totp_code') # Current TOTP code to confirm disabling
+    audit_logger = current_app.audit_log_service
+
+    admin_user = User.query.get(current_admin_id)
+    if not admin_user or admin_user.role != 'admin':
+        return jsonify(message="Admin user not found or invalid.", success=False), 403
+
+    if not admin_user.is_totp_enabled or not admin_user.totp_secret:
+        return jsonify(message="TOTP is not currently enabled for your account.", success=False), 400
+
+    if not password or not admin_user.check_password(password):
+        audit_logger.log_action(user_id=current_admin_id, action='totp_disable_fail_password', details="Incorrect password for TOTP disable.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Incorrect current password.", success=False), 401
+    
+    if not totp_code or not admin_user.verify_totp(totp_code):
+        audit_logger.log_action(user_id=current_admin_id, action='totp_disable_fail_invalid_code', details="Invalid TOTP code for disable.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Invalid current TOTP code.", success=False), 401
+
+    try:
+        admin_user.is_totp_enabled = False
+        admin_user.totp_secret = None # Clear the secret
+        admin_user.updated_at = datetime.now(timezone.utc)
+        db.session.commit()
+        audit_logger.log_action(user_id=current_admin_id, action='totp_disable_success', details="TOTP disabled successfully.", status='success', ip_address=request.remote_addr)
+        return jsonify(message="Two-Factor Authentication (TOTP) has been disabled.", success=True), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error disabling TOTP for admin {current_admin_id}: {e}", exc_info=True)
+        audit_logger.log_action(user_id=current_admin_id, action='totp_disable_fail_exception', details=str(e), status='failure', ip_address=request.remote_addr)
+        return jsonify(message=f"Failed to disable TOTP: {str(e)}", success=False), 500
+
+
+
 @admin_api_bp.route('/dashboard/stats', methods=['GET'])
 @admin_required
 def get_dashboard_stats():
