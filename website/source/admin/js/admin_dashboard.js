@@ -9,79 +9,82 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalCategoriesCardP = document.querySelector('#totalCategoriesCard p');
     const pendingOrdersCardP = document.querySelector('#pendingOrdersCard p');
     const totalUsersCardP = document.querySelector('#totalUsersCard p');
+    // Add new card for B2B applications if it exists in HTML
+    const pendingB2BAppsCardP = document.querySelector('#pendingB2BAppsCard p'); // Example ID
 
     /**
-     * Fetches and displays summary data for the dashboard.
+     * Fetches and displays summary data for the dashboard using the single stats endpoint.
      */
     async function loadDashboardSummaries() {
-        // Fetch Total Products
-        try {
-            if (totalProductsCardP) {
-                const products = await adminApi.getProducts(); // Assuming getProducts returns all products
-                totalProductsCardP.textContent = products.length;
-            }
-        } catch (error) {
-            console.error('Failed to load total products:', error);
-            if (totalProductsCardP) totalProductsCardP.textContent = 'Error';
-        }
+        // Set loading text for all cards
+        if (totalProductsCardP) totalProductsCardP.textContent = 'Loading...';
+        if (totalCategoriesCardP) totalCategoriesCardP.textContent = 'Loading...';
+        if (pendingOrdersCardP) pendingOrdersCardP.textContent = 'Loading...';
+        if (totalUsersCardP) totalUsersCardP.textContent = 'Loading...';
+        if (pendingB2BAppsCardP) pendingB2BAppsCardP.textContent = 'Loading...';
 
-        // Fetch Total Categories
         try {
-            if (totalCategoriesCardP) {
-                const categories = await adminApi.getCategories();
-                totalCategoriesCardP.textContent = categories.length;
-            }
-        } catch (error) {
-            console.error('Failed to load total categories:', error);
-            if (totalCategoriesCardP) totalCategoriesCardP.textContent = 'Error';
-        }
-
-        // Fetch Pending Orders
-        try {
-            if (pendingOrdersCardP) {
-                // Assuming getOrders can be filtered by status, or you filter client-side
-                // For this example, let's say getOrders returns all and we filter here (less efficient for large datasets)
-                const orders = await adminApi.getOrders({ status: 'pending' }); // Or fetch all and filter
-                // If your API directly supports ?status=pending and returns a count or filtered list:
-                // const pendingOrdersResult = await adminApi.getOrders({ status: 'pending' });
-                // pendingOrdersCardP.textContent = pendingOrdersResult.total_count || pendingOrdersResult.length;
+            // adminApi.getDashboardStats() is defined in admin_api.js
+            const response = await adminApi.getDashboardStats(); 
+            
+            if (response && response.success && response.stats) {
+                const stats = response.stats;
+                if (totalProductsCardP) totalProductsCardP.textContent = stats.total_products !== undefined ? stats.total_products : 'N/A';
+                if (totalCategoriesCardP) totalCategoriesCardP.textContent = stats.total_categories !== undefined ? stats.total_categories : 'N/A';
+                if (pendingOrdersCardP) pendingOrdersCardP.textContent = stats.pending_orders !== undefined ? stats.pending_orders : 'N/A';
+                if (totalUsersCardP) totalUsersCardP.textContent = stats.total_users !== undefined ? stats.total_users : 'N/A';
+                if (pendingB2BAppsCardP) pendingB2BAppsCardP.textContent = stats.pending_b2b_applications !== undefined ? stats.pending_b2b_applications : 'N/A';
                 
-                // Placeholder if API doesn't directly filter by count:
-                // This count might be inaccurate if getOrders doesn't filter by status in the backend for this call.
-                // A dedicated API endpoint /api/admin/orders/summary or /api/admin/orders/count?status=pending would be better.
-                pendingOrdersCardP.textContent = orders.length > 0 ? orders.length : '0'; // Example if orders is the filtered list
-                 if (orders.length === 0 && !error) pendingOrdersCardP.textContent = '0';
+                // Update links if needed, e.g., if count is 0, link might be disabled or text changed
+                const pendingOrdersLink = document.querySelector('#pendingOrdersCard a');
+                if (pendingOrdersLink && stats.pending_orders === 0) {
+                    // Example: pendingOrdersLink.textContent = "No Pending Orders";
+                    // pendingOrdersLink.href = "#"; // Or disable
+                }
 
-
+            } else {
+                const errorMsg = response?.message || 'Failed to load dashboard data.';
+                showAdminToast(errorMsg, 'error');
+                if (totalProductsCardP) totalProductsCardP.textContent = 'Error';
+                if (totalCategoriesCardP) totalCategoriesCardP.textContent = 'Error';
+                if (pendingOrdersCardP) pendingOrdersCardP.textContent = 'Error';
+                if (totalUsersCardP) totalUsersCardP.textContent = 'Error';
+                if (pendingB2BAppsCardP) pendingB2BAppsCardP.textContent = 'Error';
             }
         } catch (error) {
-            console.error('Failed to load pending orders:', error);
-             if (pendingOrdersCardP) pendingOrdersCardP.textContent = 'Error';
-        }
-
-        // Fetch Total Users
-        try {
-            if (totalUsersCardP) {
-                const users = await adminApi.getUsers();
-                totalUsersCardP.textContent = users.length;
-            }
-        } catch (error) {
-            console.error('Failed to load total users:', error);
-            if (totalUsersCardP) totalUsersCardP.textContent = 'Error';
+            console.error('Failed to load dashboard summaries:', error);
+            showAdminToast(error.message || 'Error fetching dashboard data.', 'error');
+            if (totalProductsCardP) totalProductsCardP.textContent = 'API Error';
+            if (totalCategoriesCardP) totalCategoriesCardP.textContent = 'API Error';
+            if (pendingOrdersCardP) pendingOrdersCardP.textContent = 'API Error';
+            if (totalUsersCardP) totalUsersCardP.textContent = 'API Error';
+            if (pendingB2BAppsCardP) pendingB2BAppsCardP.textContent = 'API Error';
         }
     }
 
     // --- Initialization ---
-    if (typeof adminApi !== 'undefined') { // Check if adminApi is loaded
+    if (typeof adminApi !== 'undefined' && typeof adminApi.getDashboardStats === 'function') {
         loadDashboardSummaries();
     } else {
-        console.error('adminApi is not defined. Ensure admin_api.js is loaded before admin_dashboard.js');
-        if (totalProductsCardP) totalProductsCardP.textContent = 'API Error';
-        if (totalCategoriesCardP) totalCategoriesCardP.textContent = 'API Error';
-        if (pendingOrdersCardP) pendingOrdersCardP.textContent = 'API Error';
-        if (totalUsersCardP) totalUsersCardP.textContent = 'API Error';
+        console.error('adminApi or adminApi.getDashboardStats is not defined. Ensure admin_api.js is loaded correctly.');
+        // Display error on all cards if API object is missing
+        const errorText = 'API Error';
+        if (totalProductsCardP) totalProductsCardP.textContent = errorText;
+        if (totalCategoriesCardP) totalCategoriesCardP.textContent = errorText;
+        if (pendingOrdersCardP) pendingOrdersCardP.textContent = errorText;
+        if (totalUsersCardP) totalUsersCardP.textContent = errorText;
+        if (pendingB2BAppsCardP) pendingB2BAppsCardP.textContent = errorText;
     }
 
     // Add any other dashboard-specific JavaScript logic here,
     // e.g., chart initializations, real-time updates, etc.
+    
+    // Ensure admin user greeting is populated (if admin_main.js doesn't handle it early enough for this specific element)
+    const adminUserForGreetingMain = typeof getAdminUser === 'function' ? getAdminUser() : null;
+    const greetingMainElement = document.getElementById('admin-user-greeting-main');
+    if (greetingMainElement && adminUserForGreetingMain) {
+        greetingMainElement.textContent = `${adminUserForGreetingMain.prenom || 'Admin'}`;
+    } else if (greetingMainElement) {
+        greetingMainElement.textContent = 'Admin'; // Fallback
+    }
 });
