@@ -563,4 +563,18 @@
     "invoicesPro.pasDeFactures": "Vous n'avez aucune facture pour le moment.",
     "invoicesPro.erreurChargement": "Impossible de charger vos factures. Veuillez réessayer plus tard."
 
+    "invoiceStatus.paid": "Payée",
+    "invoiceStatus.issued": "Émise",
+    "invoiceStatus.pending_payment": "En attente de paiement",
+    "invoiceStatus.draft": "Brouillon",
+    "invoiceStatus.cancelled": "Annulée",
+    "invoiceStatus.overdue": "En retard",
+    "invoiceStatus.processing": "En traitement",
+    "invoiceStatus.shipped": "Expédiée",
+    "invoiceStatus.delivered": "Livrée",
+    "invoiceStatus.completed": "Terminée",
+    "invoiceStatus.refunded": "Remboursée",
+    "invoiceStatus.partially_refunded": "Partiellement remboursée",
+    "invoiceStatus.on_hold": "En attente",
+    "invoiceStatus.failed": "Échouée"
 }
