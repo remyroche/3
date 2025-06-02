@@ -1,4 +1,4 @@
-from flask import Flask, request, g, jsonify, send_from_directory, current_app, abort as flask_abort # Added abort
+from flask import Flask, request, g, jsonify, send_from_directory, current_app, abort as flask_abort 
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, verify_jwt_in_request, get_jwt_identity, get_jwt
 from flask_talisman import Talisman
@@ -6,10 +6,12 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import os
 import logging
+from logging.handlers import RotatingFileHandler # For production logging
 
 from .config import get_config_by_name
 from .database import register_db_commands, init_db_schema, populate_initial_data
-from .audit_log_service import AuditLogService # Corrected import path
+from .audit_log_service import AuditLogService 
+
 
 def create_app(config_name=None):
     if config_name is None:
@@ -18,71 +20,68 @@ def create_app(config_name=None):
     app_config = get_config_by_name(config_name)
 
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # Ensure static_folder points to a directory that exists or can be created.
-    # Using 'website/dist/static_assets' which is more conventional for built frontend assets.
-    # If your build process places assets elsewhere, adjust this.
-    # For development, if 'website/source/static_assets' exists and is used, point there.
-    # Let's assume a 'source/static_assets' for dev and 'dist/static_assets' for prod-like structure.
-    # For simplicity, using a generic 'static_assets' that should be present in the source.
     default_static_folder = os.path.join(project_root, 'website', 'source', 'static_assets')
     if not os.path.exists(default_static_folder):
-        # Fallback if the above doesn't exist, to the original less specific one
         default_static_folder = os.path.join(project_root, 'static_assets') 
         if not os.path.exists(default_static_folder):
-             # If still not found, create a placeholder or log warning
             os.makedirs(default_static_folder, exist_ok=True)
-            app.logger.warning(f"Static folder at {default_static_folder} did not exist, created. Ensure assets are placed here.")
-
+            # Use app.logger once it's configured
+            # print(f"Warning: Static folder at {default_static_folder} did not exist, created.")
 
     app = Flask(__name__,
                 instance_path=os.path.join(project_root, 'instance'),
                 static_folder=getattr(app_config, 'STATIC_FOLDER', default_static_folder),
-                static_url_path=getattr(app_config, 'STATIC_URL_PATH', '/static')) # Changed to /static for convention
+                static_url_path=getattr(app_config, 'STATIC_URL_PATH', '/static'))
 
     app.config.from_object(app_config)
 
     try:
         os.makedirs(app.instance_path, exist_ok=True)
     except OSError as e:
-        app.logger.error(f"Could not create instance path at {app.instance_path}: {e}")
-        # Depending on severity, you might want to raise the error or exit
+        # Log this after logger is configured
+        # print(f"Error: Could not create instance path at {app.instance_path}: {e}")
         pass 
 
-    # Initialize CORS
-    CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", "*").split(',')}})
-    app.logger.info(f"CORS configured for origins: {app.config.get('CORS_ORIGINS', '*')}")
-
-    # Initialize Logging (Ensure this is done early)
+    # --- Logging Configuration ---
     log_level_str = app.config.get('LOG_LEVEL', 'INFO').upper()
     log_level = getattr(logging, log_level_str, logging.INFO)
     
-    # Remove basicConfig if Flask's default logger is sufficient or if you configure handlers elsewhere
-    # logging.basicConfig(level=log_level,
-    #                     format='%(asctime)s %(levelname)s: %(message)s [%(name)s:%(lineno)d]',
-    #                     datefmt='%Y-%m-%dT%H:%M:%S%z')
-    
-    # Configure Flask's built-in logger
-    handler = logging.StreamHandler() # Log to stderr
-    handler.setFormatter(logging.Formatter(
-        '%(asctime)s %(levelname)s: %(message)s [%(name)s:%(pathname)s:%(lineno)d]'
-    ))
-    if app.debug: # More verbose logging in debug mode
-        app.logger.setLevel(logging.DEBUG)
-        handler.setLevel(logging.DEBUG)
-    else:
+    if not app.debug and not app.testing: # Production logging
+        log_file = app.config.get('LOG_FILE')
+        if log_file:
+            # Ensure log directory exists
+            log_dir = os.path.dirname(log_file)
+            if log_dir and not os.path.exists(log_dir):
+                os.makedirs(log_dir, exist_ok=True)
+            
+            file_handler = RotatingFileHandler(log_file, maxBytes=1024 * 1024 * 100, backupCount=20) # 100MB per file, 20 backups
+            file_handler.setFormatter(logging.Formatter(
+                '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+            ))
+            file_handler.setLevel(log_level)
+            if not app.logger.handlers: # Avoid adding multiple times if create_app is called more than once
+                app.logger.addHandler(file_handler)
+        else: # Log to stderr if no log file specified in production
+            stream_handler = logging.StreamHandler()
+            stream_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
+            stream_handler.setLevel(log_level)
+            if not app.logger.handlers:
+                app.logger.addHandler(stream_handler)
         app.logger.setLevel(log_level)
-        handler.setLevel(log_level)
+    elif app.debug: # Development logging
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
+        if not app.logger.handlers:
+            app.logger.addHandler(stream_handler)
+        app.logger.setLevel(logging.DEBUG)
     
-    # Avoid adding handlers multiple times if create_app is called more than once (e.g., in tests)
-    if not app.logger.handlers:
-        app.logger.addHandler(handler)
-
     app.logger.info(f"Maison Trüvra App starting with config: {config_name}")
     app.logger.info(f"Database path: {app.config['DATABASE_PATH']}")
     app.logger.info(f"Upload folder: {app.config['UPLOAD_FOLDER']}")
-    app.logger.info(f"Asset storage path: {app.config['ASSET_STORAGE_PATH']}")
-    app.logger.info(f"Static folder path: {app.static_folder}")
-
+    
+    # Initialize CORS
+    CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", "*").split(',')}})
+    app.logger.info(f"CORS configured for origins: {app.config.get('CORS_ORIGINS', '*')}")
 
     # Initialize JWTManager
     app.jwt = JWTManager(app)
@@ -90,7 +89,7 @@ def create_app(config_name=None):
     # Initialize Database
     with app.app_context():
         init_db_schema()
-        populate_initial_data()
+        populate_initial_data() # Ensure this handles admin password securely
     register_db_commands(app)
 
     # Initialize AuditLogService
@@ -98,29 +97,35 @@ def create_app(config_name=None):
     app.logger.info("AuditLogService initialized and attached to app.")
 
     # Initialize Flask-Talisman for security headers
-    Talisman(
-        app,
-        content_security_policy=app.config.get('CONTENT_SECURITY_POLICY'),
-        force_https=app.config.get('TALISMAN_FORCE_HTTPS', False) 
-    )
+    talisman_config = {
+        'content_security_policy': app.config.get('CONTENT_SECURITY_POLICY'),
+        'force_https': app.config.get('TALISMAN_FORCE_HTTPS', False),
+        'strict_transport_security': app.config.get('TALISMAN_FORCE_HTTPS', False), # Enable HSTS if HTTPS is forced
+        'session_cookie_secure': app.config.get('JWT_COOKIE_SECURE', False), # Align with JWT_COOKIE_SECURE
+        'session_cookie_samesite': app.config.get('JWT_COOKIE_SAMESITE', 'Lax'),
+        # Add other Talisman options as needed, e.g., frame_options, referrer_policy
+        'frame_options': 'DENY', # Default is SAMEORIGIN, DENY is stronger
+        'referrer_policy': 'strict-origin-when-cross-origin',
+    }
+    Talisman(app, **talisman_config)
     app.logger.info("Flask-Talisman initialized for security headers.")
 
     # Initialize Flask-Limiter for rate limiting
     limiter = Limiter(
         get_remote_address,
         app=app,
-        default_limits=[app.config.get('DEFAULT_RATE_LIMIT_DAY', "200 per day"), app.config.get('DEFAULT_RATE_LIMIT_HOUR', "50 per hour")],
-        storage_uri=app.config.get('LIMITER_STORAGE_URI', "memory://"), 
-        strategy="fixed-window" 
+        default_limits=[app.config.get('DEFAULT_RATELIMITS_DAY', "200 per day"), app.config.get('DEFAULT_RATELIMITS_HOUR', "50 per hour")], # Corrected key names
+        storage_uri=app.config.get('RATELIMIT_STORAGE_URI', "memory://"), 
+        strategy=app.config.get('RATELIMIT_STRATEGY', "fixed-window"),
+        headers_enabled=app.config.get('RATELIMIT_HEADERS_ENABLED', True)
     )
     app.limiter = limiter 
     app.logger.info(f"Flask-Limiter initialized with default limits.")
 
-
     # Register Blueprints
     from .auth import auth_bp
     app.register_blueprint(auth_bp)
-    limiter.limit(app.config.get('AUTH_RATE_LIMIT', "20 per minute"))(auth_bp) 
+    limiter.limit(app.config.get('AUTH_RATELIMITS', "20 per minute"))(auth_bp) 
 
     from .products import products_bp
     app.register_blueprint(products_bp)
@@ -130,15 +135,14 @@ def create_app(config_name=None):
     
     from .newsletter import newsletter_bp
     app.register_blueprint(newsletter_bp)
-    limiter.limit(app.config.get('NEWSLETTER_RATE_LIMIT', "10 per minute"))(newsletter_bp)
-
+    limiter.limit(app.config.get('NEWSLETTER_RATELIMITS', "10 per minute"))(newsletter_bp) # Corrected key name
 
     from .inventory import inventory_bp 
     app.register_blueprint(inventory_bp)
 
     from .admin_api import admin_api_bp 
     app.register_blueprint(admin_api_bp)
-    limiter.limit(app.config.get('ADMIN_API_RATE_LIMIT', "200 per hour"))(admin_api_bp)
+    limiter.limit(app.config.get('ADMIN_API_RATELIMITS', "200 per hour"))(admin_api_bp) # Corrected key name
     
     from .professional import professional_bp 
     app.register_blueprint(professional_bp)
@@ -159,8 +163,84 @@ def create_app(config_name=None):
                 if claims:
                     g.current_user_role = claims.get('role')
                     g.is_admin = (claims.get('role') == 'admin')
-        except Exception: # Catch any JWT error silently
+        except Exception: 
             pass 
+
+    @app.route('/')
+    @app.route('/api')
+    def api_root():
+        return jsonify({
+            "message": "Welcome to the Maison Trüvra API!",
+            "version": app.config.get("API_VERSION", "1.0.0"),
+            "documentation_url": "/api/docs" 
+        })
+
+    # Public Asset Serving (ensure this is secure and serves only intended files)
+    @app.route('/public-assets/<path:filepath>')
+    def serve_public_asset(filepath):
+        if ".." in filepath or filepath.startswith("/"):
+            app.logger.warning(f"Directory traversal attempt for public asset: {filepath}")
+            return flask_abort(404)
+        
+        base_serve_path = None
+        actual_filename = filepath
+
+        # Define where public assets are relative to UPLOAD_FOLDER or ASSET_STORAGE_PATH
+        # These paths must match how files are saved by your application.
+        if filepath.startswith('products/'):
+            base_serve_path = os.path.join(app.config['UPLOAD_FOLDER'], 'products')
+            actual_filename = filepath[len('products/'):]
+        elif filepath.startswith('categories/'):
+            base_serve_path = os.path.join(app.config['UPLOAD_FOLDER'], 'categories')
+            actual_filename = filepath[len('categories/'):]
+        elif filepath.startswith('passports/'): # Public HTML passports
+            base_serve_path = os.path.join(app.config['ASSET_STORAGE_PATH'], 'passports')
+            actual_filename = filepath[len('passports/'):]
+        
+        if base_serve_path:
+            requested_path_full = os.path.normpath(os.path.join(base_serve_path, actual_filename))
+            # Security: Ensure the final path is still within the intended base directory
+            if not requested_path_full.startswith(os.path.normpath(base_serve_path) + os.sep) and requested_path_full != os.path.normpath(base_serve_path) :
+                app.logger.error(f"Security violation: Attempt to access file outside designated public asset directory. Requested: {requested_path_full}, Base: {base_serve_path}")
+                return flask_abort(404)
+
+            if os.path.exists(requested_path_full) and os.path.isfile(requested_path_full):
+                app.logger.debug(f"Serving public asset: {actual_filename} from {base_serve_path}")
+                return send_from_directory(base_serve_path, actual_filename)
+        
+        app.logger.warning(f"Public asset not found or path not recognized: {filepath}")
+        return flask_abort(404)
+
+    # Centralized error handlers
+    @app.errorhandler(400)
+    def bad_request_error(error):
+        return jsonify(message=str(error.description if hasattr(error, 'description') else "Bad Request"), success=False), 400
+
+    @app.errorhandler(401)
+    def unauthorized_error(error):
+        return jsonify(message=str(error.description if hasattr(error, 'description') else "Unauthorized"), success=False), 401
+        
+    @app.errorhandler(403)
+    def forbidden_error(error):
+        return jsonify(message=str(error.description if hasattr(error, 'description') else "Forbidden"), success=False), 403
+
+    @app.errorhandler(404)
+    def not_found_error(error):
+        return jsonify(message=str(error.description if hasattr(error, 'description') else "Resource not found"), success=False), 404
+
+    @app.errorhandler(429) 
+    def ratelimit_handler(e):
+        return jsonify(message=f"Rate limit exceeded: {e.description}", success=False), 429
+
+    @app.errorhandler(500)
+    def internal_server_error(error):
+        app.logger.error(f"Internal Server Error: {error}", exc_info=True) # Log the full exception
+        # Avoid sending detailed error messages to the client in production
+        if app.debug:
+             return jsonify(message=f"An internal server error occurred: {str(error)}", success=False), 500
+        return jsonify(message="An internal server error occurred. Please try again later.", success=False), 500
+
+    return app
 
     @app.route('/')
     @app.route('/api')
