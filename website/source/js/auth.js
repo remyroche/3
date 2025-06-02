@@ -1,18 +1,6 @@
 // website/js/auth.js
 // Handles user authentication, session management, and account display.
 
-/**
- * Retrieves the authentication token from session storage.
- * @returns {string|null} The auth token or null if not found.
- */
-function getAuthToken() {
-    return sessionStorage.getItem('authToken');
-}
-
-/**
- * Sets or removes the authentication token in session storage.// website/js/auth.js
-// Handles user authentication, session management, and account display.
-
 function getAuthToken() {
     return sessionStorage.getItem('authToken');
 }
@@ -48,13 +36,13 @@ function setCurrentUser(userData, token = null) {
         sessionStorage.removeItem('authToken');
     }
     updateLoginState();
-    updateCartDisplay(); // Changed from updateCartCountDisplay
+    updateCartDisplay(); 
     document.dispatchEvent(new CustomEvent('authStateChanged', { detail: { isLoggedIn: !!userData } }));
 }
 
 async function logoutUser() {
     setCurrentUser(null); 
-    showGlobalMessage(t('public.js.logged_out'), "info");
+    showGlobalMessage(t('public.js.logged_out'), "info"); // Key: public.js.logged_out
 
     const bodyId = document.body.id;
     if (bodyId === 'page-compte' || bodyId === 'page-paiement') {
@@ -70,7 +58,7 @@ function updateLoginState() {
     const cartIconMobile = document.querySelector('.md\\:hidden a[href="panier.html"]');
 
     if (currentUser) {
-        if (accountLinkDesktop) accountLinkDesktop.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-brand-classic-gold"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg> <span class="ml-1 text-xs">${currentUser.prenom || t('public.nav.account')}</span>`;
+        if (accountLinkDesktop) accountLinkDesktop.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7 text-brand-classic-gold"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg> <span class="ml-1 text-xs">${currentUser.prenom || t('public.nav.account')}</span>`; // Key: public.nav.account
         if (accountLinkMobile) accountLinkMobile.textContent = `${t('public.nav.account')} (${currentUser.prenom || ''})`;
     } else {
         if (accountLinkDesktop) accountLinkDesktop.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-7 h-7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>`;
@@ -94,25 +82,25 @@ async function handleLogin(event) {
     if (loginMessageElement) loginMessageElement.textContent = '';
 
     if (!email || !validateEmail(email)) { 
-        setFieldError(emailField, t('public.js.newsletter_invalid_email')); 
+        setFieldError(emailField, t('public.js.newsletter_invalid_email')); // Key: public.js.newsletter_invalid_email
         isValid = false;
     }
     if (!password) {
-        setFieldError(passwordField, t('public.account.password_label')); // Or a more specific "Password required"
+        setFieldError(passwordField, t('public.js.password_required')); // New key: public.js.password_required (e.g., "Password is required.")
         isValid = false;
     }
     if (!isValid) {
-        showGlobalMessage(t('global.error_generic'), "error"); 
+        showGlobalMessage(t('public.js.fix_form_errors'), "error"); // New key: public.js.fix_form_errors (e.g., "Please correct the errors in the form.")
         return;
     }
 
-    showGlobalMessage(t('public.js.logging_in'), "info", 60000); 
+    showGlobalMessage(t('public.js.logging_in'), "info", 60000); // Key: public.js.logging_in
 
     try {
         const result = await makeApiRequest('/auth/login', 'POST', { email, password });
         if (result.success && result.user && result.token) {
             setCurrentUser(result.user, result.token);
-            showGlobalMessage(result.message || t('public.js.login_success'), "success");
+            showGlobalMessage(result.message || t('public.js.login_success'), "success"); // Key: public.js.login_success
             loginForm.reset();
             const urlParams = new URLSearchParams(window.location.search);
             const redirectUrl = urlParams.get('redirect');
@@ -121,7 +109,7 @@ async function handleLogin(event) {
             }
         } else {
             setCurrentUser(null); 
-            const generalErrorMessage = result.message || t('public.js.login_failed');
+            const generalErrorMessage = result.message || t('public.js.login_failed'); // Key: public.js.login_failed
             showGlobalMessage(generalErrorMessage, "error");
             if (loginMessageElement) loginMessageElement.textContent = generalErrorMessage;
             setFieldError(emailField, " "); 
@@ -129,7 +117,9 @@ async function handleLogin(event) {
         }
     } catch (error) {
         setCurrentUser(null); 
-        if (loginMessageElement) loginMessageElement.textContent = error.message || t('global.error_generic');
+        const errorMessage = error.data?.message || t('global.error_generic'); // Key: global.error_generic
+        if (loginMessageElement) loginMessageElement.textContent = errorMessage;
+        showGlobalMessage(errorMessage, "error");
     }
 }
 
@@ -149,26 +139,25 @@ async function handleRegistrationForm(event) {
     if (!emailField.value || !validateEmail(emailField.value)) {
         setFieldError(emailField, t('public.js.newsletter_invalid_email')); isValid = false;
     }
-    // Add more specific translated validation messages if needed
     if (!nomField.value.trim()) {
-        setFieldError(nomField, "Nom requis."); isValid = false;
+        setFieldError(nomField, t('public.js.lastname_required')); isValid = false; // New key: public.js.lastname_required
     }
     if (!prenomField.value.trim()) {
-        setFieldError(prenomField, "Prénom requis."); isValid = false;
+        setFieldError(prenomField, t('public.js.firstname_required')); isValid = false; // New key: public.js.firstname_required
     }
     if (passwordField.value.length < 8) {
-        setFieldError(passwordField, "Le mot de passe doit faire au moins 8 caractères."); isValid = false;
+        setFieldError(passwordField, t('public.js.password_min_chars')); isValid = false; // New key: public.js.password_min_chars (e.g., "Password must be at least 8 characters.")
     }
     if (passwordField.value !== confirmPasswordField.value) {
-        setFieldError(confirmPasswordField, "Les mots de passe ne correspondent pas."); isValid = false;
+        setFieldError(confirmPasswordField, t('public.js.passwords_do_not_match')); isValid = false; // New key: public.js.passwords_do_not_match
     }
 
     if (!isValid) {
-        showGlobalMessage(t('global.error_generic'), "error");
+        showGlobalMessage(t('public.js.fix_form_errors'), "error"); // New key: public.js.fix_form_errors
         return;
     }
 
-    showGlobalMessage(t('public.account.create_account_btn') + "...", "info"); // "Creating account..."
+    showGlobalMessage(t('public.js.creating_account'), "info"); // New key: public.js.creating_account
     try {
         const result = await makeApiRequest('/auth/register', 'POST', {
             email: emailField.value,
@@ -177,13 +166,15 @@ async function handleRegistrationForm(event) {
             prenom: prenomField.value
         });
         if (result.success) {
-            showGlobalMessage(result.message || t('public.js.login_success'), "success"); // Or a specific registration success message
+            showGlobalMessage(result.message || t('public.js.registration_success'), "success"); // New key: public.js.registration_success
             form.reset();
+            // Potentially redirect or switch to login view
         } else {
             showGlobalMessage(result.message || t('global.error_generic'), "error");
         }
     } catch (error) {
         console.error("Registration error:", error);
+        showGlobalMessage(error.data?.message || t('global.error_generic'), "error");
     }
 }
 
@@ -219,14 +210,16 @@ async function loadOrderHistory() {
 
     const currentUser = getCurrentUser();
     if (!currentUser) {
-        orderHistoryContainer.innerHTML = `<p class="text-sm text-brand-warm-taupe italic">${t('public.cart.login_prompt')}</p>`; // "Please log in to see your history."
+        orderHistoryContainer.innerHTML = `<p class="text-sm text-brand-warm-taupe italic">${t('public.cart.login_prompt')}</p>`; // Key: public.cart.login_prompt
         return;
     }
 
-    orderHistoryContainer.innerHTML = `<p class="text-sm text-brand-warm-taupe italic">${t('global.loading')}</p>`;
+    orderHistoryContainer.innerHTML = `<p class="text-sm text-brand-warm-taupe italic">${t('global.loading')}</p>`; // Key: global.loading
     try {
+        // Simulate API call as per original, replace with actual API call when backend ready
+        // const ordersData = await makeApiRequest('/orders/history', 'GET', null, true);
         await new Promise(resolve => setTimeout(resolve, 500)); 
-        const ordersData = { success: true, orders: [] }; 
+        const ordersData = { success: true, orders: [] }; // Dummy empty response
 
         if (ordersData.success && ordersData.orders.length > 0) {
             let html = '<ul class="space-y-4">';
@@ -237,23 +230,25 @@ async function loadOrderHistory() {
                             <p class="font-semibold text-brand-near-black">${t('public.confirmation.order_number_label')} #${order.orderId || order.id}</p>
                             <span class="px-2 py-1 text-xs font-semibold rounded-full ${getOrderStatusClass(order.status)}">${order.status}</span>
                         </div>
-                        <p class="text-sm"><strong>Date:</strong> ${new Date(order.date || order.order_date).toLocaleDateString(currentLang)}</p>
-                        <p class="text-sm"><strong>${t('public.cart.total')}</strong> ${parseFloat(order.totalAmount || order.total_amount).toFixed(2)} €</p>
-                        <button class="text-sm text-brand-classic-gold hover:underline mt-2" onclick="viewOrderDetail('${order.orderId || order.id}')">${t('public.confirmation.view_account_btn')}</button> </li>
+                        <p class="text-sm"><strong>${t('public.js.order_date_label')}</strong> ${new Date(order.date || order.order_date).toLocaleDateString(currentLang)}</p> <p class="text-sm"><strong>${t('public.cart.total')}</strong> ${parseFloat(order.totalAmount || order.total_amount).toFixed(2)} €</p>
+                        <button class="text-sm text-brand-classic-gold hover:underline mt-2" onclick="viewOrderDetail('${order.orderId || order.id}')">${t('public.confirmation.view_account_btn')}</button> 
+                    </li>
                 `;
             });
             html += '</ul>';
             orderHistoryContainer.innerHTML = html;
         } else {
-            orderHistoryContainer.innerHTML = `<p class="text-sm text-brand-warm-taupe italic">${t('public.account.dashboard_orders_placeholder')}</p>`;
+            orderHistoryContainer.innerHTML = `<p class="text-sm text-brand-warm-taupe italic">${t('public.account.dashboard_orders_placeholder')}</p>`; // Key: public.account.dashboard_orders_placeholder
         }
     } catch (error) {
-        orderHistoryContainer.innerHTML = `<p class="text-sm text-brand-truffle-burgundy italic">${t('global.error_generic')}: ${error.message}</p>`;
+        orderHistoryContainer.innerHTML = `<p class="text-sm text-brand-truffle-burgundy italic">${t('global.error_generic')}: ${error.message || error.data?.message}</p>`;
     }
 }
 
 function viewOrderDetail(orderId) {
-    showGlobalMessage(`${t('public.confirmation.order_number_label')} #${orderId} (${t('global.loading')}).`, 'info'); // "Order Detail #... (feature to implement)"
+    // Example: Redirect to a detail page or open a modal
+    // The message will be translated by build.js
+    showGlobalMessage(`${t('public.js.view_order_detail_prefix')} #${orderId}. ${t('public.js.feature_to_implement_suffix')}`, 'info'); // New keys: public.js.view_order_detail_prefix, public.js.feature_to_implement_suffix
 }
 
 function isUserLoggedIn() {
