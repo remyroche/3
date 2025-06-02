@@ -1,12 +1,11 @@
 import os
-from datetime import datetime
-from flask import current_app
-# from reportlab.lib.pagesizes import letter
-# from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as ReportLabImage # Renamed to avoid conflict
-# from reportlab.lib.styles import getSampleStyleSheet
-# from reportlab.lib.units import inch
-# For a more modern approach, consider WeasyPrint:
-# import weasyprint
+import sqlite3
+from datetime import datetime, timedelta
+from flask import current_app, render_template
+from weasyprint import HTML, CSS
+from ..database import get_db_connection, query_db
+
+
 
 # Import your actual PDF generation script/functions if you have one, e.g.:
 # from ..pdf_utils.generate_professional_invoice import create_invoice_pdf_reportlab 
