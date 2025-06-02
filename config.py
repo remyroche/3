@@ -4,19 +4,17 @@ from datetime import timedelta
 
 class Config:
     """Base configuration."""
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'change_this_default_secret_key_in_prod_sqlalchemy')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'change_this_default_secret_key_in_prod_sqlalchemy_totp')
     DEBUG = False
     TESTING = False
-    APP_BASE_URL = os.environ.get('APP_BASE_URL', 'http://localhost:8000') # Used for frontend redirects
+    APP_BASE_URL = os.environ.get('APP_BASE_URL', 'http://localhost:8000') 
 
-    # SQLAlchemy Configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'maison_truvra_orm.sqlite3')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
 
-    # JWT Extended Settings
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'change_this_default_jwt_secret_key_in_prod_sqlalchemy')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'change_this_default_jwt_secret_key_in_prod_sqlalchemy_totp')
     JWT_TOKEN_LOCATION = ['headers', 'cookies']
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
@@ -28,7 +26,6 @@ class Config:
     JWT_CSRF_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE']
     JWT_CSRF_IN_COOKIES = True 
 
-    # File Uploads / Asset Storage
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'uploads'))
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
     MAX_CONTENT_LENGTH = 8 * 1024 * 1024
@@ -40,7 +37,6 @@ class Config:
     MAISON_TRUVRA_LOGO_PATH_LABEL = os.environ.get('MAISON_TRUVRA_LOGO_PATH_LABEL', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static_assets', 'logos', 'maison_truvra_label_logo.png')) 
     MAISON_TRUVRA_LOGO_PATH_PASSPORT = os.environ.get('MAISON_TRUVRA_LOGO_PATH_PASSPORT', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static_assets', 'logos', 'maison_truvra_passport_logo.png'))
 
-    # Email Configuration
     MAIL_SERVER = os.environ.get('MAIL_SERVER')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ('true', '1', 't')
@@ -50,7 +46,6 @@ class Config:
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@example.com')
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL')
 
-    # Stripe Configuration
     STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
     STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY')
     STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
@@ -71,9 +66,8 @@ class Config:
         "logo_path": os.environ.get('INVOICE_COMPANY_LOGO_PATH', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static_assets', 'logos', 'maison_truvra_invoice_logo.png'))
     }
     
-    API_VERSION = "v1.4-sqlalchemy-totp-sso" 
+    API_VERSION = "v1.5-sqlalchemy-totp-enrollment" 
 
-    # Rate Limiting
     RATELIMIT_STORAGE_URI = os.environ.get('RATELIMIT_STORAGE_URI', "memory://")
     RATELIMIT_STRATEGY = "fixed-window"
     RATELIMIT_HEADERS_ENABLED = True
@@ -83,12 +77,12 @@ class Config:
     PASSWORD_RESET_RATELIMITS = ["5 per 15 minutes"]
     NEWSLETTER_RATELIMITS = ["10 per minute"] 
     ADMIN_API_RATELIMITS = ["200 per hour"] 
+    ADMIN_TOTP_SETUP_RATELIMITS = ["5 per 10 minutes"] # Rate limit for TOTP setup attempts
 
-    # Content Security Policy
     CONTENT_SECURITY_POLICY = {
         'default-src': ['\'self\''],
         'img-src': ['\'self\'', 'https://placehold.co', 'data:'], 
-        'script-src': ['\'self\'', 'https://cdn.tailwindcss.com'],
+        'script-src': ['\'self\'', 'https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js'], # Added qrcodejs CDN
         'style-src': ['\'self\'', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com', '\'unsafe-inline\''],
         'font-src': ['\'self\'', 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
         'connect-src': ['\'self\'', 'https://app.simplelogin.io'], 
@@ -97,25 +91,23 @@ class Config:
     }
     TALISMAN_FORCE_HTTPS = False
 
-    # Initial Admin User
     INITIAL_ADMIN_EMAIL = os.environ.get('INITIAL_ADMIN_EMAIL')
     INITIAL_ADMIN_PASSWORD = os.environ.get('INITIAL_ADMIN_PASSWORD')
 
-    # Token Lifespans
     VERIFICATION_TOKEN_LIFESPAN_HOURS = 24
     RESET_TOKEN_LIFESPAN_HOURS = 1
     MAGIC_LINK_LIFESPAN_MINUTES = 10
 
-    # Invoice Settings
     INVOICE_DUE_DAYS = 30
 
-    # TOTP Configuration
     TOTP_ISSUER_NAME = os.environ.get('TOTP_ISSUER_NAME', "Maison Trüvra Admin")
     TOTP_LOGIN_STATE_TIMEOUT = timedelta(minutes=5) 
+    # Temporary storage for TOTP secret during setup verification step
+    TOTP_SETUP_SECRET_TIMEOUT = timedelta(minutes=10)
 
-    # SimpleLogin OAuth Configuration
-    SIMPLELOGIN_CLIENT_ID = os.environ.get('SIMPLELOGIN_CLIENT_ID', 'truvra-ykisfvoctm') # Updated with your App ID
-    SIMPLELOGIN_CLIENT_SECRET = os.environ.get('SIMPLELOGIN_CLIENT_SECRET', 'cppjuelfvjkkqursqunvwigxiyabakgfthhivwzi') # Updated with your App Secret
+
+    SIMPLELOGIN_CLIENT_ID = os.environ.get('SIMPLELOGIN_CLIENT_ID', 'truvra-ykisfvoctm') 
+    SIMPLELOGIN_CLIENT_SECRET = os.environ.get('SIMPLELOGIN_CLIENT_SECRET', 'cppjuelfvjkkqursqunvwigxiyabakgfthhivwzi') 
     SIMPLELOGIN_AUTHORIZE_URL = os.environ.get('SIMPLELOGIN_AUTHORIZE_URL', 'https://app.simplelogin.io/oauth2/authorize')
     SIMPLELOGIN_TOKEN_URL = os.environ.get('SIMPLELOGIN_TOKEN_URL', 'https://app.simplelogin.io/oauth2/token')
     SIMPLELOGIN_USERINFO_URL = os.environ.get('SIMPLELOGIN_USERINFO_URL', 'https://app.simplelogin.io/oauth2/userinfo')
@@ -138,7 +130,6 @@ class DevelopmentConfig(Config):
     TALISMAN_FORCE_HTTPS = False
     APP_BASE_URL = os.environ.get('DEV_APP_BASE_URL', 'http://localhost:8000') 
     Config.CONTENT_SECURITY_POLICY['connect-src'].extend(['http://localhost:5001', 'http://127.0.0.1:5001'])
-    # Development values for SimpleLogin are now taken from the base Config or environment variables
 
 
 class TestingConfig(Config):
@@ -155,7 +146,7 @@ class TestingConfig(Config):
     INITIAL_ADMIN_EMAIL = 'test_admin_orm@example.com'
     INITIAL_ADMIN_PASSWORD = 'test_password_orm123'
     SQLALCHEMY_ECHO = False
-    SIMPLELOGIN_CLIENT_ID = 'test_sl_client_id_testing' # Keep test credentials separate
+    SIMPLELOGIN_CLIENT_ID = 'test_sl_client_id_testing' 
     SIMPLELOGIN_CLIENT_SECRET = 'test_sl_client_secret_testing'
 
 
@@ -163,9 +154,9 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
     
-    if Config.SECRET_KEY == 'change_this_default_secret_key_in_prod_sqlalchemy':
+    if Config.SECRET_KEY == 'change_this_default_secret_key_in_prod_sqlalchemy_totp': # Ensure this matches the new default
         raise ValueError("Production SECRET_KEY is not set or is using the default value.")
-    if Config.JWT_SECRET_KEY == 'change_this_default_jwt_secret_key_in_prod_sqlalchemy':
+    if Config.JWT_SECRET_KEY == 'change_this_default_jwt_secret_key_in_prod_sqlalchemy_totp': # Ensure this matches
         raise ValueError("Production JWT_SECRET_KEY is not set or is using the default value.")
 
     JWT_COOKIE_SECURE = True
@@ -206,7 +197,6 @@ class ProductionConfig(Config):
     if not Config.INITIAL_ADMIN_EMAIL or not Config.INITIAL_ADMIN_PASSWORD:
         print("WARNING: INITIAL_ADMIN_EMAIL or INITIAL_ADMIN_PASSWORD environment variables are not set.")
     
-    # Ensure production uses actual environment variables for SimpleLogin credentials
     if Config.SIMPLELOGIN_CLIENT_ID == 'truvra-ykisfvoctm' or Config.SIMPLELOGIN_CLIENT_SECRET == 'cppjuelfvjkkqursqunvwigxiyabakgfthhivwzi':
         if not (os.environ.get('SIMPLELOGIN_CLIENT_ID') and os.environ.get('SIMPLELOGIN_CLIENT_SECRET')):
              print("WARNING: SimpleLogin OAuth credentials are using fallback values in production. Set environment variables.")
