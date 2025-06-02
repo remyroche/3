@@ -1,10 +1,12 @@
 import sqlite3
-from flask import Blueprint, request, jsonify, current_app, g
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import Blueprint, request, jsonify, current_app, g, send_from_directory, abort
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime, timezone # Added timezone
+import os
 
 from ..database import get_db_connection, query_db, record_stock_movement
 from ..utils import is_valid_email, format_datetime_for_display, format_datetime_for_storage
+from ..services.invoice_service import InvoiceService
 
 orders_bp = Blueprint('orders_bp', __name__, url_prefix='/api/orders')
 
@@ -211,3 +213,65 @@ def get_order_details_public(order_id):
         current_app.logger.error(f"Error fetching public order details for order {order_id}, user {current_user_id}: {e}", exc_info=True)
         audit_logger.log_action(user_id=current_user_id, action='get_order_detail_fail_server_error', target_type='order', target_id=order_id, details=str(e), status='failure', ip_address=request.remote_addr)
         return jsonify(message="Failed to fetch order details.", success=False), 500
+
+
+# Add this new route to your orders blueprint to TRIGGER invoice generation
+@orders_bp.route('/<int:order_id>/generate-invoice', methods=['POST'])
+@jwt_required()
+def generate_invoice_for_order(order_id):
+    """
+    Endpoint for an admin to generate an invoice for a specific order.
+    """
+    claims = get_jwt()
+    # Ensure only admins can perform this action
+    if claims.get('role') != 'admin':
+        return jsonify(message="Forbidden: Admins only"), 403
+
+    try:
+        invoice_service = InvoiceService()
+        invoice_id = invoice_service.create_invoice_from_order(order_id)
+        if invoice_id:
+            return jsonify(success=True, message="Invoice generated successfully.", invoice_id=invoice_id), 201
+        else:
+            return jsonify(success=False, message="Invoice might already exist or failed to generate."), 409
+    except ValueError as ve:
+        return jsonify(message=str(ve)), 404
+    except Exception as e:
+        current_app.logger.error(f"API error generating invoice for order {order_id}: {e}")
+        return jsonify(message="An internal error occurred during invoice generation."), 500
+
+
+# Add this new route to download an invoice
+@orders_bp.route('/invoices/download/<int:invoice_id>', methods=['GET'])
+@jwt_required()
+def download_invoice(invoice_id):
+    """
+    Allows a user to download their own invoice, or an admin to download any.
+    """
+    user_id = get_jwt_identity()
+    claims = get_jwt()
+    is_admin = claims.get('role') == 'admin'
+
+    db = get_db_connection()
+    invoice = query_db("SELECT * FROM invoices WHERE id = ?", [invoice_id], db_conn=db, one=True)
+
+    if not invoice:
+        abort(404, "Invoice not found.")
+
+    # Security Check: User can only access their own invoices, unless they are an admin
+    if not is_admin and invoice['b2b_user_id'] != user_id:
+        abort(403, "You do not have permission to access this invoice.")
+
+    pdf_path = invoice.get('pdf_path')
+    if not pdf_path or not os.path.exists(pdf_path):
+        abort(404, "Invoice file not found on server. It may need to be regenerated.")
+    
+    directory = os.path.dirname(pdf_path)
+    filename = os.path.basename(pdf_path)
+
+    try:
+        return send_from_directory(directory, filename, as_attachment=True)
+    except Exception as e:
+        current_app.logger.error(f"Error sending invoice file {filename}: {e}")
+        abort(500)
+
