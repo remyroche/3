@@ -4,15 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voir Inventaire Détaillé - Maison Trüvra Admin</title>
-    <link rel="stylesheet" href="css/admin_style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin_style.css"> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 font-sans">
-    <!-- COMMON ADMIN HEADER START -->
-    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
+<body id="page-admin-view-inventory" class="bg-gray-100 font-sans"> <header class="bg-white shadow-md p-4 sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
-                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center">
+                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
                     <i class="fas fa-arrow-left mr-2"></i>
                     Retour au Tableau de Bord
                 </a>
@@ -29,13 +26,12 @@
         </div>
     </header>
 
-    <!-- COMMON ADMIN NAVIGATION START -->
     <nav class="bg-gray-800 text-white shadow-md">
         <div class="container mx-auto px-4">
-            <div class="flex items-center justify-start h-12 space-x-1">
+            <div class="flex items-center justify-start h-12 space-x-1 overflow-x-auto">
                 <a href="admin_dashboard.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Tableau de Bord</a>
                 <a href="admin_manage_products.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Produits</a>
-                <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Gérer Inventaire</a>
+                <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Inventaire</a>
                 <a href="admin_view_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 active">Voir Inventaire</a>
                 <a href="admin_manage_orders.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Commandes</a>
                 <a href="admin_manage_users.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Utilisateurs</a>
@@ -45,21 +41,22 @@
             </div>
         </div>
     </nav>
-    <!-- COMMON ADMIN HEADER/NAVIGATION END -->
-
-    <main class="container mx-auto p-6 space-y-6">
+    <main class="admin-content-area container mx-auto p-6 space-y-6">
         <h1 class="text-3xl font-semibold text-gray-800 mb-6">Inventaire Détaillé des Articles</h1>
         
-        <section class="bg-white p-6 rounded-lg shadow">
-            <h2 class="text-xl font-semibold text-gray-700 mb-4">Filtres</h2>
-            <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label for="filter-view-product-name" class="block text-sm font-medium text-gray-700">Nom du Produit:</label>
-                    <input type="text" id="filter-view-product-name" placeholder="Filtrer par nom de produit..." class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+        <section class="admin-form-container bg-white p-6 rounded-lg shadow">
+            <h2 class="admin-form-title text-xl font-semibold text-gray-700 mb-4">Filtres</h2>
+            <div class="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"> <div>
+                    <label for="filter-view-product-name" class="form-label">Nom du Produit:</label>
+                    <input type="text" id="filter-view-product-name" placeholder="Filtrer par nom de produit..." class="form-input-admin mt-1">
+                </div>
+                 <div>
+                    <label for="filter-view-product-code" class="form-label">Code Produit:</label>
+                    <input type="text" id="filter-view-product-code" placeholder="Filtrer par code produit..." class="form-input-admin mt-1">
                 </div>
                 <div>
-                    <label for="filter-view-item-status" class="block text-sm font-medium text-gray-700">Statut de l'Article:</label>
-                    <select id="filter-view-item-status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <label for="filter-view-item-status" class="form-label">Statut de l'Article:</label>
+                    <select id="filter-view-item-status" class="form-input-admin mt-1">
                         <option value="">Tous les statuts</option>
                         <option value="available">Disponible</option>
                         <option value="allocated">Alloué</option>
@@ -72,51 +69,71 @@
                     </select>
                 </div>
                 <div>
-                    <label for="search-view-item-uid" class="block text-sm font-medium text-gray-700">Rechercher par UID:</label>
-                    <input type="text" id="search-view-item-uid" placeholder="Entrer UID..." class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    <label for="search-view-item-uid" class="form-label">Rechercher par UID:</label>
+                    <input type="text" id="search-view-item-uid" placeholder="Entrer UID..." class="form-input-admin mt-1">
                 </div>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-4">
+                 <button id="export-inventory-csv-button" class="btn btn-admin-secondary">
+                    <i class="fas fa-file-csv mr-2"></i>Exporter en CSV
+                </button>
+                <div>
+                    <label for="import-inventory-csv-file" class="form-label sr-only">Importer CSV</label>
+                    <input type="file" id="import-inventory-csv-file" accept=".csv" class="form-input-admin text-sm">
+                </div>
+                <button id="import-inventory-csv-button" class="btn btn-admin-primary">
+                    <i class="fas fa-file-upload mr-2"></i>Importer CSV
+                </button>
             </div>
         </section>
 
-        <section class="bg-white p-6 rounded-lg shadow mt-6">
-            <h2 class="text-xl font-semibold text-gray-700 mb-4">Liste des Articles en Stock</h2>
+        <section class="admin-table-container bg-white p-6 rounded-lg shadow mt-6">
+            <h2 class="admin-table-title text-xl font-semibold text-gray-700 mb-4">Liste des Articles en Stock</h2>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table class="admin-table min-w-full">
+                    <thead>
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produit</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variante</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UID Article</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lot</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Prod.</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Exp.</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reçu le</th>
+                            <th>Produit</th>
+                            <th>Variante</th>
+                            <th>Code Produit</th>
+                            <th>UID Article</th>
+                            <th>Statut</th>
+                            <th>Lot</th>
+                            <th>Date Prod.</th>
+                            <th>Date Exp.</th>
+                            <th>Reçu le</th>
                         </tr>
                     </thead>
-                    <tbody id="detailed-inventory-table-body" class="bg-white divide-y divide-gray-200">
-                        <tr><td colspan="8" class="text-center p-4">Chargement de l'inventaire détaillé...</td></tr>
+                    <tbody id="detailed-inventory-table-body">
+                        <tr><td colspan="9" class="text-center p-4">Chargement de l'inventaire détaillé...</td></tr>
                     </tbody>
                 </table>
             </div>
         </section>
     </main>
+    
+    <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
+        <p>&copy; <span id="currentYearViewInv">2024</span> Maison Trüvra - Admin Panel</p>
+    </footer>
 
-    <!-- Container for admin toasts -->
     <div id="admin-toast-container" class="fixed bottom-0 right-0 p-4 space-y-2 z-[1051]"></div>
 
-    <script src="js/admin_config.js" defer></script>
-    <script src="js/admin_ui.js" defer></script>
-    <script src="js/admin_api.js" defer></script>
-    <script src="js/admin_auth.js" defer></script>
-    <script src="js/admin_main.js" defer></script>
-    <script src="js/admin_view_inventory.js" defer></script>
-
-    <!-- Product Overview Tooltip -->
     <div id="product-overview-tooltip" 
          class="hidden absolute z-[1060] p-3 bg-gray-900 text-white text-sm rounded-md shadow-lg pointer-events-none max-w-xs"
          role="tooltip">
-        <!-- Content will be dynamically injected by JavaScript -->
-    </div>
+        </div>
+
+    <script src="js/admin_config.js"></script>
+    <script src="js/admin_ui.js"></script>
+    <script src="js/admin_api.js"></script>
+    <script src="js/admin_auth.js"></script>
+    <script src="js/admin_main.js"></script>
+    <script src="js/admin_view_inventory.js"></script>
+    <script>
+        const currentYearSpanViewInv = document.getElementById('currentYearViewInv');
+        if (currentYearSpanViewInv) {
+            currentYearSpanViewInv.textContent = new Date().getFullYear();
+        }
+    </script>
 </body>
 </html>
