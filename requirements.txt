@@ -6,3 +6,4 @@ qrcode>=7.0
 Unidecode>=1.0
 python-dotenv>=0.19.0 # Recommended for managing environment variables
 Flask-Talisman>=1.0.0 # For security headers
+weasyprint
