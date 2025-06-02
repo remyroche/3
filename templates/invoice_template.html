@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice {{ invoice.invoice_number }}</title>
+    <style>
+        body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; font-size: 12px; }
+        .container { width: 90%; margin: 0 auto; }
+        .header, .footer { text-align: center; margin-bottom: 20px; }
+        .header img { max-width: 150px; margin-bottom: 10px; }
+        .header h1 { margin: 0; color: #1a1a1a; }
+        .details { display: block; margin-bottom: 30px; }
+        .details .company-details { float: left; width: 45%; }
+        .details .invoice-details { float: right; width: 45%; text-align: right; }
+        .details h2 { font-size: 14px; margin-top: 0; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        .bill-to { margin-bottom: 30px; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .items-table th, .items-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        .items-table th { background-color: #f2f2f2; }
+        .items-table .text-right { text-align: right; }
+        .totals { float: right; width: 30%; }
+        .totals table { width: 100%; }
+        .totals td { padding: 5px; }
+        .totals .label { font-weight: bold; }
+        .totals .amount { text-align: right; }
+        .notes { clear: both; margin-top: 40px; }
+        .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 10px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            {% if company.logo_path %}
+                <img src="{{ company.logo_path }}" alt="{{ company.name }} Logo">
+            {% endif %}
+            <h1>INVOICE</h1>
+        </div>
+
+        <div class="details">
+            <div class="company-details">
+                <h2>From:</h2>
+                <strong>{{ company.name }}</strong><br>
+                {{ company.address_line1 }}<br>
+                {% if company.address_line2 %}{{ company.address_line2 }}<br>{% endif %}
+                {{ company.city_postal_country }}<br>
+                VAT Number: {{ company.vat_number }}
+            </div>
+            <div class="invoice-details">
+                <h2>Invoice Details:</h2>
+                <strong>Invoice #:</strong> {{ invoice.invoice_number }}<br>
+                <strong>Issue Date:</strong> {{ invoice.issue_date }}<br>
+                <strong>Due Date:</strong> {{ invoice.due_date }}<br>
+            </div>
+        </div>
+
+        <div class="bill-to">
+            <h2>To:</h2>
+            <strong>{{ user.company_name or (user.first_name + ' ' + user.last_name) }}</strong><br>
+            {{ user.email }}<br>
+            {% if shipping_address %}
+                {{ shipping_address.line1 }}<br>
+                {% if shipping_address.line2 %}{{ shipping_address.line2 }}<br>{% endif %}
+                {{ shipping_address.city }}, {{ shipping_address.postal_code }}<br>
+                {{ shipping_address.country }}
+            {% endif %}
+        </div>
+
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Quantity</th>
+                    <th class="text-right">Unit Price</th>
+                    <th class="text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice_items %}
+                <tr>
+                    <td>{{ item.description }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td class="text-right">{{ "%.2f"|format(item.unit_price) }} {{ invoice.currency }}</td>
+                    <td class="text-right">{{ "%.2f"|format(item.total_price) }} {{ invoice.currency }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <table>
+                <tr>
+                    <td class="label">Subtotal:</td>
+                    <td class="amount">{{ "%.2f"|format(invoice.total_amount) }} {{ invoice.currency }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Grand Total:</td>
+                    <td class="amount">{{ "%.2f"|format(invoice.total_amount) }} {{ invoice.currency }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="notes">
+            <h2>Notes:</h2>
+            <p>{{ invoice.notes or 'Thank you for your business.' }}</p>
+        </div>
+
+        <div class="footer">
+            <p>{{ company.name }} | {{ company.city_postal_country }}</p>
+        </div>
+    </div>
+</body>
+</html>
