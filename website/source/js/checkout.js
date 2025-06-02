@@ -1,17 +1,4 @@
 // Maison Trüvra - Checkout Logic
-// This file handles the checkout process, including form validation,
-// order summary display, and eventually payment processing and order creation.
-
-// Ensure this script is loaded after config.js, api.js, cart.js, auth.js, ui.js
-
-document.addEventListener('DOMContentLoaded', () => {
-    const paymentForm = document.getElementById('payment-form');
-    const checkoutSummaryContainer = document.getElementById('checkout-summary-container');
-    const paymentButtonAmount = document.getElementById('payment-amount-button');
-    
-    // TODO: Stripe.js Integration
-    // let stripe; 
-    // let cardElement;// Maison Trüvra - Checkout Logic
 
 document.addEventListener('DOMContentLoaded', () => {
     const paymentForm = document.getElementById('payment-form');
@@ -30,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsContainer.innerHTML = ''; 
 
         if (cartItems.length === 0) {
-            itemsContainer.innerHTML = `<p class="text-gray-600">${t('public.cart.empty_message')}</p>`;
+            itemsContainer.innerHTML = `<p class="text-gray-600">${t('public.cart.empty_message')}</p>`; // Key: public.cart.empty_message
             totalEl.textContent = '0.00 €';
             if(paymentButtonAmount) paymentButtonAmount.textContent = '0.00';
             const paymentButton = document.getElementById('submit-payment-button');
@@ -64,14 +51,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (paymentForm) {
         paymentForm.addEventListener('submit', async (event) => {
             event.preventDefault();
-            showGlobalMessage(t('public.js.order_processing'), 'info', 10000); 
+            showGlobalMessage(t('public.js.order_processing'), 'info', 10000);  // Key: public.js.order_processing
             const paymentButton = document.getElementById('submit-payment-button');
             if (paymentButton) paymentButton.disabled = true;
             const paymentMessageEl = document.getElementById('payment-message');
             if(paymentMessageEl) paymentMessageEl.textContent = '';
 
             // --- Fallback/Simulation ---
-            console.warn("SIMULATION: Stripe payment not integrated. Proceeding with simulated order creation.");
+            console.warn("SIMULATION: Stripe payment not integrated. Proceeding with simulated order creation."); // Dev-facing
             await new Promise(resolve => setTimeout(resolve, 1500)); 
             const simulatedPaymentIntent = { 
                 id: `sim_maison_truvra_${new Date().getTime()}`, 
@@ -90,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const cartItems = getCartItems(); 
 
         if (cartItems.length === 0) {
-            showGlobalMessage(t('public.js.cart_is_empty_redirecting'), "error");
+            showGlobalMessage(t('public.js.cart_is_empty_redirecting'), "error"); // Key: public.js.cart_is_empty_redirecting
             if (paymentButton) paymentButton.disabled = false;
             return;
         }
@@ -103,18 +90,18 @@ document.addEventListener('DOMContentLoaded', () => {
             shippingAddress = shippingAddressString ? JSON.parse(shippingAddressString) : null;
             billingAddress = billingAddressString ? JSON.parse(billingAddressString) : shippingAddress;
         } catch (e) {
-            showGlobalMessage(t('global.error_generic'), "error"); // Generic error for parsing
+            showGlobalMessage(t('global.error_generic'), "error"); // Key: global.error_generic
             if (paymentButton) paymentButton.disabled = false;
             return;
         }
 
         if (!shippingAddress || !shippingAddress.address_line1 || !shippingAddress.city || !shippingAddress.postal_code || !shippingAddress.country || !shippingAddress.first_name || !shippingAddress.last_name) {
-            showGlobalMessage(t('public.js.missing_shipping_info'), "error");
+            showGlobalMessage(t('public.js.missing_shipping_info'), "error"); // Key: public.js.missing_shipping_info
             if (paymentButton) paymentButton.disabled = false;
             return;
         }
         if (billingAddress !== shippingAddress && (!billingAddress || !billingAddress.address_line1 || !billingAddress.city || !billingAddress.postal_code || !billingAddress.country || !billingAddress.first_name || !billingAddress.last_name)) {
-            showGlobalMessage(t('public.js.missing_shipping_info'), "error"); // Assuming same message for billing
+            showGlobalMessage(t('public.js.missing_billing_info'), "error"); // New key: public.js.missing_billing_info
             if (paymentButton) paymentButton.disabled = false;
             return;
         }
@@ -126,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 variant_id: item.variantId || null,
                 quantity: item.quantity,
             })),
-            currency: 'EUR',
+            currency: 'EUR', // Should ideally come from config or cart
             shipping_address: shippingAddress,
             billing_address: billingAddress,
             payment_details: { 
@@ -135,12 +122,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 status: paymentResult.status,
                 amount_captured: paymentResult.amount / 100 
             },
-            customer_email: currentUser ? currentUser.email : shippingAddress.email,
+            customer_email: currentUser ? currentUser.email : (shippingAddress.email || t('public.js.email_not_provided')), // New key: public.js.email_not_provided
         };
 
         try {
             const orderCreationResponse = await makeApiRequest('/orders/create', 'POST', orderData, !!currentUser); 
-            showGlobalMessage(orderCreationResponse.message || t('public.confirmation.success_message'), "success");
+            showGlobalMessage(orderCreationResponse.message || t('public.confirmation.success_message'), "success"); // Key: public.confirmation.success_message
             clearCart(); 
             localStorage.setItem('lastOrderId', orderCreationResponse.order_id);
             localStorage.setItem('lastOrderTotal', orderCreationResponse.total_amount.toFixed(2)); 
@@ -148,15 +135,16 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.removeItem('billingAddress');
             window.location.href = 'confirmation-commande.html'; 
         } catch (error) {
-            showGlobalMessage(error.message || t('public.js.order_creation_failed'), "error");
-            if(paymentMessageEl) paymentMessageEl.textContent = `${t('global.error_generic')}: ${error.message || t('public.js.order_creation_failed')}`;
+            const errorMessage = error.data?.message || t('public.js.order_creation_failed'); // Key: public.js.order_creation_failed
+            showGlobalMessage(errorMessage, "error");
+            if(paymentMessageEl) paymentMessageEl.textContent = `${t('global.error_generic')}: ${errorMessage}`;
             if (paymentButton) paymentButton.disabled = false;
         }
     }
 
-    if (document.getElementById('payment-form') || checkoutSummaryContainer) {
+    if (document.body.id === 'page-paiement' || (document.body.id === 'page-checkout' && checkoutSummaryContainer)) { // Assuming page-paiement is the correct ID
         const cartItems = getCartItems();
-        if (cartItems.length === 0 && window.location.pathname.includes('payment.html')) {
+        if (cartItems.length === 0 && window.location.pathname.includes('payment.html')) { // Or checkout.html
             showGlobalMessage(t('public.js.cart_is_empty_redirecting'), "info");
             setTimeout(() => { window.location.href = 'nos-produits.html'; }, 2000);
         } else {
@@ -165,14 +153,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-function initializeCheckoutPage() {
+function initializeCheckoutPage() { // Called from main.js for page-paiement
     const shippingAddress = JSON.parse(localStorage.getItem('shippingAddress'));
-    if (!shippingAddress && window.location.pathname.includes('payment.html')) {
-        showGlobalMessage(t('public.js.missing_shipping_info'), "error");
+    if (!shippingAddress && (window.location.pathname.includes('payment.html') || window.location.pathname.includes('checkout.html'))) {
+        showGlobalMessage(t('public.js.missing_shipping_info_redirect_checkout'), "error"); // New key: public.js.missing_shipping_info_redirect_checkout (e.g., "Shipping info missing. Please complete address first. Redirecting...")
+        // Consider redirecting to the address step of checkout if it exists, or cart.
+        // setTimeout(() => { window.location.href = 'panier.html'; }, 3000); 
     }
+     // Initialize Stripe or other payment elements here if not done elsewhere
 }
 
-function initializeConfirmationPage() {
+function initializeConfirmationPage() { // Called from main.js for page-confirmation-commande
     const orderIdEl = document.getElementById('confirmation-order-id');
     const totalAmountEl = document.getElementById('confirmation-total-amount');
     const lastOrderId = localStorage.getItem('lastOrderId');
@@ -184,9 +175,9 @@ function initializeConfirmationPage() {
         localStorage.removeItem('lastOrderId');
         localStorage.removeItem('lastOrderTotal');
     } else if (orderIdEl) { 
-        orderIdEl.textContent = 'N/A';
-        if(totalAmountEl) totalAmountEl.textContent = 'N/A';
+        orderIdEl.textContent = t('common.notApplicable'); // Key: common.notApplicable (e.g., N/A)
+        if(totalAmountEl) totalAmountEl.textContent = t('common.notApplicable');
         const confirmationMessageEl = document.getElementById('confirmation-message');
-        if(confirmationMessageEl) confirmationMessageEl.textContent = t('public.js.order_details_not_found');
+        if(confirmationMessageEl) confirmationMessageEl.textContent = t('public.js.order_details_not_found'); // Key: public.js.order_details_not_found
     }
 }
