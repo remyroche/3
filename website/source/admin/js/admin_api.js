@@ -1,5 +1,4 @@
 // website/source/admin/js/admin_api.js
-// This script handles all API communication for the admin panel.
 
 const adminApi = {
     BASE_URL: typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '/api/admin',
@@ -20,7 +19,9 @@ const adminApi = {
         if (storedToken) {
             headers['Authorization'] = `Bearer ${storedToken}`;
         } else {
-            if (!url.endsWith('/login')) { 
+            // Allow login, verify-totp, and simplelogin initiation/callback without token
+            const noTokenEndpoints = ['/login', '/login/verify-totp', '/login/simplelogin/initiate', '/login/simplelogin/callback'];
+            if (!noTokenEndpoints.some(ep => url.endsWith(ep))) { 
                  console.warn(`Admin API request to ${url} without token.`);
             }
         }
@@ -59,10 +60,8 @@ const adminApi = {
             if (response.status === 204) { 
                 return { success: true, message: "Operation successful (no content)." };
             }
-            // Ensure all successful JSON responses are parsed
             const responseData = await response.json();
-            // Add success: true if not present, for consistency, unless it's explicitly false
-            if (responseData.success === undefined) {
+            if (responseData.success === undefined && response.status < 300) { // Assume success for 2xx if not specified
                 responseData.success = true;
             }
             return responseData;
@@ -75,15 +74,25 @@ const adminApi = {
         }
     },
 
-    loginAdmin: function(email, password) {
+    loginAdminStep1Password: function(email, password) { // Renamed for clarity
         return this._request('POST', '/login', { email, password });
     },
 
-    getDashboardStats: function() { // New method for dashboard stats
-        return this._request('GET', '/dashboard/stats');
+    loginAdminStep2VerifyTotp: function(email, totp_code) { // New method for TOTP verification
+        return this._request('POST', '/login/verify-totp', { email, totp_code });
+    },
+    
+    // SimpleLogin SSO initiation - This will be a direct navigation, not an API data request
+    initiateSimpleLogin: function() {
+        // The actual redirection is handled by navigating the browser
+        window.location.href = `${this.BASE_URL}/login/simplelogin/initiate`;
     },
 
-    // --- Product Management ---
+    // ... (rest of the adminApi methods: getDashboardStats, product, category, user, order, review, settings, inventory management)
+    // Ensure they remain unchanged unless directly affected by auth flow.
+    getDashboardStats: function() { 
+        return this._request('GET', '/dashboard/stats');
+    },
     addProduct: function(productData) { 
         return this._request('POST', '/products', productData, true); 
     },
@@ -99,8 +108,6 @@ const adminApi = {
     deleteProduct: function(productId) { 
         return this._request('DELETE', `/products/${productId}`);
     },
-
-    // --- Category Management ---
     addCategory: function(categoryData) { 
         return this._request('POST', '/categories', categoryData, true);
     },
@@ -116,8 +123,6 @@ const adminApi = {
     deleteCategory: function(categoryId) { 
         return this._request('DELETE', `/categories/${categoryId}`);
     },
-
-    // --- User Management ---
     getUsers: function(filters = {}) {
         const queryParams = new URLSearchParams(filters).toString();
         return this._request('GET', `/users${queryParams ? '?' + queryParams : ''}`);
@@ -128,11 +133,9 @@ const adminApi = {
     updateUser: function(userId, userData) {
         return this._request('PUT', `/users/${userId}`, userData);
     },
-     getProfessionalUsers: function() { // Added for invoice creation form
+     getProfessionalUsers: function() {
         return this._request('GET', '/users/professionals');
     },
-
-    // --- Order Management ---
     getOrders: function(filters = {}) {
         const queryParams = new URLSearchParams(filters).toString();
         return this._request('GET', `/orders${queryParams ? '?' + queryParams : ''}`);
@@ -146,8 +149,6 @@ const adminApi = {
     addOrderNote: function(orderId, noteData) {
         return this._request('POST', `/orders/${orderId}/notes`, noteData);
     },
-
-    // --- Review Management ---
     getReviews: function(filters = {}) {
         const queryParams = new URLSearchParams(filters).toString();
         return this._request('GET', `/reviews${queryParams ? '?' + queryParams : ''}`);
@@ -161,16 +162,12 @@ const adminApi = {
     deleteReview: function(reviewId) {
         return this._request('DELETE', `/reviews/${reviewId}`);
     },
-    
-    // --- Settings Management ---
     getSettings: function() {
         return this._request('GET', '/settings');
     },
     updateSettings: function(settingsData) {
         return this._request('POST', '/settings', settingsData);
     },
-
-    // --- Inventory ---
     getDetailedInventoryItems: function(filters = {}) {
         const queryParams = new URLSearchParams(filters).toString();
         return this._request('GET', `/inventory/items/detailed${queryParams ? '?' + queryParams : ''}`);
@@ -215,28 +212,26 @@ const adminApi = {
     importSerializedItemsCsv: function(formData) { 
         return this._request('POST', '/inventory/import/serialized_items', formData, true);
     },
-    adjustStock: function(adjustmentData) { // Renamed from adjustAggregatedStock for simplicity
+    adjustStock: function(adjustmentData) {
         return this._request('POST', '/inventory/stock/adjust', adjustmentData);
     },
-    getProductInventoryDetails: function(productCode, variantSkuSuffix = null) { // Renamed
+    getProductInventoryDetails: function(productCode, variantSkuSuffix = null) {
         let endpoint = `/inventory/product/${productCode}`;
         if (variantSkuSuffix) {
             endpoint += `?variant_sku_suffix=${encodeURIComponent(variantSkuSuffix)}`;
         }
         return this._request('GET', endpoint);
     },
-    // --- Invoice Management (Admin) ---
-    createManualInvoice: function(invoiceData) { // New method for admin creating manual invoice
+    createManualInvoice: function(invoiceData) {
         return this._request('POST', '/invoices/create', invoiceData);
     },
-    getAdminInvoices: function(filters = {}) { // New method to get all invoices (admin)
+    getAdminInvoices: function(filters = {}) {
         const queryParams = new URLSearchParams(filters).toString();
         return this._request('GET', `/invoices${queryParams ? '?' + queryParams : ''}`);
     },
-    updateAdminInvoiceStatus: function(invoiceId, statusData) { // New method to update any invoice status (admin)
+    updateAdminInvoiceStatus: function(invoiceId, statusData) {
         return this._request('PUT', `/invoices/${invoiceId}/status`, statusData);
     },
-
     regenerateStaticJson: function() {
         return this._request('POST', '/regenerate-static-json');
     }
