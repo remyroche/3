@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Manual Invoice - Admin</title>
+    <link href="../css/admin_style.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="admin-header-placeholder"></div>
+
+    <main class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800">Create Manual Invoice</h1>
+
+        <div class="bg-white p-8 rounded-lg shadow-md">
+            <form id="create-invoice-form">
+                <div class="mb-6">
+                    <label for="professional-user-select" class="block text-gray-700 font-bold mb-2">Select Professional User:</label>
+                    <select id="professional-user-select" name="b2b_user_id" class="form-input w-full" required>
+                        <option value="">Loading professionals...</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700">Line Items</h2>
+                    <div id="line-items-container">
+                        </div>
+                    <button type="button" id="add-line-item-btn" class="btn btn-secondary mt-4">Add Line Item</button>
+                </div>
+                
+                <div class="mb-6">
+                    <label for="invoice-notes" class="block text-gray-700 font-bold mb-2">Notes (Optional):</label>
+                    <textarea id="invoice-notes" name="notes" class="form-input w-full h-24"></textarea>
+                </div>
+
+
+                <div class="text-right">
+                    <button type="submit" class="btn btn-primary">Generate Invoice</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="js/admin_api.js"></script>
+    <script src="js/admin_auth.js"></script>
+    <script src="js/admin_main.js"></script>
+    <script src="js/admin_invoices.js"></script>
+</body>
+</html>
