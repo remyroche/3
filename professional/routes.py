@@ -17,10 +17,36 @@ from ..utils import (
     format_datetime_for_storage
 )
 from ..services.invoice_service import generate_invoice_pdf
+from . import professional_bp # Assuming a local __init__.py defines the blueprint
 
 # Define the Blueprint. The Python variable name is 'professional_bp'.
 # The first argument to Blueprint() is the name of the blueprint instance.
 professional_bp = Blueprint('professional_bp', __name__, url_prefix='/api/professional')
+
+
+@professional_bp.route('/invoices', methods=['GET'])
+@jwt_required()
+def get_professional_invoices():
+    """
+    Fetches all invoices for the currently logged-in professional user.
+    """
+    user_id = get_jwt_identity()
+    db = get_db_connection()
+
+    invoices = query_db(
+        "SELECT id, invoice_number, issue_date, due_date, total_amount, currency, status FROM invoices WHERE b2b_user_id = ? ORDER BY issue_date DESC",
+        [user_id],
+        db_conn=db
+    )
+
+    if invoices is None:
+        # query_db might return None on error, or an empty list if no results.
+        # Handle case where it might be None, though an empty list is more likely.
+        invoices_list = []
+    else:
+        invoices_list = [dict(row) for row in invoices]
+
+    return jsonify(invoices=invoices_list), 200
 
 
 @professional_bp.route('/applications', methods=['GET'])
