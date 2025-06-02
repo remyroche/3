@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="css/admin_style.css"> 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body id="page-admin-manage-orders" class="bg-gray-100 font-sans"> <header class="bg-white shadow-md p-4 sticky top-0 z-50">
+<body id="page-admin-manage-orders">
+    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
                 <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
@@ -44,11 +45,12 @@
     </nav>
     <main class="admin-content-area container mx-auto p-6 space-y-6">
         <h1 class="text-3xl font-semibold text-gray-800 mb-6">Gestion des Commandes</h1>
-        <section class="admin-form-container bg-white p-6 rounded-lg shadow">
-            <h2 class="admin-form-title text-xl font-semibold text-gray-700 mb-4">Filtrer les Commandes</h2>
+        <section class="admin-form-container">
+            <h2 class="admin-form-title">Filtrer les Commandes</h2>
             <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label for="order-status-filter" class="form-label">Statut:</label> <select id="order-status-filter" class="form-input-admin mt-1">
+                    <label for="order-status-filter" class="form-label">Statut:</label>
+                    <select id="order-status-filter" class="form-input-admin mt-1">
                         <option value="">Tous</option>
                         <option value="pending_payment">Paiement en attente</option>
                         <option value="paid">Payée</option>
@@ -65,17 +67,19 @@
                     </select>
                 </div>
                 <div>
-                    <label for="order-search" class="form-label">Client (Email, Nom, ID Commande, ID Transaction):</label> <input type="text" id="order-search" placeholder="Email, Nom, ID..." class="form-input-admin mt-1">
+                    <label for="order-search" class="form-label">Client (Email, Nom, ID Commande, ID Transaction):</label>
+                    <input type="text" id="order-search" placeholder="Email, Nom, ID..." class="form-input-admin mt-1">
                 </div>
                 <div>
-                    <label for="order-date-filter" class="form-label">Date de commande:</label> <input type="date" id="order-date-filter" class="form-input-admin mt-1">
+                    <label for="order-date-filter" class="form-label">Date de commande:</label>
+                    <input type="date" id="order-date-filter" class="form-input-admin mt-1">
                 </div>
             </div>
             <button id="apply-order-filters-button" class="btn btn-admin-primary">Appliquer Filtres</button>
         </section>
 
-        <section class="admin-table-container bg-white p-6 rounded-lg shadow">
-            <h2 class="admin-table-title text-xl font-semibold text-gray-700 mb-4">Liste des Commandes</h2>
+        <section class="admin-table-container">
+            <h2 class="admin-table-title">Liste des Commandes</h2>
             <div class="overflow-x-auto">
                 <table class="admin-table min-w-full">
                     <thead>
@@ -97,9 +101,10 @@
     </main>
 
     <div id="order-detail-modal" class="admin-modal-overlay">
-        <div class="admin-modal-content sm-max-w-3xl"> <form id="update-order-status-form" class="admin-form">
+        <div class="admin-modal-content sm-max-w-3xl">
+            <form id="update-order-status-form" class="admin-form">
                 <div class="admin-modal-header">
-                    <h3 id="order-detail-modal-title">Détails de la Commande #<span id="modal-order-id"></span></h3>
+                    <h3 id="order-detail-modal-title" class="admin-form-title">Détails de la Commande #<span id="modal-order-id"></span></h3>
                     <button type="button" class="admin-modal-close" id="close-order-detail-modal-button" aria-label="Close">&times;</button>
                 </div>
                 <div class="admin-modal-body space-y-4">
@@ -117,23 +122,23 @@
                     <div class="mt-4">
                         <h4 class="text-md font-semibold text-gray-800 mb-2">Articles Commandés:</h4>
                         <div class="overflow-x-auto border border-gray-200 rounded">
-                            <table class="min-w-full text-xs">
+                            <table class="min-w-full text-xs admin-table">
                                 <thead class="bg-gray-100">
                                     <tr>
-                                        <th class="p-2 text-left">Produit</th>
-                                        <th class="p-2 text-left">Variante</th>
-                                        <th class="p-2 text-center">Qté</th>
-                                        <th class="p-2 text-right">Prix Unitaire</th>
-                                        <th class="p-2 text-right">Total</th>
+                                        <th>Produit</th>
+                                        <th>Variante</th>
+                                        <th class="text-center">Qté</th>
+                                        <th class="text-right">Prix Unitaire</th>
+                                        <th class="text-right">Total</th>
                                     </tr>
                                 </thead>
                                 <tbody id="modal-order-items-table-body">
-                                    </tbody>
+                                </tbody>
                             </table>
                         </div>
                     </div>
                      <div class="mt-4">
-                        <h4 class="text-md font-semibold text-gray-800 mb-2">Changer Statut:</h4>
+                        <label for="modal-order-new-status" class="form-label">Changer Statut:</label>
                         <select id="modal-order-new-status" name="status" class="form-input-admin">
                              <option value="pending_payment">Paiement en attente</option>
                              <option value="paid">Payée</option>
@@ -159,7 +164,8 @@
                             <input type="text" id="modal-order-carrier" name="carrier" class="form-input-admin">
                         </div>
                     </div>
-                     <div class="mt-4 form-actions"> <button type="submit" id="save-order-status-button" class="btn btn-admin-primary">
+                     <div class="form-actions mt-4">
+                        <button type="submit" id="save-order-status-button" class="btn btn-admin-primary">
                             Mettre à Jour Statut
                         </button>
                     </div>
@@ -177,7 +183,7 @@
                         <textarea id="modal-order-new-note" name="note" rows="2" placeholder="Ajouter une note interne..." class="form-input-admin"></textarea>
                     </div>
                     <div class="form-actions mt-2">
-                        <button type="submit" id="add-note-button" class="btn btn-admin-secondary btn-sm">Ajouter Note</button>
+                        <button type="submit" id="add-note-button" class="btn btn-admin-secondary small-button">Ajouter Note</button>
                     </div>
                 </form>
             </div>
@@ -188,10 +194,10 @@
     </div>
     
     <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
-        <p>&copy; <span id="currentYearManageOrders">2024</span> Maison Trüvra - Admin Panel</p>
+        <p>&copy; <span id="currentYearManageOrders"></span> Maison Trüvra - Admin Panel</p>
     </footer>
 
-    <div id="admin-toast-container" class="fixed bottom-0 right-0 p-4 space-y-2 z-[1051]"></div>
+    <div id="admin-toast-container"></div>
 
     <script src="js/admin_config.js"></script> 
     <script src="js/admin_ui.js"></script>     
