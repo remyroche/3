@@ -17,7 +17,7 @@ from ..utils import (
 )
 # from ..services.email_service import send_email # Uncomment when email service is ready
 
-auth_bp = Blueprint('auth_bp', __name__, url_prefix='/auth') # Keep /auth prefix for these routes
+auth_bp = Blueprint('auth_bp', __name__, url_prefix='/auth') 
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
@@ -40,7 +40,12 @@ def register():
     if not is_valid_email(email):
         audit_logger.log_action(action='register_fail', email=email, details="Invalid email format.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Invalid email format"), 400
-
+    
+    # TODO: Implement robust server-side password complexity checks for production
+    # e.g., minimum length, character types (uppercase, lowercase, number, special char)
+    if len(password) < 8: # Example: Basic length check
+        audit_logger.log_action(action='register_fail_weak_password', email=email, details="Password too short.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Password must be at least 8 characters long."), 400
 
     if role not in ['b2c_customer', 'b2b_professional']:
         audit_logger.log_action(action='register_fail', email=email, details="Invalid role specified.", status='failure', ip_address=request.remote_addr)
@@ -54,14 +59,14 @@ def register():
 
         password_hash = generate_password_hash(password)
         verification_token = secrets.token_urlsafe(32)
-        verification_token_expires_at = format_datetime_for_storage(datetime.now(timezone.utc) + timedelta(hours=24))
+        verification_token_expires_at = format_datetime_for_storage(datetime.now(timezone.utc) + timedelta(hours=current_app.config.get('VERIFICATION_TOKEN_LIFESPAN_HOURS', 24)))
         
         professional_status = None
         if role == 'b2b_professional':
-            if not company_name or not siret_number:
+            if not company_name or not siret_number: # VAT might be optional depending on country
                 audit_logger.log_action(action='register_fail_b2b', email=email, details="Company name and SIRET are required for B2B.", status='failure', ip_address=request.remote_addr)
                 return jsonify(message="Company name and SIRET number are required for professional accounts."), 400
-            professional_status = 'pending'
+            professional_status = 'pending' # B2B accounts start as pending approval
 
         cursor = db.cursor()
         cursor.execute(
@@ -76,14 +81,11 @@ def register():
         user_id = cursor.lastrowid
         db.commit()
 
-        # verification_link = f"{current_app.config.get('FRONTEND_URL', 'http://localhost:8000')}/verify-email?token={verification_token}"
-        # try:
-        #     send_email(to_email=email, subject="Verify Your Email - Maison Trüvra", body_html=f"<p>Please verify your email: <a href='{verification_link}'>{verification_link}</a></p>")
-        #     audit_logger.log_action(user_id=user_id, action='verification_email_sent', target_type='user', target_id=user_id, status='success', ip_address=request.remote_addr)
-        # except Exception as e_mail:
-        #     current_app.logger.error(f"Failed to send verification email to {email}: {e_mail}")
-        #     audit_logger.log_action(user_id=user_id, action='verification_email_fail', target_type='user', target_id=user_id, details=str(e_mail), status='failure', ip_address=request.remote_addr)
-        current_app.logger.info(f"Simulated sending verification email to {email} with token {verification_token}")
+        # Actual email sending should be implemented here using a robust service
+        # verification_link = f"{current_app.config.get('APP_BASE_URL')}/verify-email?token={verification_token}"
+        # send_email(to_email=email, subject="Verify Your Email - Maison Trüvra", body_html=f"<p>Please verify your email: <a href='{verification_link}'>{verification_link}</a></p>")
+        current_app.logger.info(f"SIMULATED: Verification email sent to {email} with token {verification_token}")
+        audit_logger.log_action(user_id=user_id, action='verification_email_sent_simulated', target_type='user', target_id=user_id, status='success', ip_address=request.remote_addr)
 
         audit_logger.log_action(user_id=user_id, action='register_success', target_type='user', target_id=user_id, details=f"User {email} registered as {role}.", status='success', ip_address=request.remote_addr)
         return jsonify(message="User registered successfully. Please check your email to verify your account.", user_id=user_id, success=True), 201
@@ -108,6 +110,9 @@ def login():
     if not email or not password:
         audit_logger.log_action(action='login_fail_missing_fields', email=email, details="Email and password required.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Email and password are required"), 400
+
+    # TODO: Implement account lockout mechanism after N failed attempts for an email/IP.
+    # This typically involves tracking failed attempts in cache (e.g., Redis) or DB.
 
     db = get_db_connection()
     user_data = query_db("SELECT id, email, password_hash, role, is_active, is_verified, first_name, last_name, company_name, professional_status FROM users WHERE email = ?", [email], db_conn=db, one=True)
@@ -139,13 +144,15 @@ def login():
         
         user_info_to_return = {
             "id": user['id'], "email": user['email'], "prenom": user.get('first_name'), "nom": user.get('last_name'),
-            "role": user['role'], "is_admin": user['role'] == 'admin', # Explicitly add is_admin for frontend admin check
+            "role": user['role'], "is_admin": user['role'] == 'admin', 
             "is_verified": user['is_verified'], "company_name": user.get('company_name'),
             "professional_status": user.get('professional_status')
         }
         return jsonify(success=True, token=access_token, refresh_token=refresh_token, user=user_info_to_return, message="Connexion réussie"), 200
     else:
-        audit_logger.log_action(action='login_fail_credentials', email=email, details="Invalid credentials.", status='failure', ip_address=request.remote_addr)
+        # Log failed login attempt for potential brute-force detection
+        user_id_attempt = user_data['id'] if user_data else None
+        audit_logger.log_action(user_id=user_id_attempt, action='login_fail_credentials', email=email, details="Invalid credentials.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Invalid email or password"), 401
 
 @auth_bp.route('/refresh', methods=['POST'])
@@ -171,12 +178,13 @@ def refresh():
     return jsonify(access_token=new_access_token), 200
 
 @auth_bp.route('/logout', methods=['POST'])
-@jwt_required(optional=True) # Make it optional so client can call it even if token already cleared
+@jwt_required(optional=True) 
 def logout():
-    current_user_id = get_jwt_identity() # Will be None if token already cleared or invalid
+    current_user_id = get_jwt_identity() 
     audit_logger = current_app.audit_log_service
+    # If using a denylist for JWTs, the token JTI would be added here.
+    # For simplicity, we are relying on short-lived access tokens and client-side token removal.
     audit_logger.log_action(user_id=current_user_id, action='logout', target_type='user', target_id=current_user_id, status='success', ip_address=request.remote_addr)
-    # JWT blocklisting would happen here if implemented
     return jsonify(message="Logout successful"), 200
 
 @auth_bp.route('/verify-email', methods=['POST'])
@@ -201,8 +209,12 @@ def verify_email():
             audit_logger.log_action(user_id=user['id'], action='verify_email_already_verified', target_type='user', target_id=user['id'], status='info', ip_address=request.remote_addr)
             return jsonify(message="Email already verified."), 200
 
-        expires_at = parse_datetime_from_iso(user['verification_token_expires_at'])
+        expires_at_str = user['verification_token_expires_at']
+        expires_at = parse_datetime_from_iso(expires_at_str) if expires_at_str else None
+        
         if expires_at is None or datetime.now(timezone.utc) > expires_at:
+            # Optionally, clear the expired token from the DB
+            query_db("UPDATE users SET verification_token = NULL, verification_token_expires_at = NULL WHERE id = ?", [user['id']], db_conn=db, commit=True)
             audit_logger.log_action(user_id=user['id'], action='verify_email_fail_expired_token', target_type='user', target_id=user['id'], details="Verification token expired.", status='failure', ip_address=request.remote_addr)
             return jsonify(message="Verification token expired."), 400
 
@@ -212,7 +224,7 @@ def verify_email():
         return jsonify(message="Email verified successfully."), 200
 
     except Exception as e:
-        db.rollback() # Ensure rollback on any unexpected error
+        db.rollback() 
         current_app.logger.error(f"Error during email verification: {e}", exc_info=True)
         audit_logger.log_action(action='verify_email_fail_server_error', details=f"Server error: {e}", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Email verification failed due to a server error."), 500
@@ -231,18 +243,16 @@ def request_password_reset():
         user = query_db("SELECT id, is_active FROM users WHERE email = ?", [email], db_conn=db, one=True)
         if user and user['is_active']:
             reset_token = secrets.token_urlsafe(32)
-            expires_at_iso = format_datetime_for_storage(datetime.now(timezone.utc) + timedelta(hours=1))
+            expires_at_iso = format_datetime_for_storage(datetime.now(timezone.utc) + timedelta(hours=current_app.config.get('RESET_TOKEN_LIFESPAN_HOURS', 1)))
             query_db("UPDATE users SET reset_token = ?, reset_token_expires_at = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", [reset_token, expires_at_iso, user['id']], db_conn=db, commit=True)
             
-            # reset_link = f"{current_app.config.get('FRONTEND_URL', 'http://localhost:8000')}/reset-password?token={reset_token}"
-            # try:
-            #     send_email(to_email=email, subject="Password Reset Request - Maison Trüvra", body_html=f"<p>Click to reset password: <a href='{reset_link}'>{reset_link}</a>. Valid for 1 hour.</p>")
-            #     audit_logger.log_action(user_id=user['id'], action='password_reset_email_sent', target_type='user', target_id=user['id'], status='success', ip_address=request.remote_addr)
-            # except Exception as e_mail:
-            #     current_app.logger.error(f"Failed to send password reset email to {email}: {e_mail}")
-            #     audit_logger.log_action(user_id=user['id'], action='password_reset_email_fail', target_type='user', target_id=user['id'], details=str(e_mail), status='failure', ip_address=request.remote_addr)
-            current_app.logger.info(f"Simulated sending password reset email to {email} with token {reset_token}")
-        else:
+            # Actual email sending
+            # reset_link = f"{current_app.config.get('APP_BASE_URL')}/reset-password?token={reset_token}"
+            # send_email(to_email=email, subject="Password Reset Request - Maison Trüvra", body_html=f"<p>Click to reset password: <a href='{reset_link}'>{reset_link}</a>. Valid for 1 hour.</p>")
+            current_app.logger.info(f"SIMULATED: Password reset email sent to {email} with token {reset_token}")
+            audit_logger.log_action(user_id=user['id'], action='password_reset_email_sent_simulated', target_type='user', target_id=user['id'], status='success', ip_address=request.remote_addr)
+
+        else: # User not found or inactive, still return generic message
             audit_logger.log_action(action='request_password_reset_user_not_found_or_inactive', email=email, details="User not found or inactive.", status='info', ip_address=request.remote_addr)
         
         return jsonify(message="If your email is registered and active, you will receive a password reset link."), 200
@@ -261,10 +271,11 @@ def reset_password():
     if not token or not new_password:
         audit_logger.log_action(action='reset_password_fail_missing_fields', details="Token and new password required.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Token and new password are required."), 400
-    if len(new_password) < 8: # Basic password policy
+    
+    # TODO: Implement robust server-side password complexity checks for production
+    if len(new_password) < 8: # Example: Basic length check
         audit_logger.log_action(action='reset_password_fail_weak_password', details="Password too short.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Password must be at least 8 characters long."),400
-
 
     db = get_db_connection()
     try:
@@ -274,10 +285,11 @@ def reset_password():
             return jsonify(message="Invalid or expired reset token."), 400
         
         user = dict(user_data)
-        expires_at = parse_datetime_from_iso(user['reset_token_expires_at'])
+        expires_at_str = user['reset_token_expires_at']
+        expires_at = parse_datetime_from_iso(expires_at_str) if expires_at_str else None
 
         if expires_at is None or datetime.now(timezone.utc) > expires_at:
-            query_db("UPDATE users SET reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?", [user['id']], db_conn=db, commit=True)
+            query_db("UPDATE users SET reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?", [user['id']], db_conn=db, commit=True) # Invalidate used/expired token
             audit_logger.log_action(user_id=user['id'], action='reset_password_fail_expired_token', target_type='user', target_id=user['id'], details="Reset token expired.", status='failure', ip_address=request.remote_addr)
             return jsonify(message="Password reset token has expired."), 400
 
@@ -302,7 +314,6 @@ def get_me():
         user = dict(user_data)
         user['created_at'] = format_datetime_for_display(user['created_at'])
         user['updated_at'] = format_datetime_for_display(user['updated_at'])
-        # Add is_admin for convenience if frontend admin logic relies on it directly from /me
         user['is_admin'] = (user['role'] == 'admin') 
         return jsonify(user=user), 200
     return jsonify(message="User not found"), 404
@@ -317,41 +328,28 @@ def request_magic_link():
         return jsonify(message="Email is required."), 400
 
     db = get_db_connection()
-    # Find the user, ensure they are a professional and are active
     user = query_db(
         "SELECT id, is_active, role FROM users WHERE email = ? AND role = 'b2b_professional'",
-        [email],
-        db_conn=db,
-        one=True
+        [email], db_conn=db, one=True
     )
 
     if user and user['is_active']:
-        # Generate a secure, single-use token valid for 10 minutes
         magic_token = secrets.token_urlsafe(32)
-        # 10 minute lifespan
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
-        expires_at_iso = expires_at.isoformat()
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=current_app.config.get('MAGIC_LINK_LIFESPAN_MINUTES', 10))
+        expires_at_iso = format_datetime_for_storage(expires_at)
 
-        # Store the token hash and expiry in the DB
-        # We reuse the reset_token columns for this purpose
         query_db(
             "UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE id = ?",
-            [magic_token, expires_at_iso, user['id']],
-            db_conn=db,
-            commit=True
+            [magic_token, expires_at_iso, user['id']], db_conn=db, commit=True
         )
-
-        # In a real app, you would use an email service here.
-        # The link points to a frontend page that will handle verification.
-        # NOTE: The frontend will need to extract the token and send it to /verify-magic-link
-        magic_link_url = f"{current_app.config.get('APP_BASE_URL', 'http://localhost:8000')}/professionnels.html?magic_token={magic_token}"
-        current_app.logger.info(f"--- MAGIC LINK (SIMULATED EMAIL) ---")
-        current_app.logger.info(f"To: {email}")
-        current_app.logger.info(f"Link: {magic_link_url}")
-        current_app.logger.info(f"------------------------------------")
-        audit_logger.log_action(user_id=user['id'], action='magic_link_request', status='success', ip_address=request.remote_addr)
-
-    # Always return a generic message to prevent user enumeration
+        # Actual email sending
+        # magic_link_url = f"{current_app.config.get('APP_BASE_URL')}/professionnels.html?magic_token={magic_token}"
+        # send_email(to_email=email, subject="Votre lien de connexion Maison Trüvra", body_html=f"<p>Cliquez ici pour vous connecter : <a href='{magic_link_url}'>{magic_link_url}</a>. Valide 10 minutes.</p>")
+        current_app.logger.info(f"SIMULATED: Magic link email sent to {email} with token {magic_token}")
+        audit_logger.log_action(user_id=user['id'], action='magic_link_request_sent_simulated', status='success', ip_address=request.remote_addr)
+    else:
+        audit_logger.log_action(action='magic_link_request_user_not_found_or_inactive', email=email, status='info', ip_address=request.remote_addr)
+        
     return jsonify(message="If an active professional account with that email exists, a magic link has been sent."), 200
 
 
@@ -367,9 +365,7 @@ def verify_magic_link():
     db = get_db_connection()
     user_data = query_db(
         "SELECT id, email, password_hash, role, is_active, is_verified, first_name, last_name, company_name, professional_status, reset_token_expires_at FROM users WHERE reset_token = ?",
-        [token],
-        db_conn=db,
-        one=True
+        [token], db_conn=db, one=True
     )
 
     if not user_data:
@@ -378,18 +374,16 @@ def verify_magic_link():
     
     user = dict(user_data)
     
-    # Check if token is expired
-    expires_at = datetime.fromisoformat(user['reset_token_expires_at'])
-    if datetime.now(timezone.utc) > expires_at:
-        audit_logger.log_action(user_id=user['id'], action='magic_link_fail_expired', status='failure', ip_address=request.remote_addr)
-        # Clear the expired token
+    expires_at_str = user['reset_token_expires_at']
+    expires_at = parse_datetime_from_iso(expires_at_str) if expires_at_str else None
+    
+    if expires_at is None or datetime.now(timezone.utc) > expires_at:
         query_db("UPDATE users SET reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?", [user['id']], db_conn=db, commit=True)
+        audit_logger.log_action(user_id=user['id'], action='magic_link_fail_expired', status='failure', ip_address=request.remote_addr)
         return jsonify(message="Magic link has expired."), 400
 
-    # Invalidate the token after use
     query_db("UPDATE users SET reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?", [user['id']], db_conn=db, commit=True)
     
-    # --- Login Success: Generate JWT Tokens ---
     identity = user['id']
     additional_claims = {
         "role": user['role'], "email": user['email'], "is_verified": user['is_verified'],
@@ -408,3 +402,4 @@ def verify_magic_link():
         "professional_status": user.get('professional_status')
     }
     return jsonify(success=True, token=access_token, refresh_token=refresh_token, user=user_info_to_return, message="Connexion réussie"), 200
+
