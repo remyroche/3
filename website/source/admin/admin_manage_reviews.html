@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="css/admin_style.css"> 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body id="page-admin-manage-reviews" class="bg-gray-100 font-sans"> <header class="bg-white shadow-md p-4 sticky top-0 z-50">
+<body id="page-admin-manage-reviews">
+    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
                 <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
@@ -44,8 +45,8 @@
     </nav>
     <main class="admin-content-area container mx-auto p-6 space-y-6">
         <h1 class="text-3xl font-semibold text-gray-800 mb-6">Gestion des Avis Clients</h1>
-        <section class="admin-form-container bg-white p-6 rounded-lg shadow">
-            <h2 class="admin-form-title text-xl font-semibold text-gray-700 mb-4">Filtrer les Avis</h2>
+        <section class="admin-form-container">
+            <h2 class="admin-form-title">Filtrer les Avis</h2>
             <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label for="filter-review-status" class="form-label">Statut:</label>
@@ -67,8 +68,8 @@
              <button id="apply-review-filters-button" class="btn btn-admin-primary">Appliquer Filtres</button>
         </section>
 
-        <section class="admin-table-container bg-white p-6 rounded-lg shadow">
-            <h2 class="admin-table-title text-xl font-semibold text-gray-700 mb-4">Liste des Avis</h2>
+        <section class="admin-table-container">
+            <h2 class="admin-table-title">Liste des Avis</h2>
             <div class="overflow-x-auto">
                 <table class="admin-table min-w-full">
                     <thead>
@@ -92,14 +93,10 @@
     </main>
     
     <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
-        <p>&copy; <span id="currentYearManageReviews">2024</span> Maison Trüvra - Admin Panel</p>
+        <p>&copy; <span id="currentYearManageReviews"></span> Maison Trüvra - Admin Panel</p>
     </footer>
 
-    <div id="admin-toast-container" class="fixed bottom-0 right-0 p-4 space-y-2 z-[1051]"></div>
-    <!-- <div id="global-message" class="hidden fixed bottom-5 right-5 p-4 rounded-md text-white z-50">
-        <span id="global-message-text"></span>
-        <button id="global-message-close" class="ml-4 text-xl font-bold">&times;</button>
-    </div> -->
+    <div id="admin-toast-container"></div>
 
     <script src="js/admin_config.js"></script>
     <script src="js/admin_ui.js"></script>
