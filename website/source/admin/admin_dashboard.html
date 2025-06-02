@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Maison Trüvra</title> <link rel="stylesheet" href="css/admin_style.css"> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <title>Admin Dashboard - Maison Trüvra</title>
+    <link rel="stylesheet" href="css/admin_style.css"> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
 <body id="page-admin-dashboard"> 
     <header class="bg-white shadow-md p-4 sticky top-0 z-50">
@@ -42,7 +43,9 @@
             </div>
         </div>
     </nav>
-    <main class="admin-content-area container mx-auto p-6 space-y-6"> <div class="dashboard-header"> <h2 class="text-2xl font-semibold text-gray-800">Welcome, <span id="admin-user-greeting-main">Admin</span>!</h2> <p class="text-gray-600">Here's a quick overview of your store.</p>
+    <main class="admin-content-area container mx-auto p-6 space-y-6">
+        <div class="dashboard-header"> <h2 class="text-2xl font-semibold text-gray-800">Welcome, <span id="admin-user-greeting-main">Admin</span>!</h2>
+            <p class="text-gray-600">Here's a quick overview of your store.</p>
         </div>
 
         <section class="dashboard-summary">
@@ -68,9 +71,7 @@
             </div>
         </section>
 
-        <section class="quick-links admin-form-container"> 
-            <h3 class="admin-form-title">Quick Links</h3>
-            <ul>
+        <section class="quick-links admin-section-container"> <h3 class="admin-section-title">Quick Links</h3> <ul>
                 <li><a href="admin_manage_products.html#productFormContainer">Add New Product</a></li>
                 <li><a href="admin_manage_categories.html#categoryFormContainer">Add New Category</a></li>
                 <li><a href="admin_manage_orders.html">View All Orders</a></li>
@@ -89,14 +90,13 @@
     <script src="js/admin_ui.js"></script> 
     <script src="js/admin_api.js"></script>
     <script src="js/admin_auth.js"></script>
-    <script src="js/admin_main.js"></script> <script src="js/admin_dashboard.js"></script>
+    <script src="js/admin_main.js"></script> 
+    <script src="js/admin_dashboard.js"></script>
     <script>
         const currentYearSpanDashboard = document.getElementById('currentYearDashboard');
         if (currentYearSpanDashboard) {
             currentYearSpanDashboard.textContent = new Date().getFullYear();
         }
-
-        // Greeting in main content area (if different from header)
         const adminUserForGreeting = typeof getAdminUser === 'function' ? getAdminUser() : null;
         const greetingMainElement = document.getElementById('admin-user-greeting-main');
         if (greetingMainElement && adminUserForGreeting) {
