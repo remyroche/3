@@ -1,132 +1,99 @@
 // website/js/main.js
 // Main script for initializing the frontend application and page-specific logic.
 
-/**
- * Initializes the language switcher links and highlights the current language.
- */
 function initializeLangSwitcher() {
-    const path = window.location.pathname;
-    const pathSegments = path.split('/').filter(Boolean); // e.g., ['dist', 'fr', 'index.html'] or ['fr', 'index.html']
-
-    let currentLang = 'fr'; // Default// website/js/main.js
-// Main script for initializing the frontend application and page-specific logic.
-// This version assumes that translations are handled by a build script (scripts/build.js)
-// which replaces {{key}} in HTML and t('key') in JS files with static translated strings.
-
-/**
- * Initializes the language switcher links.
- * It determines the current language from the HTML lang attribute (set by the build script)
- * and constructs links to the equivalent page in the other language.
- */
-function initializeLangSwitcher() {
-    // Determine current language from the <html lang="..."> attribute
-    const currentLang = document.documentElement.lang || 'fr'; // Default to 'fr' if not set
-    
-    // Determine the current page's path relative to the language directory.
-    // Example: if current URL is /dist/fr/nos-produits.html, pageName should be nos-produits.html
-    // This logic assumes a structure like /dist/{lang}/page.html
+    const currentLang = document.documentElement.lang || 'fr'; 
     const pathSegments = window.location.pathname.split('/');
-    let pageName = pathSegments.pop() || 'index.html'; // Get the last segment (file name) or default to index.html
+    let pageName = pathSegments.pop() || 'index.html'; 
     if (pageName === currentLang && pathSegments.length > 0) { 
-        // This handles cases where the URL might be just /dist/fr/ (implicitly index.html)
-        // or if the last segment was the lang code itself (e.g. from a base URL redirect)
         pageName = 'index.html';
     }
 
-
     document.querySelectorAll('.lang-link').forEach(link => {
-        const linkLang = link.dataset.lang; // 'fr' or 'en'
+        const linkLang = link.dataset.lang; 
+        const currentPathname = window.location.pathname;
+        let baseHref = currentPathname;
 
-        // Construct the new href.
-        // Assumes HTML files are directly inside /fr/ or /en/ subdirectories.
-        // e.g., if current page is /fr/nos-produits.html and link is for 'en', new href is '../en/nos-produits.html'
-        const newHref = `../${linkLang}/${pageName}`;
-        link.setAttribute('href', newHref);
+        // Logic to switch between /fr/ and /en/ paths
+        // Assumes build structure like /dist/{lang}/page.html or just /{lang}/page.html
+        const langPathRegex = /^\/(fr|en)\//;
+        if (langPathRegex.test(currentPathname)) {
+            baseHref = currentPathname.replace(langPathRegex, `/${linkLang}/`);
+        } else if (currentPathname.startsWith(`/${currentLang}/`)) { // case like /fr
+             baseHref = currentPathname.replace(`/${currentLang}/`, `/${linkLang}/`);
+        } else { // If no lang in path (e.g. root, or dev serving from source)
+             // This might need to be smarter if your dev and prod URL structures differ significantly without lang prefix
+             baseHref = `/${linkLang}${currentPathname.startsWith('/') ? '' : '/'}${pageName}`;
+        }
+        
+        // Ensure baseHref points to a file, not just a directory, if pageName is index.html
+        if (baseHref.endsWith(`/${linkLang}/`)) {
+            baseHref += 'index.html';
+        }
+
+
+        link.setAttribute('href', baseHref);
 
         if (linkLang === currentLang) {
             link.style.opacity = '1';
-            link.style.border = '2px solid #D4AF37'; // Gold border for active
+            link.style.border = '2px solid #D4AF37'; 
             link.style.borderRadius = '4px';
             link.style.padding = '2px 4px';
             link.style.cursor = 'default';
-            link.onclick = (e) => e.preventDefault(); // Prevent navigation for current language
+            link.onclick = (e) => e.preventDefault(); 
         } else {
             link.style.opacity = '0.6';
             link.style.border = '2px solid transparent';
             link.style.padding = '2px 4px';
             link.style.cursor = 'pointer';
-            link.onclick = null; // Ensure click works for other language link
-             // Add hover effects for non-active links
+            link.onclick = null; 
             link.addEventListener('mouseover', () => { link.style.opacity = '1'; });
             link.addEventListener('mouseout', () => { link.style.opacity = '0.6'; });
         }
     });
 }
 
-/**
- * Loads the header.html content into the #header-placeholder div.
- * Initializes header-specific functionalities after loading.
- */
 async function loadHeader() {
     const headerPlaceholder = document.getElementById('header-placeholder');
     if (!headerPlaceholder) {
-        // console.error("Header placeholder #header-placeholder not found.");
-        // Since t() is not available at runtime, use a generic or pre-translated error.
-        // The build script should have replaced any t('public.js.loading_header_error') calls.
-        console.error("{{public.js.loading_header_error}}"); 
+        console.error(t('public.js.loading_header_error_console')); // New key for console
         return;
     }
-
     try {
-        // Path to header.html should be relative to the final HTML file location.
-        // If HTML files are in /dist/fr/ or /dist/en/, header.html needs to be accessible.
-        // Assuming header.html is copied by the build script into each language directory or is accessible via a relative path.
-        // For simplicity, if header.html is also processed by build.js, it will be in the same directory.
         const response = await fetch('header.html'); 
         if (!response.ok) {
-            // Error message will be pre-translated by build.js if it uses t()
-            throw new Error(`{{public.js.loading_header_error}}: ${response.status}`);
+            throw new Error(`${t('public.js.loading_header_error_status')} ${response.status}`); // New key
         }
         const headerHtml = await response.text();
         headerPlaceholder.innerHTML = headerHtml;
 
-        // Initialize components within the loaded header
         if (typeof initializeMobileMenu === 'function') initializeMobileMenu();
         if (typeof setActiveNavLink === 'function') setActiveNavLink();
         if (typeof updateLoginState === 'function') updateLoginState();
-        if (typeof updateCartDisplay === 'function') updateCartDisplay(); // From ui.js
+        if (typeof updateCartDisplay === 'function') updateCartDisplay(); 
         
-        // Initialize language switcher now that its HTML is loaded
         initializeLangSwitcher();
 
     } catch (error) {
-        console.error("Failed to load header:", error);
-        // Error message will be pre-translated by build.js
-        headerPlaceholder.innerHTML = `<p class='text-center text-red-500'>{{public.js.loading_header_error}}</p>`;
+        console.error("Failed to load header:", error); // Dev-facing
+        headerPlaceholder.innerHTML = `<p class='text-center text-red-500'>${t('public.js.loading_header_error_user')}</p>`; // New key for user
     }
 }
 
-/**
- * Loads the footer.html content into the #footer-placeholder div.
- * Initializes footer-specific functionalities after loading.
- */
 async function loadFooter() {
     const footerPlaceholder = document.getElementById('footer-placeholder');
     if (!footerPlaceholder) {
-        // console.error("Footer placeholder #footer-placeholder not found.");
-        console.error("{{public.js.loading_footer_error}}");
+        console.error(t('public.js.loading_footer_error_console')); // New key for console
         return;
     }
     try {
-        // Assuming footer.html is copied by the build script into each language directory or accessible via a relative path.
         const response = await fetch('footer.html'); 
         if (!response.ok) {
-            throw new Error(`{{public.js.loading_footer_error}}: ${response.status}`);
+            throw new Error(`${t('public.js.loading_footer_error_status')} ${response.status}`); // New key
         }
         const footerHtml = await response.text();
         footerPlaceholder.innerHTML = footerHtml;
 
-        // Initialize components within the loaded footer
         if (typeof initializeNewsletterForm === 'function') {
             if (footerPlaceholder.querySelector('#newsletter-form')) {
                 initializeNewsletterForm();
@@ -138,41 +105,36 @@ async function loadFooter() {
         }
 
     } catch (error) {
-        console.error("Failed to load footer:", error);
-        footerPlaceholder.innerHTML = `<p class='text-center text-red-500'>{{public.js.loading_footer_error}}</p>`;
+        console.error("Failed to load footer:", error); // Dev-facing
+        footerPlaceholder.innerHTML = `<p class='text-center text-red-500'>${t('public.js.loading_footer_error_user')}</p>`; // New key for user
     }
 }
 
-// Main execution block after DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
-    // Load common components
     await Promise.all([
-        loadHeader(), // This will also initialize the lang switcher
+        loadHeader(), 
         loadFooter()
     ]);
 
-    // Initialize global elements not tied to header/footer if they exist outside them
     const globalCurrentYearEl = document.getElementById('currentYear');
     if (globalCurrentYearEl && !document.getElementById('footer-placeholder')?.querySelector('#currentYear')) {
          globalCurrentYearEl.textContent = new Date().getFullYear();
     }
-    // If newsletter form is outside footer and needs init
     if (typeof initializeNewsletterForm === 'function' && 
         document.getElementById('newsletter-form') && 
         !document.getElementById('footer-placeholder')?.querySelector('#newsletter-form')) {
         initializeNewsletterForm();
     }
 
-    // Page-specific initializations
     const bodyId = document.body.id;
 
     if (bodyId === 'page-index') {
         // Specific logic for index page if any
     } else if (bodyId === 'page-nos-produits') {
-        if (typeof fetchAndDisplayProducts === 'function') fetchAndDisplayProducts('all');
-        if (typeof setupCategoryFilters === 'function') setupCategoryFilters();
+        // This page is handled by nos-produits.js which self-initializes with dynamic data
+        // If there were static parts of this page needing JS init, it would go here.
     } else if (bodyId === 'page-produit-detail') {
-        if (typeof loadProductDetail === 'function') loadProductDetail();
+        if (typeof loadProductDetail === 'function') loadProductDetail(); // from products.js
         const addToCartDetailButton = document.getElementById('add-to-cart-button');
         if (addToCartDetailButton && typeof handleAddToCartFromDetail === 'function') {
             addToCartDetailButton.addEventListener('click', (event) => {
@@ -181,37 +143,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
     } else if (bodyId === 'page-panier') {
-        if (typeof initCartPage === 'function') {
+        if (typeof initCartPage === 'function') { // from cart.js
             initCartPage(); 
         }
     } else if (bodyId === 'page-compte') {
-        if (typeof displayAccountDashboard === 'function') displayAccountDashboard();
+        if (typeof displayAccountDashboard === 'function') displayAccountDashboard(); // from auth.js
         const loginForm = document.getElementById('login-form');
-        if (loginForm && typeof handleLogin === 'function') {
+        if (loginForm && typeof handleLogin === 'function') { // from auth.js
             loginForm.addEventListener('submit', handleLogin); 
         }
         const createAccountButton = document.querySelector('#login-register-section button.btn-secondary');
         if(createAccountButton && typeof showGlobalMessage === 'function'){
             createAccountButton.addEventListener('click', (e) => {
                 e.preventDefault();
-                // This message will be pre-translated by build.js
-                showGlobalMessage("{{public.js.registration_feature_not_implemented}}", 'info');
+                showGlobalMessage(t('public.js.registration_feature_not_implemented'), 'info'); // Key: public.js.registration_feature_not_implemented
             });
         }
-         const forgotPasswordLink = document.querySelector('#login-form a[href="#"]'); // More specific selector
+         const forgotPasswordLink = document.querySelector('#login-form a[href="#"]'); 
         if (forgotPasswordLink) {
             forgotPasswordLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                showGlobalMessage("{{public.js.password_reset_not_implemented}}", 'info');
+                showGlobalMessage(t('public.js.password_reset_not_implemented'), 'info'); // Key: public.js.password_reset_not_implemented
             });
         }
     } else if (bodyId === 'page-paiement') { 
-        if (typeof initializeCheckoutPage === 'function') initializeCheckoutPage();
+        if (typeof initializeCheckoutPage === 'function') initializeCheckoutPage(); // from checkout.js
     } else if (bodyId === 'page-confirmation-commande') {
-        if (typeof initializeConfirmationPage === 'function') initializeConfirmationPage();
+        if (typeof initializeConfirmationPage === 'function') initializeConfirmationPage(); // from checkout.js
+    } else if (bodyId === 'page-professionnels') {
+        // Logic is in professionnels.js, which should self-initialize
     }
 
-    // Initialize global modals (if any)
     document.querySelectorAll('.modal-overlay').forEach(modalOverlay => {
         modalOverlay.addEventListener('click', function(event) {
             if (event.target === modalOverlay && typeof closeModal === 'function') { 
@@ -228,12 +190,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
-    // Listen for authentication state changes (e.g., after login/logout)
     document.addEventListener('authStateChanged', (event) => {
         const currentBodyId = document.body.id;
-        // const isLoggedIn = event.detail.isLoggedIn; // This detail may not be needed if UI updates are simple
-
-        // Re-initialize components that depend on auth state for the current page
         if (typeof updateLoginState === 'function') updateLoginState(); 
         if (typeof updateCartDisplay === 'function') updateCartDisplay();   
 
@@ -241,7 +199,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (typeof initCartPage === 'function') initCartPage(); 
         } else if (currentBodyId === 'page-compte') {
             if (typeof displayAccountDashboard === 'function') displayAccountDashboard(); 
+        } else if (currentBodyId === 'page-professionnels') {
+            if (typeof updateProfessionalView === 'function') updateProfessionalView(); // from professionnels.js
         }
-        // Other page-specific updates based on auth state can be added here
     });
 });
