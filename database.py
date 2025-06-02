@@ -32,10 +32,10 @@ def populate_initial_data_sqlalchemy():
                     last_name="Trüvra",
                     role='admin',
                     is_active=True,
-                    is_verified=True, # Admins are typically pre-verified
-                    professional_status='approved' # If admin can also be a B2B user
+                    is_verified=True,
+                    professional_status='approved'
                 )
-                admin.set_password(admin_password) # Use the method from the User model
+                admin.set_password(admin_password)
                 db.session.add(admin)
                 current_app.logger.info(f"Admin user '{admin_email}' created via SQLAlchemy.")
             else:
@@ -56,32 +56,12 @@ def populate_initial_data_sqlalchemy():
                 {'name': 'Autre', 'description': 'Autres délices truffés.', 'category_code': 'CAT-AUTRE', 'slug': 'autre', 'is_active': True}
             ]
             for cat_data in initial_categories_data:
-                category = Category(**cat_data) # Unpack dictionary into model constructor
+                category = Category(**cat_data)
                 db.session.add(category)
             current_app.logger.info(f"{len(initial_categories_data)} initial categories populated via SQLAlchemy.")
         else:
             current_app.logger.info("Categories table already has data. Skipping initial population.")
         
-        # --- Example Product (Optional) ---
-        # if Product.query.count() == 0:
-        #     cat_tf = Category.query.filter_by(slug='truffes-fraiches').first()
-        #     if cat_tf:
-        #         example_product = Product(
-        #             name="Truffe Noire d'Hiver (Exemple)",
-        #             description="Une truffe noire d'hiver exceptionnelle.",
-        #             category_id=cat_tf.id,
-        #             product_code="PROD-TNH-EX01",
-        #             sku_prefix="TNHEX", # Example
-        #             type='simple', # or 'variable_weight'
-        #             base_price=150.00,
-        #             currency='EUR',
-        #             is_active=True,
-        #             slug='truffe-noire-hiver-exemple',
-        #             aggregate_stock_quantity=10 
-        #         )
-        #         db.session.add(example_product)
-        #         current_app.logger.info("Example product added.")
-
         try:
             db.session.commit()
             current_app.logger.info("Initial data (if any) committed successfully via SQLAlchemy.")
@@ -100,11 +80,54 @@ def seed_db_command():
 def register_db_commands(app):
     """Registers database-related CLI commands."""
     app.cli.add_command(seed_db_command)
-    # The 'init-db' command is now effectively handled by Flask-Migrate's `flask db upgrade`
-    # You might remove the old init_db_command or adapt it if needed for very specific first-time setup
-    # not covered by migrations (though migrations should handle schema creation).
     app.logger.info("SQLAlchemy DB seed command registered.")
 
+def record_stock_movement(
+    db_session, product_id, movement_type, quantity_change=None, weight_change_grams=None,
+    variant_id=None, serialized_item_id=None, reason=None,
+    related_order_id=None, related_user_id=None, notes=None
+):
+    """
+    Records a stock movement using SQLAlchemy session.
+    The calling function is responsible for db_session.commit().
+    """
+    if not db_session:
+        current_app.logger.error("record_stock_movement called without a SQLAlchemy db session.")
+        raise ValueError("A SQLAlchemy db session is required for record_stock_movement.")
+
+    movement = StockMovement(
+        product_id=product_id,
+        variant_id=variant_id,
+        serialized_item_id=serialized_item_id,
+        movement_type=movement_type,
+        quantity_change=quantity_change,
+        weight_change_grams=weight_change_grams,
+        reason=reason,
+        related_order_id=related_order_id,
+        related_user_id=related_user_id,
+        notes=notes
+        # movement_date is defaulted in the model
+    )
+    db_session.add(movement)
+    current_app.logger.debug(f"Stock movement object created for recording: {movement_type} for product ID {product_id}")
+    return movement
+
+def get_product_id_from_code(product_code, db_session=None):
+    """Fetches product ID using product_code with SQLAlchemy."""
+    if not product_code: return None
+    
+    session_to_use = db_session or db.session
+    product = session_to_use.query(Product.id).filter(func.upper(Product.product_code) == product_code.upper()).first()
+    return product.id if product else None
+
+def get_category_id_from_code(category_code, db_session=None):
+    """Fetches category ID using category_code with SQLAlchemy."""
+    if not category_code: return None
+    
+    session_to_use = db_session or db.session
+    category = session_to_use.query(Category.id).filter(func.upper(Category.category_code) == category_code.upper()).first()
+    return category.id if category else None
+    
 
 # --- Utility functions that were in database.py, now adapted or to be replaced ---
 
