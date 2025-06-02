@@ -1,5 +1,5 @@
 import sqlite3
-from flask import Blueprint, request, jsonify, current_app, g
+from flask import Blueprint, request, jsonify, current_app, g, url_for, redirect
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import (
     create_access_token, create_refresh_token, jwt_required, 
@@ -306,3 +306,105 @@ def get_me():
         user['is_admin'] = (user['role'] == 'admin') 
         return jsonify(user=user), 200
     return jsonify(message="User not found"), 404
+
+@auth_bp.route('/request-magic-link', methods=['POST'])
+def request_magic_link():
+    data = request.json
+    email = data.get('email')
+    audit_logger = current_app.audit_log_service
+
+    if not email:
+        return jsonify(message="Email is required."), 400
+
+    db = get_db_connection()
+    # Find the user, ensure they are a professional and are active
+    user = query_db(
+        "SELECT id, is_active, role FROM users WHERE email = ? AND role = 'b2b_professional'",
+        [email],
+        db_conn=db,
+        one=True
+    )
+
+    if user and user['is_active']:
+        # Generate a secure, single-use token valid for 10 minutes
+        magic_token = secrets.token_urlsafe(32)
+        # 10 minute lifespan
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+        expires_at_iso = expires_at.isoformat()
+
+        # Store the token hash and expiry in the DB
+        # We reuse the reset_token columns for this purpose
+        query_db(
+            "UPDATE users SET reset_token = ?, reset_token_expires_at = ? WHERE id = ?",
+            [magic_token, expires_at_iso, user['id']],
+            db_conn=db,
+            commit=True
+        )
+
+        # In a real app, you would use an email service here.
+        # The link points to a frontend page that will handle verification.
+        # NOTE: The frontend will need to extract the token and send it to /verify-magic-link
+        magic_link_url = f"{current_app.config.get('APP_BASE_URL', 'http://localhost:8000')}/professionnels.html?magic_token={magic_token}"
+        current_app.logger.info(f"--- MAGIC LINK (SIMULATED EMAIL) ---")
+        current_app.logger.info(f"To: {email}")
+        current_app.logger.info(f"Link: {magic_link_url}")
+        current_app.logger.info(f"------------------------------------")
+        audit_logger.log_action(user_id=user['id'], action='magic_link_request', status='success', ip_address=request.remote_addr)
+
+    # Always return a generic message to prevent user enumeration
+    return jsonify(message="If an active professional account with that email exists, a magic link has been sent."), 200
+
+
+@auth_bp.route('/verify-magic-link', methods=['POST'])
+def verify_magic_link():
+    data = request.json
+    token = data.get('token')
+    audit_logger = current_app.audit_log_service
+
+    if not token:
+        return jsonify(message="Magic token is missing."), 400
+
+    db = get_db_connection()
+    user_data = query_db(
+        "SELECT id, email, password_hash, role, is_active, is_verified, first_name, last_name, company_name, professional_status, reset_token_expires_at FROM users WHERE reset_token = ?",
+        [token],
+        db_conn=db,
+        one=True
+    )
+
+    if not user_data:
+        audit_logger.log_action(action='magic_link_fail_invalid_token', status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Magic link is invalid or has already been used."), 400
+    
+    user = dict(user_data)
+    
+    # Check if token is expired
+    expires_at = datetime.fromisoformat(user['reset_token_expires_at'])
+    if datetime.now(timezone.utc) > expires_at:
+        audit_logger.log_action(user_id=user['id'], action='magic_link_fail_expired', status='failure', ip_address=request.remote_addr)
+        # Clear the expired token
+        query_db("UPDATE users SET reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?", [user['id']], db_conn=db, commit=True)
+        return jsonify(message="Magic link has expired."), 400
+
+    # Invalidate the token after use
+    query_db("UPDATE users SET reset_token = NULL, reset_token_expires_at = NULL WHERE id = ?", [user['id']], db_conn=db, commit=True)
+    
+    # --- Login Success: Generate JWT Tokens ---
+    identity = user['id']
+    additional_claims = {
+        "role": user['role'], "email": user['email'], "is_verified": user['is_verified'],
+        "first_name": user.get('first_name'), "last_name": user.get('last_name'),
+        "professional_status": user.get('professional_status')
+    }
+    access_token = create_access_token(identity=identity, additional_claims=additional_claims)
+    refresh_token = create_refresh_token(identity=identity)
+
+    audit_logger.log_action(user_id=user['id'], action='login_success_magic_link', status='success', ip_address=request.remote_addr)
+
+    user_info_to_return = {
+        "id": user['id'], "email": user['email'], "prenom": user.get('first_name'), "nom": user.get('last_name'),
+        "role": user['role'], "is_admin": user['role'] == 'admin',
+        "is_verified": user['is_verified'], "company_name": user.get('company_name'),
+        "professional_status": user.get('professional_status')
+    }
+    return jsonify(success=True, token=access_token, refresh_token=refresh_token, user=user_info_to_return, message="Connexion réussie"), 200
