@@ -1,5 +1,5 @@
 // website/source/admin/js/admin_products.js
-// This script handles the "Manage Products & Inventory" page in the admin panel.
+// Handles the "Manage Products" page in the admin panel.
 
 document.addEventListener('DOMContentLoaded', function() {
     // --- DOM Element References ---
@@ -7,107 +7,92 @@ document.addEventListener('DOMContentLoaded', function() {
     const productsTableBody = document.getElementById('productsTableBody');
     const productCategorySelect = document.getElementById('productCategory');
     const formTitle = document.getElementById('formTitle');
-    const productCodeInput = document.getElementById('productCode'); // Product Code (SKU) field
+    const productCodeInput = document.getElementById('productCode');
     const saveProductButton = document.getElementById('saveProductButton');
     const cancelEditButton = document.getElementById('cancelEditButton');
     const productSearchInput = document.getElementById('productSearchInput');
+    const productTypeSelect = document.getElementById('productType');
+
 
     // --- State Variables ---
-    let editingProductOriginalCode = null; // Stores the original product_code when editing
-    let allProductsCache = []; // Cache for all fetched products to enable client-side search
+    let editingProductId = null; // Use product ID for editing
+    let allProductsCache = []; 
 
     // --- Initialization ---
     loadInitialData();
 
-    /**
-     * Loads initial data required for the page (categories and products).
-     */
     async function loadInitialData() {
-        await loadCategoriesForSelect(); // Load categories first for the dropdown
-        await loadProductsTable();       // Then load products
+        await loadCategoriesForSelect(); 
+        await loadProductsTable();       
     }
 
-    /**
-     * Fetches categories from the API and populates the category select dropdown.
-     */
     async function loadCategoriesForSelect() {
         try {
-            const categories = await adminApi.getCategories();
-            productCategorySelect.innerHTML = '<option value="">-- Select Category --</option>'; // Default option
+            const apiResponse = await adminApi.getCategories(); // Expects { categories: [...] }
+            const categories = apiResponse.categories || []; // Defensive coding
+            productCategorySelect.innerHTML = '<option value="">-- Select Category --</option>'; 
             categories.forEach(category => {
-                if (category.is_active) { // Only show active categories in the dropdown
+                if (category.is_active) { 
                     const option = document.createElement('option');
-                    option.value = category.id; // Backend expects category_id (integer FK)
+                    option.value = category.id; 
                     option.textContent = `${category.name} (${category.category_code})`;
-                    option.dataset.categoryCode = category.category_code; // Store code for reference if needed
                     productCategorySelect.appendChild(option);
                 }
             });
         } catch (error) {
             console.error('Failed to load categories for select:', error);
-            showAdminMessage('Error loading categories for the dropdown. Please try refreshing.', 'error');
+            showAdminToast('Error loading categories for the dropdown. Please try refreshing.', 'error');
         }
     }
 
-    /**
-     * Renders the list of products into the table.
-     * @param {Array<object>} productsToRender - The array of product objects to display.
-     */
     function renderProductsTable(productsToRender) {
-        productsTableBody.innerHTML = ''; // Clear existing rows
+        productsTableBody.innerHTML = ''; 
         if (!productsToRender || productsToRender.length === 0) {
-            productsTableBody.innerHTML = '<tr><td colspan="8">No products found.</td></tr>';
+            productsTableBody.innerHTML = '<tr><td colspan="9">No products found.</td></tr>';
             return;
         }
         productsToRender.forEach(product => {
             const row = productsTableBody.insertRow();
-            // Populate cells, using product_code as the main identifier
             row.insertCell().textContent = product.product_code;
             row.insertCell().textContent = product.name;
             row.insertCell().textContent = product.category_name ? `${product.category_name} (${product.category_code || 'N/A'})` : 'Uncategorized';
-            row.insertCell().textContent = `€${parseFloat(product.price).toFixed(2)}`;
-            row.insertCell().textContent = product.quantity !== undefined ? product.quantity : 'N/A'; // Inventory quantity
-            row.insertCell().innerHTML = product.is_active ? '<span style="color: green;">Yes</span>' : '<span style="color: red;">No</span>';
-            row.insertCell().innerHTML = product.is_featured ? '<span style="color: blue;">Yes</span>' : 'No';
+            row.insertCell().textContent = product.price !== null ? `€${parseFloat(product.price).toFixed(2)}` : 'N/A (Variable)';
+            row.insertCell().textContent = product.quantity !== undefined ? product.quantity : 'N/A'; // Aggregate stock
+            row.insertCell().textContent = product.type || 'simple';
+            row.insertCell().innerHTML = product.is_active ? '<span class="text-green-600 font-semibold">Yes</span>' : '<span class="text-red-600">No</span>';
+            row.insertCell().innerHTML = product.is_featured ? '<span class="text-blue-600">Yes</span>' : 'No';
             
-            // Actions cell (Edit, Delete)
             const actionsCell = row.insertCell();
             const editButton = document.createElement('button');
             editButton.textContent = 'Edit';
-            editButton.classList.add('small-button');
+            editButton.classList.add('btn', 'btn-admin-secondary', 'small-button'); // Use new CSS classes
             editButton.onclick = () => populateFormForEdit(product);
             actionsCell.appendChild(editButton);
 
             const deleteButton = document.createElement('button');
             deleteButton.textContent = 'Delete';
-            deleteButton.classList.add('small-button', 'delete');
-            deleteButton.onclick = () => confirmDeleteProduct(product.product_code, product.name);
+            deleteButton.classList.add('btn', 'btn-admin-danger', 'small-button'); // Use new CSS classes
+            deleteButton.onclick = () => confirmDeleteProduct(product.id, product.name, product.product_code);
             actionsCell.appendChild(deleteButton);
         });
     }
     
-    /**
-     * Fetches all products from the API and renders them in the table.
-     */
     async function loadProductsTable() {
         try {
-            productsTableBody.innerHTML = '<tr><td colspan="8">Loading products...</td></tr>';
-            allProductsCache = await adminApi.getProducts(); // Fetch and cache
-            renderProductsTable(allProductsCache); // Render from cache
+            productsTableBody.innerHTML = '<tr><td colspan="9">Loading products...</td></tr>'; // Updated colspan
+            const response = await adminApi.getProducts(); // Expects { products: [...] }
+            allProductsCache = response.products || []; 
+            renderProductsTable(allProductsCache); 
         } catch (error) {
             console.error('Failed to load products:', error);
-            showAdminMessage('Error loading products list. Please try refreshing.', 'error');
-            productsTableBody.innerHTML = '<tr><td colspan="8">Error loading products.</td></tr>';
+            showAdminToast('Error loading products list. Please try refreshing.', 'error');
+            productsTableBody.innerHTML = '<tr><td colspan="9">Error loading products.</td></tr>'; // Updated colspan
         }
     }
     
-    // --- Event Listeners ---
-    /**
-     * Handles product search input to filter the displayed products.
-     */
     productSearchInput.addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase().trim();
-        if (!allProductsCache) return; // Guard if cache isn't populated
+        if (!allProductsCache) return;
 
         const filteredProducts = allProductsCache.filter(product => {
             return (
@@ -120,165 +105,125 @@ document.addEventListener('DOMContentLoaded', function() {
         renderProductsTable(filteredProducts);
     });
 
-    /**
-     * Populates the product form with data for editing an existing product.
-     * @param {object} product - The product object to edit.
-     */
     function populateFormForEdit(product) {
         formTitle.textContent = `Edit Product: ${product.name} (${product.product_code})`;
         saveProductButton.textContent = 'Update Product';
-        cancelEditButton.style.display = 'inline-block'; // Show cancel button
+        cancelEditButton.style.display = 'inline-block'; 
         
-        editingProductOriginalCode = product.product_code; // Store original code for the PUT request
+        editingProductId = product.id; // Store product ID for update
         
-        // Populate form fields
         productCodeInput.value = product.product_code;
-        // productCodeInput.readOnly = true; // Product code can be updatable based on backend logic
-                                          // If not updatable, set to true. Current backend allows it.
+        // productCodeInput.readOnly = true; // Product code generally should not be changed once set, or handled carefully.
+                                          // For this refactor, we'll assume it's editable if needed.
 
         document.getElementById('productName').value = product.name;
         document.getElementById('productDescription').value = product.description || '';
-        document.getElementById('productPrice').value = parseFloat(product.price).toFixed(2);
-        productCategorySelect.value = product.category_id || ''; // category_id is the integer FK
+        document.getElementById('productPrice').value = product.base_price !== null ? parseFloat(product.base_price).toFixed(2) : '';
+        productCategorySelect.value = product.category_id || '';
+        productTypeSelect.value = product.type || 'simple';
 
-        // Inventory fields
-        document.getElementById('productQuantity').value = product.quantity !== undefined ? product.quantity : 0;
+        document.getElementById('productQuantity').value = product.aggregate_stock_quantity !== undefined ? product.aggregate_stock_quantity : 0;
         document.getElementById('lowStockThreshold').value = product.low_stock_threshold !== undefined ? product.low_stock_threshold : 10;
         document.getElementById('supplierInfo').value = product.supplier_info || '';
         
-        document.getElementById('productImageUrl').value = product.image_url || '';
+        document.getElementById('productImageUrl').value = product.main_image_url || '';
         document.getElementById('productIsActive').checked = product.is_active;
         document.getElementById('productIsFeatured').checked = product.is_featured;
 
-        // Scroll to the form for better UX
         const productFormContainer = document.getElementById('productFormContainer');
         if (productFormContainer) {
             productFormContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
 
-    /**
-     * Resets the product form to its default state for adding a new product.
-     */
     function resetForm() {
         formTitle.textContent = 'Add New Product';
         saveProductButton.textContent = 'Save Product';
-        productForm.reset(); // Resets all form fields
-        productCodeInput.readOnly = false; // Ensure product code is editable for new products
-        editingProductOriginalCode = null; // Clear editing state
-        cancelEditButton.style.display = 'none'; // Hide cancel button
+        productForm.reset(); 
+        productCodeInput.readOnly = false;
+        editingProductId = null; 
+        cancelEditButton.style.display = 'none'; 
 
-        // Explicitly set defaults for checkboxes if `reset()` doesn't handle them as expected
         document.getElementById('productIsActive').checked = true;
         document.getElementById('productIsFeatured').checked = false;
-        productCategorySelect.value = ""; // Reset category dropdown to default
+        productCategorySelect.value = ""; 
+        productTypeSelect.value = "simple";
     }
     
     cancelEditButton.addEventListener('click', resetForm);
 
-    /**
-     * Handles the submission of the product form (for both add and update).
-     */
     productForm.addEventListener('submit', async function(event) {
-        event.preventDefault(); // Prevent default form submission
+        event.preventDefault(); 
         const formData = new FormData(productForm);
-        const productData = {};
-        
-        // Convert FormData to a plain object, handling types
-        for (const [key, value] of formData.entries()) {
-            if (key === 'price' || key === 'quantity' || key === 'low_stock_threshold') {
-                // Convert to number, or null if empty (backend should handle nulls appropriately)
-                productData[key] = value.trim() === '' ? null : Number(value);
-            } else if (key === 'category_id') {
-                 productData[key] = value.trim() === '' ? null : parseInt(value, 10); 
-                 if (isNaN(productData[key])) productData[key] = null; 
-            } else if (key === 'is_active' || key === 'is_featured') {
-                // Checkbox values are handled by their 'checked' property
-                productData[key] = document.getElementById(key === 'is_active' ? 'productIsActive' : 'productIsFeatured').checked;
-            } else {
-                productData[key] = value.trim(); // Trim whitespace for string fields
-            }
+        // No 'sku_prefix' to send, product_code serves this role now.
+
+        // Client-side validation (can be enhanced)
+        if (!formData.get('product_code').trim()) {
+            showAdminToast('Product Code (SKU) is required.', 'error'); return;
         }
-        
-        // --- Basic Client-Side Validation ---
-        if (!productData.product_code) {
-            showAdminMessage('Product Code (SKU) is required.', 'error', 'Validation Error');
-            return;
+        if (!formData.get('name').trim()) {
+            showAdminToast('Product Name is required.', 'error'); return;
         }
-        if (!productData.name) {
-            showAdminMessage('Product Name is required.', 'error', 'Validation Error');
-            return;
+        if (!formData.get('category_id')) {
+            showAdminToast('Category is required.', 'error'); return;
         }
-        if (productData.category_id === null || productData.category_id === "") {
-            showAdminMessage('Category is required.', 'error', 'Validation Error');
-            return;
+        if (formData.get('type') === 'simple' && (formData.get('price').trim() === '' || isNaN(parseFloat(formData.get('price'))) || parseFloat(formData.get('price')) < 0)) {
+            showAdminToast('A valid Base Price is required for simple products.', 'error'); return;
         }
-        if (productData.price === null || isNaN(productData.price) || productData.price < 0) {
-            showAdminMessage('A valid Price (non-negative number) is required.', 'error', 'Validation Error');
-            return;
-        }
-        if (productData.quantity === null || isNaN(productData.quantity) || productData.quantity < 0) {
-            showAdminMessage('A valid Stock Quantity (non-negative number) is required.', 'error', 'Validation Error');
-            return;
-        }
-        // Low stock threshold validation (optional, can be 0 or null)
-        if (productData.low_stock_threshold !== null && (isNaN(productData.low_stock_threshold) || productData.low_stock_threshold < 0)) {
-            showAdminMessage('Low Stock Threshold must be a non-negative number if provided.', 'error', 'Validation Error');
-            return;
+         if (formData.get('type') === 'simple' && (formData.get('quantity').trim() === '' || isNaN(parseInt(formData.get('quantity'))) || parseInt(formData.get('quantity')) < 0)) {
+            showAdminToast('A valid Stock Quantity is required for simple products.', 'error'); return;
         }
 
 
-        // Disable button to prevent multiple submissions
         saveProductButton.disabled = true;
-        saveProductButton.textContent = editingProductOriginalCode ? 'Updating...' : 'Saving...';
+        saveProductButton.textContent = editingProductId ? 'Updating...' : 'Saving...';
 
         try {
             let response;
-            if (editingProductOriginalCode) {
-                // Update existing product
-                response = await adminApi.updateProduct(editingProductOriginalCode, productData);
+            if (editingProductId) {
+                response = await adminApi.updateProduct(editingProductId, formData); // Pass FormData directly
             } else {
-                // Add new product
-                response = await adminApi.addProduct(productData);
+                response = await adminApi.addProduct(formData); // Pass FormData directly
             }
-            showAdminMessage(response.message || `Product ${editingProductOriginalCode ? 'updated' : 'added'} successfully!`, 'success');
-            resetForm(); // Clear form and editing state
-            await loadProductsTable(); // Refresh the products list
+            
+            if (response.success) {
+                showAdminToast(response.message || `Product ${editingProductId ? 'updated' : 'added'} successfully!`, 'success');
+                resetForm(); 
+                await loadProductsTable(); 
+            } else {
+                showAdminToast(response.message || 'Failed to save product.', 'error');
+            }
         } catch (error) {
             console.error('Failed to save product:', error);
-            // Display a user-friendly error message from the API response if available
-            const errorMessage = error.response?.data?.error || error.message || 'An unknown error occurred while saving the product.';
-            showAdminMessage(errorMessage, 'error', 'Save Product Error');
+            const errorMessage = error.data?.message || error.message || 'An unknown error occurred.';
+            showAdminToast(errorMessage, 'error');
         } finally {
-            // Re-enable button
             saveProductButton.disabled = false;
-            // Restore button text based on whether it was an edit or add
-            saveProductButton.textContent = editingProductOriginalCode ? 'Update Product' : 'Save Product';
+            saveProductButton.textContent = editingProductId ? 'Update Product' : 'Save Product';
         }
     });
 
-    /**
-     * Confirms and handles the deletion of a product.
-     * @param {string} productCode - The code of the product to delete.
-     * @param {string} productName - The name of the product (for confirmation message).
-     */
-    function confirmDeleteProduct(productCode, productName) {
+    function confirmDeleteProduct(productId, productName, productCode) {
         showAdminConfirm(
             'Confirm Delete Product', 
-            `Are you sure you want to delete the product: <strong>${productName} (${productCode})</strong>? This action cannot be undone. Associated inventory will also be removed.`, 
-            async () => { // This is the onConfirmCallback
+            `Are you sure you want to delete the product: <strong>${productName} (${productCode})</strong>? This action cannot be undone.`, 
+            async () => {
                 try {
-                    await adminApi.deleteProduct(productCode);
-                    showAdminMessage(`Product "${productName}" (${productCode}) deleted successfully!`, 'success');
-                    await loadProductsTable(); // Refresh the products list
+                    const response = await adminApi.deleteProduct(productId);
+                     if (response.success) {
+                        showAdminToast(response.message || `Product "${productName}" deleted successfully!`, 'success');
+                        await loadProductsTable(); 
+                    } else {
+                        showAdminToast(response.message || 'Failed to delete product.', 'error');
+                    }
                 } catch (error) {
                     console.error('Failed to delete product:', error);
-                    const errorMessage = error.response?.data?.error || 'Failed to delete product. Please try again.';
-                    showAdminMessage(errorMessage, 'error', 'Delete Product Error');
+                    const errorMessage = error.data?.message || 'Failed to delete product. Please try again.';
+                    showAdminToast(errorMessage, 'error');
                 }
             },
-            'Delete Product', // Confirm button text
-            'Cancel'          // Cancel button text
+            'Delete Product', 
+            'Cancel'          
         );
     }
 });
