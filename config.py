@@ -1,3 +1,4 @@
+# backend/config.py
 import os
 from datetime import timedelta
 
@@ -21,11 +22,11 @@ class Config:
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     JWT_COOKIE_SECURE = False 
     JWT_COOKIE_SAMESITE = 'Lax'
-    JWT_REFRESH_COOKIE_PATH = '/api/auth/refresh' # Ensure this matches your refresh endpoint prefix
-    JWT_ACCESS_COOKIE_PATH = '/api/' # General API path
-    JWT_COOKIE_CSRF_PROTECT = True # Recommended
+    JWT_REFRESH_COOKIE_PATH = '/api/auth/refresh' 
+    JWT_ACCESS_COOKIE_PATH = '/api/' 
+    JWT_COOKIE_CSRF_PROTECT = True 
     JWT_CSRF_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE']
-    JWT_CSRF_IN_COOKIES = True # Recommended for web apps
+    JWT_CSRF_IN_COOKIES = True 
 
     # File Uploads / Asset Storage
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'uploads'))
@@ -57,7 +58,7 @@ class Config:
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO').upper()
     LOG_FILE = os.environ.get('LOG_FILE', None)
 
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', "http://localhost:8000,http://127.0.0.1:8000") # Ensure your frontend admin URL is here if different
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', "http://localhost:8000,http://127.0.0.1:8000")
     
     PROFESSIONAL_DOCS_UPLOAD_PATH = os.path.join(UPLOAD_FOLDER, 'professional_documents')
     INVOICE_PDF_PATH = os.path.join(ASSET_STORAGE_PATH, 'invoices')
@@ -77,8 +78,8 @@ class Config:
     RATELIMIT_STRATEGY = "fixed-window"
     RATELIMIT_HEADERS_ENABLED = True
     DEFAULT_RATELIMITS = ["200 per day", "50 per hour"] 
-    AUTH_RATELIMITS = ["20 per minute", "200 per hour"] # Increased for general auth
-    ADMIN_LOGIN_RATELIMITS = ["10 per 5 minutes", "60 per hour"] # More specific for admin login attempts
+    AUTH_RATELIMITS = ["20 per minute", "200 per hour"] 
+    ADMIN_LOGIN_RATELIMITS = ["10 per 5 minutes", "60 per hour"] 
     PASSWORD_RESET_RATELIMITS = ["5 per 15 minutes"]
     NEWSLETTER_RATELIMITS = ["10 per minute"] 
     ADMIN_API_RATELIMITS = ["200 per hour"] 
@@ -86,12 +87,12 @@ class Config:
     # Content Security Policy
     CONTENT_SECURITY_POLICY = {
         'default-src': ['\'self\''],
-        'img-src': ['\'self\'', 'https://placehold.co', 'data:'], # Allow data: for QR codes if generated inline
+        'img-src': ['\'self\'', 'https://placehold.co', 'data:'], 
         'script-src': ['\'self\'', 'https://cdn.tailwindcss.com'],
         'style-src': ['\'self\'', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com', '\'unsafe-inline\''],
         'font-src': ['\'self\'', 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
-        'connect-src': ['\'self\'', 'https://app.simplelogin.io'], # Allow connection to SimpleLogin for OAuth
-        'form-action': ['\'self\'', 'https://app.simplelogin.io'], # Allow form submissions to SimpleLogin
+        'connect-src': ['\'self\'', 'https://app.simplelogin.io'], 
+        'form-action': ['\'self\'', 'https://app.simplelogin.io'], 
         'frame-ancestors': ['\'none\'']
     }
     TALISMAN_FORCE_HTTPS = False
@@ -110,20 +111,16 @@ class Config:
 
     # TOTP Configuration
     TOTP_ISSUER_NAME = os.environ.get('TOTP_ISSUER_NAME', "Maison Trüvra Admin")
-    # Temporary storage for TOTP state during login (e.g., user_id after password validation)
-    # This is a simple approach; a more robust solution might use a short-lived token or server-side session.
     TOTP_LOGIN_STATE_TIMEOUT = timedelta(minutes=5) 
 
     # SimpleLogin OAuth Configuration
-    SIMPLELOGIN_CLIENT_ID = os.environ.get('SIMPLELOGIN_CLIENT_ID')
-    SIMPLELOGIN_CLIENT_SECRET = os.environ.get('SIMPLELOGIN_CLIENT_SECRET')
+    SIMPLELOGIN_CLIENT_ID = os.environ.get('SIMPLELOGIN_CLIENT_ID', 'truvra-ykisfvoctm') # Updated with your App ID
+    SIMPLELOGIN_CLIENT_SECRET = os.environ.get('SIMPLELOGIN_CLIENT_SECRET', 'cppjuelfvjkkqursqunvwigxiyabakgfthhivwzi') # Updated with your App Secret
     SIMPLELOGIN_AUTHORIZE_URL = os.environ.get('SIMPLELOGIN_AUTHORIZE_URL', 'https://app.simplelogin.io/oauth2/authorize')
     SIMPLELOGIN_TOKEN_URL = os.environ.get('SIMPLELOGIN_TOKEN_URL', 'https://app.simplelogin.io/oauth2/token')
     SIMPLELOGIN_USERINFO_URL = os.environ.get('SIMPLELOGIN_USERINFO_URL', 'https://app.simplelogin.io/oauth2/userinfo')
-    # IMPORTANT: This redirect URI must be exactly what you configured in your SimpleLogin OAuth app settings.
-    # It should point to your backend callback endpoint.
     SIMPLELOGIN_REDIRECT_URI_ADMIN = os.environ.get('SIMPLELOGIN_REDIRECT_URI_ADMIN', 'http://localhost:5001/api/admin/login/simplelogin/callback')
-    SIMPLELOGIN_SCOPES = "openid email profile" # Standard OIDC scopes
+    SIMPLELOGIN_SCOPES = "openid email profile" 
 
 
 class DevelopmentConfig(Config):
@@ -139,12 +136,9 @@ class DevelopmentConfig(Config):
     MAIL_USERNAME = None
     MAIL_PASSWORD = None
     TALISMAN_FORCE_HTTPS = False
-    APP_BASE_URL = os.environ.get('DEV_APP_BASE_URL', 'http://localhost:8000') # For frontend redirects
+    APP_BASE_URL = os.environ.get('DEV_APP_BASE_URL', 'http://localhost:8000') 
     Config.CONTENT_SECURITY_POLICY['connect-src'].extend(['http://localhost:5001', 'http://127.0.0.1:5001'])
-
-    # Set placeholder SimpleLogin credentials for development if not using real ones
-    SIMPLELOGIN_CLIENT_ID = os.environ.get('SIMPLELOGIN_CLIENT_ID', 'YOUR_DEV_SL_CLIENT_ID') # Replace if testing
-    SIMPLELOGIN_CLIENT_SECRET = os.environ.get('SIMPLELOGIN_CLIENT_SECRET', 'YOUR_DEV_SL_CLIENT_SECRET') # Replace if testing
+    # Development values for SimpleLogin are now taken from the base Config or environment variables
 
 
 class TestingConfig(Config):
@@ -156,13 +150,13 @@ class TestingConfig(Config):
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(minutes=10)
     MAIL_SUPPRESS_SEND = True
     TALISMAN_FORCE_HTTPS = False
-    WTF_CSRF_ENABLED = False # Often disabled for simpler testing
+    WTF_CSRF_ENABLED = False 
     RATELIMIT_ENABLED = False
     INITIAL_ADMIN_EMAIL = 'test_admin_orm@example.com'
     INITIAL_ADMIN_PASSWORD = 'test_password_orm123'
     SQLALCHEMY_ECHO = False
-    SIMPLELOGIN_CLIENT_ID = 'test_sl_client_id'
-    SIMPLELOGIN_CLIENT_SECRET = 'test_sl_client_secret'
+    SIMPLELOGIN_CLIENT_ID = 'test_sl_client_id_testing' # Keep test credentials separate
+    SIMPLELOGIN_CLIENT_SECRET = 'test_sl_client_secret_testing'
 
 
 class ProductionConfig(Config):
@@ -176,7 +170,7 @@ class ProductionConfig(Config):
 
     JWT_COOKIE_SECURE = True
     JWT_COOKIE_SAMESITE = 'Strict'
-    TALISMAN_FORCE_HTTPS = True # Recommended for production
+    TALISMAN_FORCE_HTTPS = True 
     
     APP_BASE_URL = os.environ.get('PROD_APP_BASE_URL')
     if not APP_BASE_URL:
@@ -209,33 +203,32 @@ class ProductionConfig(Config):
     Config.CONTENT_SECURITY_POLICY['connect-src'] = ['\'self\'', APP_BASE_URL, 'https://app.simplelogin.io']
     Config.CONTENT_SECURITY_POLICY['form-action'] = ['\'self\'', 'https://app.simplelogin.io']
 
-
     if not Config.INITIAL_ADMIN_EMAIL or not Config.INITIAL_ADMIN_PASSWORD:
         print("WARNING: INITIAL_ADMIN_EMAIL or INITIAL_ADMIN_PASSWORD environment variables are not set.")
     
-    if not Config.SIMPLELOGIN_CLIENT_ID or not Config.SIMPLELOGIN_CLIENT_SECRET:
-        print("WARNING: SimpleLogin OAuth credentials (SIMPLELOGIN_CLIENT_ID, SIMPLELOGIN_CLIENT_SECRET) are not set for production.")
+    # Ensure production uses actual environment variables for SimpleLogin credentials
+    if Config.SIMPLELOGIN_CLIENT_ID == 'truvra-ykisfvoctm' or Config.SIMPLELOGIN_CLIENT_SECRET == 'cppjuelfvjkkqursqunvwigxiyabakgfthhivwzi':
+        if not (os.environ.get('SIMPLELOGIN_CLIENT_ID') and os.environ.get('SIMPLELOGIN_CLIENT_SECRET')):
+             print("WARNING: SimpleLogin OAuth credentials are using fallback values in production. Set environment variables.")
 
 
 config_by_name = dict(
     development=DevelopmentConfig,
     testing=TestingConfig,
     production=ProductionConfig,
-    default=DevelopmentConfig # Default to development for safety
+    default=DevelopmentConfig 
 )
 
 def get_config_by_name(config_name=None):
     if config_name is None:
         config_name = os.getenv('FLASK_ENV', 'default')
     
-    # Ensure production config is used if FLASK_ENV is production
     if os.getenv('FLASK_ENV') == 'production' and config_name != 'production':
         print(f"Warning: FLASK_ENV is 'production' but config_name is '{config_name}'. Forcing ProductionConfig.")
         config_name = 'production'
         
     config_instance = config_by_name.get(config_name)()
     
-    # Create necessary instance folders
     paths_to_create = [
         os.path.dirname(config_instance.SQLALCHEMY_DATABASE_URI.replace('sqlite:///', '')) if 'sqlite:///' in config_instance.SQLALCHEMY_DATABASE_URI else None,
         config_instance.UPLOAD_FOLDER,
@@ -244,10 +237,9 @@ def get_config_by_name(config_name=None):
         config_instance.PROFESSIONAL_DOCS_UPLOAD_PATH, config_instance.INVOICE_PDF_PATH
     ]
     for path in paths_to_create:
-        if path: # Ensure path is not None (e.g., for non-SQLite DBs)
+        if path: 
             try:
                 os.makedirs(path, exist_ok=True)
             except Exception as e:
-                # Log this instead of printing directly in production
-                print(f"Warning: Could not create directory {path}: {e}") # Or use app.logger if app context available
+                print(f"Warning: Could not create directory {path}: {e}") 
     return config_instance
