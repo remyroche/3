@@ -19,6 +19,54 @@ function setLanguage(lang) {
     }
 }
 
+
+/**
+ * Displays a global message toast.
+ * @param {string} message - The message to display.
+ * @param {string} [type='success'] - The type of message ('success', 'error', 'info').
+ * @param {number} [duration=4000] - The duration to display the message in milliseconds.
+ */
+function showGlobalMessage(message, type = 'success', duration = 4000) {
+    const toast = document.getElementById('global-message-toast');
+    const textElement = document.getElementById('global-message-text');
+    if (!toast || !textElement) {
+        // Fallback if toast elements are not found.
+        // The t('public.js.toast_elements_not_found') would be replaced by build.js
+        console.warn(t('public.js.toast_elements_not_found')); 
+        alert(message); 
+        return;
+    }
+
+    textElement.textContent = message; // The message itself might already be translated if it came from a t() call
+    toast.className = 'modal-message'; 
+
+    // Apply styling based on type
+    if (type === 'error') {
+        toast.classList.add('bg-brand-truffle-burgundy', 'text-brand-cream');
+    } else if (type === 'info') {
+        toast.classList.add('bg-brand-slate-blue-grey', 'text-brand-cream');
+    } else { // Default to success
+        toast.classList.add('bg-brand-deep-sage-green', 'text-brand-cream');
+    }
+    
+    toast.style.display = 'block';
+    void toast.offsetWidth; // Trigger reflow for CSS animation
+    toast.classList.add('show');
+
+    // Clear existing timeouts to prevent conflicts
+    if (toast.currentTimeout) clearTimeout(toast.currentTimeout);
+    if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
+
+    toast.currentTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+        // Wait for fade out animation to complete before hiding
+        toast.hideTimeout = setTimeout(() => {
+            toast.style.display = 'none';
+        }, 500); // Duration of fade-out animation
+    }, duration);
+}
+
+
 /**
  * Gets the preferred language from localStorage or browser settings.
  * This determines the initial language for runtime translations.
