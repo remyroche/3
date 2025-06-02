@@ -82,13 +82,18 @@ class Config:
     CONTENT_SECURITY_POLICY = {
         'default-src': ['\'self\''],
         'img-src': ['\'self\'', 'https://placehold.co', 'data:'], 
-        'script-src': ['\'self\'', 'https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js'], # Added qrcodejs CDN
+        'script-src': [
+            '\'self\'', 
+            'https://cdn.tailwindcss.com', 
+            'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js' # Added for QR code generation
+        ],
         'style-src': ['\'self\'', 'https://cdnjs.cloudflare.com', 'https://fonts.googleapis.com', '\'unsafe-inline\''],
         'font-src': ['\'self\'', 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
         'connect-src': ['\'self\'', 'https://app.simplelogin.io'], 
         'form-action': ['\'self\'', 'https://app.simplelogin.io'], 
         'frame-ancestors': ['\'none\'']
     }
+
     TALISMAN_FORCE_HTTPS = False
 
     INITIAL_ADMIN_EMAIL = os.environ.get('INITIAL_ADMIN_EMAIL')
