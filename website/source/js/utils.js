@@ -1,194 +1,95 @@
 // website/source/js/utils.js
 // Provides utility functions, including runtime language management and dynamic data translation.
 
-// --- Language Management ---
-let currentLang = 'fr'; // Default language, will be updated on load.
+let currentLang = 'fr'; 
 
-/**
- * Sets the current language for the site.
- * This is typically called by a language switcher or on initial load.
- * @param {string} lang - The language code ('fr' or 'en').
- */
 function setLanguage(lang) {
     if (['fr', 'en'].includes(lang)) {
         currentLang = lang;
         localStorage.setItem('preferredLang', lang);
-        console.log(`Runtime language set to: ${currentLang}`);
+        console.log(`Runtime language set to: ${currentLang}`); // Dev-facing
     } else {
-        console.warn(`Unsupported language: ${lang}. Defaulting to ${currentLang}.`);
+        console.warn(`Unsupported language: ${lang}. Defaulting to ${currentLang}.`); // Dev-facing
     }
 }
 
-
-/**
- * Displays a global message toast.
- * @param {string} message - The message to display.
- * @param {string} [type='success'] - The type of message ('success', 'error', 'info').
- * @param {number} [duration=4000] - The duration to display the message in milliseconds.
- */
-function showGlobalMessage(message, type = 'success', duration = 4000) {
-    const toast = document.getElementById('global-message-toast');
-    const textElement = document.getElementById('global-message-text');
-    if (!toast || !textElement) {
-        // Fallback if toast elements are not found.
-        // The t('public.js.toast_elements_not_found') would be replaced by build.js
-        console.warn(t('public.js.toast_elements_not_found')); 
-        alert(message); 
-        return;
-    }
-
-    textElement.textContent = message; // The message itself might already be translated if it came from a t() call
-    toast.className = 'modal-message'; 
-
-    // Apply styling based on type
-    if (type === 'error') {
-        toast.classList.add('bg-brand-truffle-burgundy', 'text-brand-cream');
-    } else if (type === 'info') {
-        toast.classList.add('bg-brand-slate-blue-grey', 'text-brand-cream');
-    } else { // Default to success
-        toast.classList.add('bg-brand-deep-sage-green', 'text-brand-cream');
-    }
-    
-    toast.style.display = 'block';
-    void toast.offsetWidth; // Trigger reflow for CSS animation
-    toast.classList.add('show');
-
-    // Clear existing timeouts to prevent conflicts
-    if (toast.currentTimeout) clearTimeout(toast.currentTimeout);
-    if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
-
-    toast.currentTimeout = setTimeout(() => {
-        toast.classList.remove('show');
-        // Wait for fade out animation to complete before hiding
-        toast.hideTimeout = setTimeout(() => {
-            toast.style.display = 'none';
-        }, 500); // Duration of fade-out animation
-    }, duration);
-}
-
-
-/**
- * Gets the preferred language from localStorage or browser settings.
- * This determines the initial language for runtime translations.
- * @returns {string} The language code ('fr' or 'en').
- */
 function getInitialLanguage() {
     const storedLang = localStorage.getItem('preferredLang');
     if (storedLang && ['fr', 'en'].includes(storedLang)) {
         return storedLang;
     }
-    // navigator.language can be 'fr-FR', 'en-US', etc. We only need the 'fr' or 'en' part.
     const browserLang = navigator.language.split('-')[0];
     if (['fr', 'en'].includes(browserLang)) {
         return browserLang;
     }
-    return 'fr'; // Default to French if no preference found
+    return 'fr'; 
 }
 
-// Initialize currentLang on script load for runtime purposes
 currentLang = getInitialLanguage();
-// Note: The <html lang="..."> attribute is set by build.js for SEO and initial state.
-// This currentLang is for JS-driven dynamic content.
 
-/**
- * Retrieves translated text for a given field from a dynamic data item object.
- * This is used for content that is NOT known at build time (e.g., product details from a JSON file or API).
- * Assumes the item object has sub-objects for each language, e.g., item.name.fr, item.name.en.
- * @param {object} item - The object containing translatable fields (e.g., a product from products_details.json).
- * @param {string} fieldKey - The key of the field to translate (e.g., 'name', 'description_short').
- * @returns {string} The translated text or a fallback string.
- */
 function getTranslatedText(item, fieldKey) {
     if (!item || typeof item !== 'object') {
-        // console.warn(`getTranslatedText: Invalid item provided for fieldKey '${fieldKey}'.`);
-        return `[Invalid item for ${fieldKey}]`;
+        return `[Invalid item for ${fieldKey}]`; // Dev-facing or placeholder
     }
     const field = item[fieldKey];
     if (field === undefined || field === null) {
-        // console.warn(`getTranslatedText: FieldKey '${fieldKey}' not found in item:`, item);
-        return `[${fieldKey} missing]`;
+        return `[${fieldKey} missing]`; // Dev-facing or placeholder
     }
-
-    // Check if the field itself is an object with language keys (e.g., field.fr, field.en)
     if (typeof field === 'object' && field !== null) {
-        if (field[currentLang]) {
-            return field[currentLang];
-        }
-        // Fallback logic: try French, then English, then any available language, then a placeholder
+        if (field[currentLang]) return field[currentLang];
         if (field['fr']) return field['fr'];
         if (field['en']) return field['en'];
         const availableLangs = Object.keys(field);
-        if (availableLangs.length > 0) return field[availableLangs[0]]; // Return first available translation
-        return `[${fieldKey} translation N/A for lang '${currentLang}']`;
+        if (availableLangs.length > 0) return field[availableLangs[0]];
+        return `[${fieldKey} ${t('public.js.translation_na_for_lang_suffix')} '${currentLang}']`; // New key: public.js.translation_na_for_lang_suffix (e.g., "translation N/A for lang")
     }
-    
-    // If the field is a direct string, return it (assuming it's either not translatable or already in the correct language)
-    if (typeof field === 'string') {
-        return field;
-    }
-
-    // console.warn(`getTranslatedText: Field '${fieldKey}' is not a string or a translatable object:`, field);
-    return `[${fieldKey} not translatable string/object]`;
+    if (typeof field === 'string') return field;
+    return `[${fieldKey} ${t('public.js.not_translatable_suffix')}]`; // New key: public.js.not_translatable_suffix (e.g., "not translatable string/object")
 }
 
-/**
- * Helper function to set language and reload the page.
- * To be used by language switcher buttons in the UI.
- * @param {string} lang - The language code ('fr' or 'en').
- */
 function setLanguageAndReload(lang) {
-    setLanguage(lang); // Sets currentLang and localStorage
-    // The build process creates separate directories for each language (e.g., /fr/, /en/).
-    // We need to navigate to the equivalent page in the other language's directory.
-    
-    const currentPath = window.location.pathname; // e.g., "/fr/nos-produits.html" or "/nos-produits.html" if at root of a lang
-    const pathSegments = currentPath.split('/').filter(segment => segment !== ''); // Remove empty segments
+    setLanguage(lang); 
+    const currentPath = window.location.pathname; 
+    const pathSegments = currentPath.split('/').filter(segment => segment !== '');
+    let pageName = pathSegments[pathSegments.length -1] || "index.html";
+    if (languages.includes(pageName) && pathSegments.length > 0 && pathSegments[0] === pageName) { // handles case like /fr becoming /en when pageName is fr
+        pageName = "index.html";
+    }
+
 
     let newPath;
+    const langPathRegex = /^\/(fr|en)(\/|$)/; // Matches /fr/ or /en or /fr or /en/
 
-    // Check if the first segment is a known language code
-    if (pathSegments.length > 0 && languages.includes(pathSegments[0])) {
-        // Replace the existing language code with the new one
-        // e.g., /fr/nos-produits.html -> /en/nos-produits.html
-        pathSegments[0] = lang;
-        newPath = '/' + pathSegments.join('/');
+    if (langPathRegex.test(currentPath)) {
+        newPath = currentPath.replace(langPathRegex, `/${lang}$2`);
     } else {
-        // If no language code in path (e.g. running from source, or unexpected structure),
-        // prepend the new language code. This might need adjustment based on dev vs. prod server structure.
-        // For a built site, URLs should ideally always be prefixed with language.
-        newPath = '/' + lang + (currentPath.startsWith('/') ? currentPath : '/' + currentPath);
+        // If no language code, prepend. This is a fallback.
+        // Assumes currentPath could be like "/nos-produits.html"
+        newPath = `/${lang}${currentPath.startsWith('/') ? '' : '/'}${currentPath.startsWith('/') ? currentPath.substring(1) : currentPath}`;
+        if (newPath === `/${lang}/`) newPath = `/${lang}/index.html`; // Ensure index.html for root path of language
     }
     
-    // Preserve query parameters
     const queryParams = window.location.search;
     window.location.href = newPath + queryParams;
 }
 
-// --- Data Fetching ---
-/**
- * Fetches JSON data from a given path.
- * @param {string} jsonPath - The relative or absolute path to the JSON file.
- * @returns {Promise<object|null>} - A promise that resolves with the parsed JSON data or null on error.
- */
 async function fetchData(jsonPath) {
     try {
         const response = await fetch(jsonPath);
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status} for ${jsonPath}`);
+            throw new Error(`HTTP error! status: ${response.status} for ${jsonPath}`); // Dev-facing
         }
         return await response.json();
     } catch (error) {
-        console.error(`Could not load data from ${jsonPath}:`, error);
-        showGlobalMessage(`Error loading data: ${jsonPath.split('/').pop()}`, 'error'); // User-friendly error
+        console.error(`Could not load data from ${jsonPath}:`, error); // Dev-facing
+        // The t() call for the error message shown to user
+        showGlobalMessage(`${t('public.js.error_loading_data_prefix')} ${jsonPath.split('/').pop()}`, 'error'); // New key: public.js.error_loading_data_prefix (e.g., "Error loading data:")
         return null;
     }
 }
 
-// Make languages array available if needed by setLanguageAndReload or other parts
-const languages = ['fr', 'en'];
+const languages = ['fr', 'en']; // Used by setLanguageAndReload
 
-// Expose functions to global scope if not using modules, or handle exports if using modules.
-// For this project structure, they are typically used as global functions.
 window.setLanguage = setLanguage;
 window.getInitialLanguage = getInitialLanguage;
 window.getTranslatedText = getTranslatedText;
