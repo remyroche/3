@@ -1,0 +1,8 @@
+Flask>=2.0.0 # Or your specific Flask version
+Flask-JWT-Extended>=4.0.0
+Flask-CORS>=3.0.0
+Pillow>=9.0.0
+qrcode>=7.0
+Unidecode>=1.0
+python-dotenv>=0.19.0 # Recommended for managing environment variables
+Flask-Talisman>=1.0.0 # For security headers
