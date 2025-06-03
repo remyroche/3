@@ -1,6 +1,37 @@
 // website/js/auth.js
 // Handles user authentication, session management, and account display.
 
+function getAuthToken() { /* ... */ }
+function setAuthToken(token) { /* ... */ }
+function getCurrentUser() { /* ... */ }
+function setCurrentUser(userData, token = null) { /* ... */ }
+
+async function logoutUser() {
+    setCurrentUser(null); 
+    showGlobalMessage(t('public.js.logged_out'), "info");
+
+    const bodyId = document.body.id;
+    // Updated redirection logic for clarity and to include more pages
+    const protectedPages = ['page-compte', 'page-paiement', 'page-professionnels', 'page-invoices-pro'];
+    if (protectedPages.includes(bodyId)) {
+        // Redirect to a generic login/landing page if on a protected page after logout
+        // 'compte.html' can serve as this if it correctly handles the logged-out state
+        window.location.href = 'compte.html'; 
+    }
+}
+
+function updateLoginState() { /* ... */ }
+
+async function handleLogin(event) {
+    event.preventDefault();
+    const loginForm = event.target;
+    clearFormErrors(loginForm); 
+    const emailField = loginForm.querySelector('#login-email');
+    const passwordField = loginForm.querySelector('#login-password');
+    const email = emailField.value;
+    const password = passwordField.value;
+    const loginMessageElement = document.getElementById('login-message');
+
 function getAuthToken() {
     return sessionStorage.getItem('authToken');
 }
@@ -94,73 +125,88 @@ async function handleLogin(event) {
         return;
     }
 
-    showGlobalMessage(t('public.js.logging_in'), "info", 60000); // Key: public.js.logging_in
+    showGlobalMessage(t('public.js.logging_in'), "info", 60000);
 
     try {
         const result = await makeApiRequest('/auth/login', 'POST', { email, password });
         if (result.success && result.user && result.token) {
             setCurrentUser(result.user, result.token);
-            showGlobalMessage(result.message || t('public.js.login_success'), "success"); // Key: public.js.login_success
+            showGlobalMessage(result.message || t('public.js.login_success'), "success");
             loginForm.reset();
+            
             const urlParams = new URLSearchParams(window.location.search);
             const redirectUrl = urlParams.get('redirect');
+
+            // **UPDATE: Validate redirectUrl**
             if (redirectUrl) {
-                window.location.href = redirectUrl;
+                const allowedOrigins = [window.location.origin]; // Add other trusted origins if necessary
+                let isValidRedirect = false;
+                try {
+                    const parsedRedirectUrl = new URL(redirectUrl, window.location.origin); // Resolve relative URLs
+                    if (allowedOrigins.includes(parsedRedirectUrl.origin) || redirectUrl.startsWith('/')) {
+                         // Check if it's same origin or a relative path starting with /
+                        isValidRedirect = true;
+                    }
+                } catch (e) {
+                    // Invalid URL format
+                    console.warn("Invalid redirect URL format:", redirectUrl);
+                }
+
+                if (isValidRedirect) {
+                    window.location.href = redirectUrl;
+                } else {
+                    console.warn("Blocked potentially unsafe redirect to:", redirectUrl);
+                    window.location.href = 'compte.html'; // Fallback to a safe default
+                }
+            } else {
+                 window.location.href = 'compte.html'; // Default redirect
             }
         } else {
             setCurrentUser(null); 
-            const generalErrorMessage = result.message || t('public.js.login_failed'); // Key: public.js.login_failed
+            const generalErrorMessage = result.message || t('public.js.login_failed');
             showGlobalMessage(generalErrorMessage, "error");
             if (loginMessageElement) loginMessageElement.textContent = generalErrorMessage;
-            setFieldError(emailField, " "); 
-            setFieldError(passwordField, generalErrorMessage);
+            if (emailField) setFieldError(emailField, " "); 
+            if (passwordField) setFieldError(passwordField, generalErrorMessage);
         }
     } catch (error) {
         setCurrentUser(null); 
-        const errorMessage = error.data?.message || t('global.error_generic'); // Key: global.error_generic
+        const errorMessage = error.data?.message || t('global.error_generic');
         if (loginMessageElement) loginMessageElement.textContent = errorMessage;
         showGlobalMessage(errorMessage, "error");
     }
 }
 
-// Function to validate password complexity on the client side (optional, but good for UX)
+// **UPDATE: Modified validatePasswordComplexity to return translation keys**
 function validatePasswordComplexity(password) {
     if (password.length < 8) {
-        return "Le mot de passe doit comporter au moins 8 caractères."; // Password must be at least 8 characters long.
+        return "public.js.auth.password_min_chars"; // Key for: "Password must be at least 8 characters."
     }
     if (!/[A-Z]/.test(password)) {
-        return "Le mot de passe doit contenir au moins une lettre majuscule."; // Password must contain at least one uppercase letter.
+        return "public.js.auth.password_uppercase"; // Key for: "Password must contain an uppercase letter."
     }
     if (!/[a-z]/.test(password)) {
-        return "Le mot de passe doit contenir au moins une lettre minuscule."; // Password must contain at least one lowercase letter.
+        return "public.js.auth.password_lowercase"; // Key for: "Password must contain a lowercase letter."
     }
     if (!/[0-9]/.test(password)) {
-        return "Le mot de passe doit contenir au moins un chiffre."; // Password must contain at least one digit.
+        return "public.js.auth.password_digit";    // Key for: "Password must contain a digit."
     }
+    // Add more checks if needed, e.g., special characters
+    // if (!/[!@#$%^&*]/.test(password)) {
+    //     return "public.js.auth.password_special"; // Key for: "Password must contain a special character."
+    // }
     return null; // Password is valid
 }
-
-
-
 
 async function handleRegistrationForm(event) {
     event.preventDefault();
     const form = event.target;
-    clearFormErrors(form); // Assuming clearFormErrors is defined in ui.js
+    clearFormErrors(form); 
     
-    const emailField = form.querySelector('#register-email'); // Ensure these IDs match your HTML
+    const emailField = form.querySelector('#register-email');
     const passwordField = form.querySelector('#register-password');
     const confirmPasswordField = form.querySelector('#register-confirm-password');
-    const nomField = form.querySelector('#register-nom');
-    const prenomField = form.querySelector('#register-prenom');
-    // Add fields for B2B registration if they are part of this form
-    const companyNameField = form.querySelector('#register-company-name');
-    const siretNumberField = form.querySelector('#register-siret-number');
-    const vatNumberField = form.querySelector('#register-vat-number');
-    const roleSelectField = form.querySelector('#register-role-type'); // Assuming a select field for role
-
-    const registrationMessageElement = document.getElementById('registration-message'); // For displaying general form messages
-    if (registrationMessageElement) registrationMessageElement.textContent = '';
+    // ... other fields ...
 
     let isValid = true;
 
@@ -180,16 +226,17 @@ async function handleRegistrationForm(event) {
 
     // Client-side password complexity check for immediate feedback
     if (passwordField) {
-        const passwordComplexityError = validatePasswordComplexity(passwordField.value);
-        if (passwordComplexityError) {
-            setFieldError(passwordField, passwordComplexityError); // Show specific error
+        const passwordComplexityKey = validatePasswordComplexity(passwordField.value);
+        if (passwordComplexityKey) {
+            // **UPDATE: Use t() with the key from validatePasswordComplexity**
+            setFieldError(passwordField, t(passwordComplexityKey)); 
             isValid = false;
         } else if (confirmPasswordField && passwordField.value !== confirmPasswordField.value) {
-            setFieldError(confirmPasswordField, t('public.js.passwords_do_not_match')); // Key from your locales
+            setFieldError(confirmPasswordField, t('public.js.passwords_do_not_match'));
             isValid = false;
         }
     } else {
-         isValid = false; // Password field is essential
+         isValid = false; 
     }
 
 
@@ -272,24 +319,32 @@ function displayAccountDashboard() {
     const accountDashboardSection = document.getElementById('account-dashboard-section');
     const currentUser = getCurrentUser();
 
-    if (currentUser && loginRegisterSection && accountDashboardSection) {
-        loginRegisterSection.style.display = 'none';
-        accountDashboardSection.style.display = 'block';
-        
-        const dashboardUsername = document.getElementById('dashboard-username');
-        const dashboardEmail = document.getElementById('dashboard-email');
-        if(dashboardUsername) dashboardUsername.textContent = `${currentUser.prenom || ''} ${currentUser.nom || ''}`;
-        if(dashboardEmail) dashboardEmail.textContent = currentUser.email;
-        
-        const logoutButton = document.getElementById('logout-button');
-        if (logoutButton) {
-            logoutButton.removeEventListener('click', logoutUser); 
-            logoutButton.addEventListener('click', logoutUser);
+    if (loginRegisterSection && accountDashboardSection) { // Ensure elements exist
+        if (currentUser) {
+            loginRegisterSection.style.display = 'none';
+            accountDashboardSection.style.display = 'block';
+            
+            const dashboardUsername = document.getElementById('dashboard-username');
+            const dashboardEmail = document.getElementById('dashboard-email');
+            if(dashboardUsername) dashboardUsername.textContent = `${currentUser.prenom || ''} ${currentUser.nom || ''}`.trim() || t('public.account.dashboard_greeting_fallback'); // Add a fallback key
+            if(dashboardEmail) dashboardEmail.textContent = currentUser.email;
+            
+            const logoutButton = document.getElementById('logout-button');
+            if (logoutButton) {
+                logoutButton.removeEventListener('click', logoutUser); 
+                logoutButton.addEventListener('click', logoutUser);
+            }
+            loadOrderHistory(); 
+        } else {
+            loginRegisterSection.style.display = 'block';
+            accountDashboardSection.style.display = 'none';
+            // **UPDATE (Recommendation):**
+            // If on 'compte.html' and logged out, this logic correctly shows the login/register section.
+            // Ensure 'compte.html' is structured with these distinct sections.
+            // No further JS change needed here for this point if HTML structure supports it.
         }
-        loadOrderHistory(); 
-    } else if (loginRegisterSection) {
-        loginRegisterSection.style.display = 'block';
-        if (accountDashboardSection) accountDashboardSection.style.display = 'none';
+    } else {
+        console.warn("Account page sections not found for dashboard display logic.");
     }
 }
 
