@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone
 import enum 
 import pyotp 
+import re # For password complexity
 from flask import current_app 
 
 db = SQLAlchemy()
@@ -14,10 +15,11 @@ class UserRoleEnum(enum.Enum):
     ADMIN = "admin"
     STAFF = "staff"
 
-class ProfessionalStatusEnum(enum.Enum):
+class ProfessionalStatusEnum(enum.Enum): # Used for User.professional_status and ProfessionalDocument.status
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
+    PENDING_REVIEW = "pending_review" # For ProfessionalDocument
 
 class ProductTypeEnum(enum.Enum):
     SIMPLE = "simple"
@@ -77,6 +79,13 @@ class AuditLogStatusEnum(enum.Enum):
     PENDING = "pending"
     INFO = "info"
 
+class AssetTypeEnum(enum.Enum):
+    QR_CODE = "qr_code"
+    PASSPORT_HTML = "passport_html"
+    LABEL_PDF = "label_pdf"
+    PRODUCT_IMAGE = "product_image" # Example, if you want to categorize assets further
+    CATEGORY_IMAGE = "category_image"
+
 # --- Model Definitions ---
 
 class User(db.Model):
@@ -87,7 +96,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(256)) 
     first_name = db.Column(db.String(80))
     last_name = db.Column(db.String(80))
-    role = db.Column(db.Enum(UserRoleEnum, name="user_role_enum_sqlalchemy"), 
+    role = db.Column(db.Enum(UserRoleEnum, name="user_role_enum"), 
                      nullable=False, 
                      default=UserRoleEnum.B2C_CUSTOMER, 
                      index=True)
@@ -99,7 +108,7 @@ class User(db.Model):
     company_name = db.Column(db.String(120))
     vat_number = db.Column(db.String(50))
     siret_number = db.Column(db.String(50))
-    professional_status = db.Column(db.Enum(ProfessionalStatusEnum, name="professional_status_enum_sqlalchemy"), 
+    professional_status = db.Column(db.Enum(ProfessionalStatusEnum, name="professional_status_enum"), 
                                     index=True) 
     
     reset_token = db.Column(db.String(100), index=True)
@@ -107,19 +116,20 @@ class User(db.Model):
     verification_token = db.Column(db.String(100), index=True)
     verification_token_expires_at = db.Column(db.DateTime)
     
+    magic_link_token = db.Column(db.String(100), index=True, nullable=True)
+    magic_link_expires_at = db.Column(db.DateTime, nullable=True)
+
     totp_secret = db.Column(db.String(100)) 
     is_totp_enabled = db.Column(db.Boolean, default=False, nullable=False)
     
     simplelogin_user_id = db.Column(db.String(255), unique=True, nullable=True, index=True) 
 
-    # Relationships
     orders = db.relationship('Order', backref='customer', lazy='dynamic')
     reviews = db.relationship('Review', backref='user', lazy='dynamic')
     cart = db.relationship('Cart', backref='user', uselist=False, lazy='joined') 
     professional_documents = db.relationship('ProfessionalDocument', backref='user', lazy='dynamic')
     b2b_invoices = db.relationship('Invoice', foreign_keys='Invoice.b2b_user_id', backref='b2b_user', lazy='dynamic')
     audit_logs_initiated = db.relationship('AuditLog', foreign_keys='AuditLog.user_id', backref='acting_user', lazy='dynamic')
-
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -129,40 +139,36 @@ class User(db.Model):
             return False
         return check_password_hash(self.password_hash, password)
 
+    @staticmethod
+    def validate_password(password):
+        if not password or len(password) < 8: return "auth.error.password_too_short"
+        if not re.search(r"[A-Z]", password): return "auth.error.password_no_uppercase"
+        if not re.search(r"[a-z]", password): return "auth.error.password_no_lowercase"
+        if not re.search(r"[0-9]", password): return "auth.error.password_no_digit"
+        return None
+
     def generate_totp_secret(self):
         self.totp_secret = pyotp.random_base32()
         return self.totp_secret
 
     def get_totp_uri(self, issuer_name=None):
-        if not self.totp_secret:
-            self.generate_totp_secret() 
+        if not self.totp_secret: self.generate_totp_secret() 
         effective_issuer_name = issuer_name or current_app.config.get('TOTP_ISSUER_NAME', 'Maison Truvra')
-        if not self.totp_secret:
-            raise ValueError("TOTP secret could not be generated or retrieved for URI creation.")
-        return pyotp.totp.TOTP(self.totp_secret).provisioning_uri(
-            name=self.email, 
-            issuer_name=effective_issuer_name
-        )
+        if not self.totp_secret: raise ValueError("TOTP secret could not be generated.")
+        return pyotp.totp.TOTP(self.totp_secret).provisioning_uri(name=self.email, issuer_name=effective_issuer_name)
 
     def verify_totp(self, code_attempt, for_time=None, window=1):
-        if not self.totp_secret: 
-            return False 
-        totp_instance = pyotp.TOTP(self.totp_secret)
-        return totp_instance.verify(code_attempt, for_time=for_time, window=window)
+        if not self.totp_secret: return False 
+        return pyotp.TOTP(self.totp_secret).verify(code_attempt, for_time=for_time, window=window)
 
     def to_dict(self): 
-        return {
-            "id": self.id, "email": self.email, "first_name": self.first_name,
-            "last_name": self.last_name, "role": self.role.value if self.role else None, 
-            "is_active": self.is_active, "is_verified": self.is_verified, 
-            "company_name": self.company_name,
-            "professional_status": self.professional_status.value if self.professional_status else None, 
-            "is_totp_enabled": self.is_totp_enabled,
-            "is_admin": self.role == UserRoleEnum.ADMIN 
-        }
-
-    def __repr__(self):
-        return f'<User {self.email}>'
+        return {"id": self.id, "email": self.email, "first_name": self.first_name,
+                "last_name": self.last_name, "role": self.role.value if self.role else None, 
+                "is_active": self.is_active, "is_verified": self.is_verified, 
+                "company_name": self.company_name,
+                "professional_status": self.professional_status.value if self.professional_status else None, 
+                "is_totp_enabled": self.is_totp_enabled, "is_admin": self.role == UserRoleEnum.ADMIN}
+    def __repr__(self): return f'<User {self.email}>'
 
 class Category(db.Model):
     __tablename__ = 'categories'
@@ -182,12 +188,10 @@ class Category(db.Model):
     localizations = db.relationship('CategoryLocalization', backref='category', lazy='dynamic', cascade="all, delete-orphan")
     
     def to_dict(self):
-        return {
-            "id": self.id, "name": self.name, "description": self.description, 
-            "image_url": self.image_url, "category_code": self.category_code,
-            "parent_id": self.parent_id, "slug": self.slug, "is_active": self.is_active,
-            "product_count": self.products.filter_by(is_active=True).count()
-        }
+        return {"id": self.id, "name": self.name, "description": self.description, 
+                "image_url": self.image_url, "category_code": self.category_code,
+                "parent_id": self.parent_id, "slug": self.slug, "is_active": self.is_active,
+                "product_count": self.products.filter_by(is_active=True).count()}
     def __repr__(self): return f'<Category {self.name}>'
 
 class Product(db.Model):
@@ -198,10 +202,7 @@ class Product(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), index=True)
     product_code = db.Column(db.String(100), unique=True, nullable=False, index=True) 
     brand = db.Column(db.String(100), index=True)
-    type = db.Column(db.Enum(ProductTypeEnum, name="product_type_enum_sqlalchemy"), 
-                     nullable=False, 
-                     default=ProductTypeEnum.SIMPLE, 
-                     index=True)
+    type = db.Column(db.Enum(ProductTypeEnum, name="product_type_enum"), nullable=False, default=ProductTypeEnum.SIMPLE, index=True)
     base_price = db.Column(db.Float)
     currency = db.Column(db.String(10), default='EUR')
     main_image_url = db.Column(db.String(255))
@@ -227,16 +228,14 @@ class Product(db.Model):
     generated_assets = db.relationship('GeneratedAsset', foreign_keys='GeneratedAsset.related_product_id', backref='product_asset_owner', lazy='dynamic')
 
     def to_dict(self): 
-        return {
-            "id": self.id, "name": self.name, "product_code": self.product_code,
-            "slug": self.slug, "type": self.type.value if self.type else None, 
-            "base_price": self.base_price, "is_active": self.is_active, 
-            "is_featured": self.is_featured, "category_id": self.category_id,
-            "category_name": self.category.name if self.category else None,
-            "main_image_url": self.main_image_url, 
-            "aggregate_stock_quantity": self.aggregate_stock_quantity,
-            "aggregate_stock_weight_grams": self.aggregate_stock_weight_grams
-        }
+        return {"id": self.id, "name": self.name, "product_code": self.product_code,
+                "slug": self.slug, "type": self.type.value if self.type else None, 
+                "base_price": self.base_price, "is_active": self.is_active, 
+                "is_featured": self.is_featured, "category_id": self.category_id,
+                "category_name": self.category.name if self.category else None,
+                "main_image_url": self.main_image_url, 
+                "aggregate_stock_quantity": self.aggregate_stock_quantity,
+                "aggregate_stock_weight_grams": self.aggregate_stock_weight_grams}
     def __repr__(self): return f'<Product {self.name}>'
 
 class ProductImage(db.Model):
@@ -280,10 +279,7 @@ class SerializedInventoryItem(db.Model):
     actual_weight_grams = db.Column(db.Float)
     cost_price = db.Column(db.Float)
     purchase_price = db.Column(db.Float)
-    status = db.Column(db.Enum(SerializedInventoryItemStatusEnum, name="sii_status_enum_sqlalchemy"), 
-                       nullable=False, 
-                       default=SerializedInventoryItemStatusEnum.AVAILABLE, 
-                       index=True)
+    status = db.Column(db.Enum(SerializedInventoryItemStatusEnum, name="sii_status_enum"), nullable=False, default=SerializedInventoryItemStatusEnum.AVAILABLE, index=True)
     qr_code_url = db.Column(db.String(255))
     passport_url = db.Column(db.String(255))
     label_url = db.Column(db.String(255))
@@ -299,16 +295,13 @@ class SerializedInventoryItem(db.Model):
     generated_assets = db.relationship('GeneratedAsset', foreign_keys='GeneratedAsset.related_item_uid', backref='inventory_item_asset_owner', lazy='dynamic')
 
     def to_dict(self):
-        return {
-            "id": self.id, "item_uid": self.item_uid, "product_id": self.product_id,
-            "variant_id": self.variant_id, "batch_number": self.batch_number,
-            "production_date": self.production_date.isoformat() if self.production_date else None,
-            "expiry_date": self.expiry_date.isoformat() if self.expiry_date else None,
-            "status": self.status.value if self.status else None, 
-            "notes": self.notes,
-            "product_name": self.product.name if self.product else None, 
-            "variant_sku_suffix": self.variant.sku_suffix if self.variant else None,
-        }
+        return {"id": self.id, "item_uid": self.item_uid, "product_id": self.product_id,
+                "variant_id": self.variant_id, "batch_number": self.batch_number,
+                "production_date": self.production_date.isoformat() if self.production_date else None,
+                "expiry_date": self.expiry_date.isoformat() if self.expiry_date else None,
+                "status": self.status.value if self.status else None, "notes": self.notes,
+                "product_name": self.product.name if self.product else None, 
+                "variant_sku_suffix": self.variant.sku_suffix if self.variant else None}
 
 class StockMovement(db.Model):
     __tablename__ = 'stock_movements'
@@ -316,9 +309,7 @@ class StockMovement(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
     variant_id = db.Column(db.Integer, db.ForeignKey('product_weight_options.id'), index=True)
     serialized_item_id = db.Column(db.Integer, db.ForeignKey('serialized_inventory_items.id'), index=True)
-    movement_type = db.Column(db.Enum(StockMovementTypeEnum, name="stock_movement_type_enum_sqlalchemy"), 
-                              nullable=False, 
-                              index=True)
+    movement_type = db.Column(db.Enum(StockMovementTypeEnum, name="stock_movement_type_enum"), nullable=False, index=True)
     quantity_change = db.Column(db.Integer) 
     weight_change_grams = db.Column(db.Float) 
     reason = db.Column(db.Text)
@@ -328,25 +319,18 @@ class StockMovement(db.Model):
     notes = db.Column(db.Text)
 
     def to_dict(self): 
-        return {
-            "id": self.id, "product_id": self.product_id, "variant_id": self.variant_id,
-            "serialized_item_id": self.serialized_item_id, 
-            "movement_type": self.movement_type.value if self.movement_type else None,
-            "quantity_change": self.quantity_change, 
-            "weight_change_grams": self.weight_change_grams,
-            "reason": self.reason,
-            "movement_date": self.movement_date.isoformat(), "notes": self.notes
-        }
+        return {"id": self.id, "product_id": self.product_id, "variant_id": self.variant_id,
+                "serialized_item_id": self.serialized_item_id, 
+                "movement_type": self.movement_type.value if self.movement_type else None,
+                "quantity_change": self.quantity_change, "weight_change_grams": self.weight_change_grams,
+                "reason": self.reason, "movement_date": self.movement_date.isoformat(), "notes": self.notes}
 
 class Order(db.Model):
     __tablename__ = 'orders'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
     order_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
-    status = db.Column(db.Enum(OrderStatusEnum, name="order_status_enum_sqlalchemy"), 
-                       nullable=False, 
-                       default=OrderStatusEnum.PENDING_PAYMENT, 
-                       index=True)
+    status = db.Column(db.Enum(OrderStatusEnum, name="order_status_enum"), nullable=False, default=OrderStatusEnum.PENDING_PAYMENT, index=True)
     total_amount = db.Column(db.Float, nullable=False)
     currency = db.Column(db.String(10), default='EUR')
     shipping_address_line1 = db.Column(db.String(255))
@@ -427,7 +411,7 @@ class ProfessionalDocument(db.Model):
     document_type = db.Column(db.String(100), nullable=False)
     file_path = db.Column(db.String(255), nullable=False) 
     upload_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    status = db.Column(db.String(50), default='pending_review', index=True) 
+    status = db.Column(db.Enum(ProfessionalStatusEnum, name="prof_doc_status_enum"), default=ProfessionalStatusEnum.PENDING_REVIEW, index=True) 
     reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id')) 
     reviewed_at = db.Column(db.DateTime)
     notes = db.Column(db.Text)
@@ -442,10 +426,7 @@ class Invoice(db.Model):
     due_date = db.Column(db.DateTime, index=True)
     total_amount = db.Column(db.Float, nullable=False)
     currency = db.Column(db.String(10), default='EUR') 
-    status = db.Column(db.Enum(InvoiceStatusEnum, name="invoice_status_enum_sqlalchemy"), 
-                       nullable=False, 
-                       default=InvoiceStatusEnum.DRAFT, 
-                       index=True) 
+    status = db.Column(db.Enum(InvoiceStatusEnum, name="invoice_status_enum"), nullable=False, default=InvoiceStatusEnum.DRAFT, index=True) 
     pdf_path = db.Column(db.String(255))
     notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -473,9 +454,7 @@ class AuditLog(db.Model):
     details = db.Column(db.Text)
     ip_address = db.Column(db.String(45))
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
-    status = db.Column(db.Enum(AuditLogStatusEnum, name="audit_log_status_enum_sqlalchemy"), 
-                       default=AuditLogStatusEnum.SUCCESS, 
-                       index=True) 
+    status = db.Column(db.Enum(AuditLogStatusEnum, name="audit_log_status_enum"), default=AuditLogStatusEnum.SUCCESS, index=True) 
 
 class NewsletterSubscription(db.Model):
     __tablename__ = 'newsletter_subscriptions'
@@ -485,6 +464,7 @@ class NewsletterSubscription(db.Model):
     is_active = db.Column(db.Boolean, default=True, index=True)
     source = db.Column(db.String(100)) 
     consent = db.Column(db.String(10), nullable=False, default='Y') 
+    language_code = db.Column(db.String(5)) # To store 'fr' or 'en'
 
 class Setting(db.Model):
     __tablename__ = 'settings'
@@ -542,8 +522,18 @@ class CategoryLocalization(db.Model):
 class GeneratedAsset(db.Model):
     __tablename__ = 'generated_assets'
     id = db.Column(db.Integer, primary_key=True)
-    asset_type = db.Column(db.String(50), nullable=False, index=True) 
+    asset_type = db.Column(db.Enum(AssetTypeEnum, name="asset_type_enum"), nullable=False, index=True) 
     related_item_uid = db.Column(db.String(100), db.ForeignKey('serialized_inventory_items.item_uid'), index=True)
     related_product_id = db.Column(db.Integer, db.ForeignKey('products.id'), index=True)
     file_path = db.Column(db.String(255), nullable=False, unique=True) 
     generated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+class TokenBlocklist(db.Model):
+    __tablename__ = 'token_blocklist' # Added table name
+    id = db.Column(db.Integer, primary_key=True)
+    jti = db.Column(db.String(36), nullable=False, index=True, unique=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime, nullable=False, index=True)
+
+    def __repr__(self):
+        return f"<TokenBlocklist {self.jti}>"
