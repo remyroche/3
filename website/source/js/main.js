@@ -9,33 +9,45 @@ function initializeLangSwitcher() {
 
 function initializeLangSwitcher() {
     const currentLang = document.documentElement.lang || 'fr'; 
-    const pathSegments = window.location.pathname.split('/');
-    let pageName = pathSegments.pop() || 'index.html'; 
-    if (pageName === currentLang && pathSegments.length > 0) { 
-        pageName = 'index.html';
-    }
-
+    
     document.querySelectorAll('.lang-link').forEach(link => {
         const linkLang = link.dataset.lang; 
-        const currentPathname = window.location.pathname;
-        let baseHref = currentPathname;
-
-        const langPathRegex = /^\/(fr|en)\//;
-        if (langPathRegex.test(currentPathname)) {
-            baseHref = currentPathname.replace(langPathRegex, `/${linkLang}/`);
-        } else if (currentPathname.startsWith(`/${currentLang}/`)) { 
-             baseHref = currentPathname.replace(`/${currentLang}/`, `/${linkLang}/`);
-        } else { 
-             baseHref = `/${linkLang}${currentPathname.startsWith('/') ? '' : '/'}${pageName}`;
-        }
         
-        if (baseHref.endsWith(`/${linkLang}/`)) {
-            baseHref += 'index.html';
+        try {
+            const currentUrl = new URL(window.location.href);
+            const newUrl = new URL(currentUrl); // Create a mutable copy
+
+            // Split pathname into segments to handle language prefix
+            let pathSegments = newUrl.pathname.split('/').filter(segment => segment !== '');
+            
+            // Remove existing language prefix if present
+            if (pathSegments.length > 0 && (pathSegments[0] === 'fr' || pathSegments[0] === 'en')) {
+                pathSegments.shift(); 
+            }
+
+            // Prepend the new language code
+            newUrl.pathname = `/${linkLang}/${pathSegments.join('/')}`;
+
+            // Ensure index.html for root paths of a language directory
+            if (newUrl.pathname === `/${linkLang}/` || newUrl.pathname === `/${linkLang}`) {
+                newUrl.pathname = `/${linkLang}/index.html`;
+            }
+            // Ensure path doesn't end with just / if it's not the root of the language
+            if (newUrl.pathname.endsWith('/') && newUrl.pathname !== `/${linkLang}/`) {
+                 newUrl.pathname = newUrl.pathname.slice(0, -1);
+            }
+
+
+            link.setAttribute('href', newUrl.href);
+
+        } catch (error) {
+            console.error("Error constructing language switch URL:", error);
+            // Fallback or keep original link if URL parsing fails
+            const pageName = window.location.pathname.split("/").pop() || 'index.html';
+            link.setAttribute('href', `/${linkLang}/${pageName}${window.location.search}`);
         }
 
-
-        link.setAttribute('href', baseHref);
-
+        // Style active language link (existing logic is fine)
         if (linkLang === currentLang) {
             link.style.opacity = '1';
             link.style.border = '2px solid #D4AF37'; 
