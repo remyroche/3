@@ -641,4 +641,21 @@
   "public.js.translation_na_for_lang_suffix": "translation N/A for lang",
   "public.js.not_translatable_suffix": "not a translatable string/object",
   "public.js.error_loading_data_prefix": "Error loading:"
+  "admin.invoices.loading_users": "Loading professionals...",
+  "admin.invoices.select_user": "Select a User",
+  "admin.invoices.no_pro_users_found": "No professional users found",
+  "admin.invoices.error_loading_users": "Error loading users",
+  "admin.invoices.error_loading_users_toast": "Error loading professional users.",
+  "admin.invoices.item_desc_placeholder": "Item description",
+  "admin.invoices.qty_placeholder": "Qty",
+  "admin.invoices.unit_price_placeholder": "Unit Price",
+  "admin.invoices.remove_item_label": "Remove line",
+  "admin.invoices.error_select_user_and_items": "Please select a user and add at least one valid line.",
+  "admin.invoices.generating_invoice": "Generating...",
+  "admin.invoices.generate_invoice_btn": "Generate Invoice",
+  "admin.invoices.create_success_toast": "Invoice {invoice_number} created successfully!",
+  "admin.invoices.table.loading": "Loading invoices...",
+  "admin.invoices.table.no_invoices_found": "No invoices found.",
+  "admin.invoices.table.load_error": "Error loading invoices.",
+  "admin.invoices.table.download_btn": "PDF"
 }
