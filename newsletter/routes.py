@@ -15,7 +15,9 @@ def subscribe_newsletter():
     email = data.get('email')
     source = data.get('source', 'website_form')
     consent = 'Y' # Implicit consent by subscribing
-
+    consent_given = data.get('consent', 'N') # Default to 'N' if not provided
+    language_code = data.get('language_code', 'unknown') # Get language
+    
     audit_logger = current_app.audit_log_service
 
     if not email:
