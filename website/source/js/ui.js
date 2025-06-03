@@ -97,20 +97,31 @@ function validateEmail(email) {
     return re.test(String(email).toLowerCase());
 }
 
-function setFieldError(field, message) {
+function setFieldError(field, messageKeyOrText) { // Can accept a key or pre-translated text
     if (!field) return;
     field.classList.add('border-red-500', 'ring-red-500'); // Example error styling classes
-    let errorElement = field.parentElement.querySelector('.error-message');
-    if (!errorElement) {
-        errorElement = document.createElement('p');
-        errorElement.classList.add('error-message', 'text-xs', 'text-red-600', 'mt-1'); // Example error message classes
-        if (field.nextSibling) {
-            field.parentElement.insertBefore(errorElement, field.nextSibling);
-        } else {
-            field.parentElement.appendChild(errorElement);
+    
+    // **UPDATE: Use data-error-for attribute for more robust error message placement**
+    // Assume your HTML has: <div class="error-message" data-error-for="fieldName"></div>
+    // or you can create it if it doesn't exist.
+    // The 'fieldName' should match the 'id' or 'name' of the input field.
+    const fieldName = field.id || field.name;
+    let errorElement = field.parentElement.querySelector(`.error-message[data-error-for="${fieldName}"]`);
+    
+    if (!errorElement) { // Fallback or create if not using data-error-for
+        errorElement = field.parentElement.querySelector('.error-message'); // Original fallback
+        if (!errorElement) {
+            errorElement = document.createElement('p');
+            errorElement.classList.add('error-message', 'text-xs', 'text-red-600', 'mt-1');
+            if (fieldName) { // Add data-attribute if creating dynamically
+                errorElement.setAttribute('data-error-for', fieldName);
+            }
+            // Insert after the field, or adjust as needed for your layout
+            field.parentNode.insertBefore(errorElement, field.nextSibling);
         }
     }
-    errorElement.textContent = message; // Message should be a translated string
+    // If messageKeyOrText is a key, it should have been translated by the caller using t()
+    errorElement.textContent = messageKeyOrText; 
 }
 
 function clearFormErrors(form) {
@@ -118,7 +129,8 @@ function clearFormErrors(form) {
     form.querySelectorAll('.border-red-500, .ring-red-500').forEach(el => {
         el.classList.remove('border-red-500', 'ring-red-500');
     });
-    form.querySelectorAll('.error-message').forEach(el => el.remove());
+    // **UPDATE: Clear error messages identified by data-error-for or the generic class**
+    form.querySelectorAll('.error-message').forEach(el => el.remove()); // Or el.textContent = '';
 }
 
 function getOrderStatusClass(status) { // For styling, not direct text output
