@@ -8,10 +8,26 @@ const distDir = path.join(__dirname, '..', 'dist');
 
 // The languages to build
 const languages = ['fr', 'en']; // Add more languages as needed
+const fs = require('fs-extra');
+const path = require('path');
+
+// Define project paths
+const sourceDir = path.join(__dirname, '..', 'source');
+const localesDir = path.join(__dirname, '..', 'locales');
+const distDir = path.join(__dirname, '..', 'dist');
+
+// The languages to build for the public site
+const publicLanguages = ['fr', 'en'];
+// Configurable option: whether to fail build on missing keys
+const FAIL_ON_MISSING_KEYS = false; // Set to true to make build stricter
+
+// Global error/warning collectors
+let allMissingKeys = {}; // { lang: { key: count } }
+let fileProcessingErrors = []; // { filePath: '...', error: '...' }
 
 // Main build function
 async function build() {
-    console.log('Starting build process for Maison Trüvra website...');
+    console.log('Starting enhanced build process for Maison Trüvra website...');
 
     // 1. Clean the distribution directory
     await fs.emptyDir(distDir);
@@ -19,109 +35,198 @@ async function build() {
 
     // 2. Load all translation files
     const translations = {};
-    for (const lang of languages) {
+    for (const lang of publicLanguages) {
         try {
             translations[lang] = await fs.readJson(path.join(localesDir, `${lang}.json`));
+            allMissingKeys[lang] = {}; // Initialize missing keys tracker for each language
             console.log(`Loaded translation file for: ${lang}`);
         } catch (error) {
-            console.error(`Error loading translation file for ${lang}: ${error.message}`);
-            // Optionally, decide if build should fail or continue with missing translations
-            // For now, it will try to proceed, and missing keys will use the placeholder.
+            const errorMessage = `Error loading translation file for ${lang}: ${error.message}`;
+            console.error(errorMessage);
+            fileProcessingErrors.push({ filePath: `locales/${lang}.json`, error: errorMessage });
+            // Continue without this language or fail build, depending on policy
         }
     }
-    
-    // 3. Process each language
-    for (const lang of languages) {
+
+    // 2.1. Check for key parity between locale files (Basic Check)
+    if (publicLanguages.length > 1) {
+        const baseLang = publicLanguages[0];
+        if (translations[baseLang]) {
+            const baseKeys = new Set(Object.keys(translations[baseLang]));
+            for (let i = 1; i < publicLanguages.length; i++) {
+                const compareLang = publicLanguages[i];
+                if (translations[compareLang]) {
+                    const compareKeys = new Set(Object.keys(translations[compareLang]));
+                    baseKeys.forEach(key => {
+                        if (!compareKeys.has(key)) {
+                            console.warn(`WARNING: Key "${key}" exists in "${baseLang}.json" but is missing in "${compareLang}.json".`);
+                            if (!allMissingKeys[compareLang][key]) allMissingKeys[compareLang][key] = 0;
+                            allMissingKeys[compareLang][key]++;
+                        }
+                    });
+                    compareKeys.forEach(key => {
+                        if (!baseKeys.has(key)) {
+                            console.warn(`WARNING: Key "${key}" exists in "${compareLang}.json" but is missing in "${baseLang}.json".`);
+                             if (!allMissingKeys[baseLang][key]) allMissingKeys[baseLang][key] = 0;
+                            allMissingKeys[baseLang][key]++;
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+
+    // 3. Process Admin Panel (copy once, assumes it's mostly language-agnostic or handles i18n internally)
+    const adminSourceDir = path.join(sourceDir, 'admin');
+    const adminDistDir = path.join(distDir, 'admin');
+    if (await fs.pathExists(adminSourceDir)) {
+        try {
+            await fs.copy(adminSourceDir, adminDistDir);
+            console.log(`Admin panel copied to: ${path.relative(path.join(__dirname, '..'), adminDistDir)}`);
+        } catch (error) {
+            const errorMessage = `Error copying admin panel: ${error.message}`;
+            console.error(errorMessage);
+            fileProcessingErrors.push({ filePath: 'admin panel', error: errorMessage });
+        }
+    } else {
+        console.warn('Admin source directory not found, skipping admin panel copy.');
+    }
+
+    // 4. Process each language for the public site
+    for (const lang of publicLanguages) {
         if (!translations[lang]) {
-            console.warn(`Skipping build for language '${lang}' due to missing translation file.`);
+            console.warn(`Skipping public site build for language '${lang}' due to missing translation file.`);
             continue;
         }
-        console.log(`\n--- Building for language: ${lang.toUpperCase()} ---`);
+        console.log(`\n--- Building public site for language: ${lang.toUpperCase()} ---`);
         const langDistDir = path.join(distDir, lang);
         await fs.ensureDir(langDistDir);
 
-        // Process all files and directories from the source directory
-        await processDirectory(sourceDir, langDistDir, lang, translations[lang]);
+        // Process all files and directories from the source directory (excluding admin)
+        await processDirectory(sourceDir, langDistDir, lang, translations[lang], translations);
     }
 
-    console.log('\n✅ Build completed successfully!');
+    // 5. Report build summary
+    console.log('\n--- Build Summary ---');
+    if (fileProcessingErrors.length > 0) {
+        console.error('\nFile Processing Errors Encountered:');
+        fileProcessingErrors.forEach(err => console.error(`- ${err.filePath}: ${err.error}`));
+    } else {
+        console.log('No file processing errors.');
+    }
+
+    let totalMissingKeys = 0;
+    console.log('\nMissing Translation Key Report:');
+    for (const lang in allMissingKeys) {
+        const missingInLang = Object.keys(allMissingKeys[lang]);
+        if (missingInLang.length > 0) {
+            console.warn(`Language "${lang}":`);
+            missingInLang.forEach(key => {
+                console.warn(`  - Key "${key}" was referenced ${allMissingKeys[lang][key]} time(s) but not found in ${lang}.json.`);
+                totalMissingKeys += allMissingKeys[lang][key];
+            });
+        } else {
+            console.log(`Language "${lang}": No missing keys detected during content processing.`);
+        }
+    }
+
+    if (totalMissingKeys > 0) {
+        console.warn(`\nTotal missing key references: ${totalMissingKeys}`);
+        if (FAIL_ON_MISSING_KEYS) {
+            console.error('Build FAILED due to missing translation keys.');
+            process.exit(1);
+        } else {
+            console.warn('Build completed with missing key warnings.');
+        }
+    } else {
+        console.log('No missing key references found.');
+    }
+
+    if (fileProcessingErrors.length === 0 && (!FAIL_ON_MISSING_KEYS || totalMissingKeys === 0)) {
+        console.log('\n✅ Build completed successfully!');
+    } else {
+        console.error('\n❌ Build completed with errors/warnings.');
+        if (fileProcessingErrors.length > 0) process.exit(1); // Fail if there were file processing errors
+    }
 }
 
-// Function to recursively process directories
-async function processDirectory(currentSourceDir, currentDestDir, lang, dictionary) {
+// Function to recursively process directories (modified to exclude admin for language builds)
+async function processDirectory(currentSourceDir, currentDestDir, lang, dictionary, allDictionaries) {
     await fs.ensureDir(currentDestDir);
     const items = await fs.readdir(currentSourceDir);
 
     for (const item of items) {
         const itemSourcePath = path.join(currentSourceDir, item);
         const itemDestPath = path.join(currentDestDir, item);
-        const stats = await fs.stat(itemSourcePath);
 
+        // Skip admin directory when processing language-specific builds
+        if (item === 'admin' && currentSourceDir === sourceDir) {
+            console.log(`Skipping admin directory for language build: ${lang}`);
+            continue;
+        }
+
+        const stats = await fs.stat(itemSourcePath);
         if (stats.isDirectory()) {
-            // Skip special directories like 'data' or 'admin' if they shouldn't be directly copied or processed this way for each lang
-            // For this project, 'admin' and 'data' in 'source' are likely common or handled differently.
-            // The current script structure implies 'admin' and 'data' are copied as-is into each lang folder.
-            // If 'admin' has its own i18n, it would need a separate build or handling.
-            // For now, we assume all subdirectories in 'source' are part of the public site structure.
-            await processDirectory(itemSourcePath, itemDestPath, lang, dictionary);
+            await processDirectory(itemSourcePath, itemDestPath, lang, dictionary, allDictionaries);
         } else {
-            await processFile(itemSourcePath, itemDestPath, lang, dictionary);
+            await processFile(itemSourcePath, itemDestPath, lang, dictionary, allDictionaries);
         }
     }
 }
 
-// Function to process a single file
-async function processFile(sourcePath, destPath, lang, dictionary) {
+// Function to process a single file (modified for missing key reporting and JS t() removal)
+async function processFile(sourcePath, destPath, lang, dictionary, allDictionaries) {
     const ext = path.extname(sourcePath);
+    const relativeSourcePath = path.relative(sourceDir, sourcePath);
 
-    // Process HTML and JS files for translation
-    if (ext === '.html' || ext === '.js') {
-        let content = await fs.readFile(sourcePath, 'utf-8');
+    try {
+        if (ext === '.html' || ext === '.js') {
+            let content = await fs.readFile(sourcePath, 'utf-8');
 
-        // Replace {{key.subkey}} placeholders in HTML and JS comments/strings if needed
-        content = content.replace(/{{\s*([\w.-]+)\s*}}/g, (match, key) => {
-            // Simple key lookup, does not handle nested objects from key like 'public.nav.home'
-            // The locale files are flat, so this should work.
-            return dictionary[key] || match; 
-        });
-        
-        // In JS files, replace t('key') with the translated string literal
-        // This ensures that UI strings in JavaScript are also statically translated.
-        if (ext === '.js') {
-            content = content.replace(/t\(['"`]([\w.-]+)['"`](?:,\s*\{[^}]*\})?\)/g, (match, key) => {
-                // Basic replacement, doesn't handle interpolation object in t(key, { replacements })
-                // For simple keys, this is fine. For interpolated strings, they should be handled
-                // by constructing the string at runtime or using more complex build-time replacement.
-                const translatedString = dictionary[key] || key; // Fallback to key if not found
-                return JSON.stringify(translatedString); // Properly escape for JS string literal
-            });
-        }
+            // Replace {{key}} placeholders in HTML
+            if (ext === '.html') {
+                content = content.replace(/{{\s*([\w.-]+)\s*}}/g, (match, key) => {
+                    if (dictionary.hasOwnProperty(key)) {
+                        return dictionary[key];
+                    } else {
+                        console.warn(`WARNING: Missing HTML key "${key}" in ${lang}.json for file ${relativeSourcePath}. Using placeholder: "${match}"`);
+                        if (!allMissingKeys[lang][key]) allMissingKeys[lang][key] = 0;
+                        allMissingKeys[lang][key]++;
+                        return match; // Fallback to original match
+                    }
+                });
+                content = content.replace(/<html lang=".*">/, `<html lang="${lang}">`);
+                content = content.replace(/<meta charset=".*">/, `<meta charset="${dictionary['global.charset'] || 'UTF-8'}">`);
+                // ... other HTML specific replacements ...
 
-        // For HTML files, also set the lang attribute
-        if (ext === '.html') {
-            content = content.replace(/<html lang=".*">/, `<html lang="${lang}">`);
-            // Ensure charset and viewport are also processed if they use placeholders
-            content = content.replace(/<meta charset=".*">/, `<meta charset="${dictionary['global.charset'] || 'UTF-8'}">`);
-            content = content.replace(/<meta name="viewport" content=".*">/, `<meta name="viewport" content="${dictionary['global.viewport'] || 'width=device-width, initial-scale=1.0'}">`);
-        }
+                // Inject all translations for runtime JS access (Option B)
+                let scriptToInject = `<script>\n  window.MAISON_TRUVRA_TRANSLATIONS = ${JSON.stringify(allDictionaries)};\n  window.MAISON_TRUVRA_CURRENT_LANG = "${lang}";\n</script>`;
+                content = content.replace('</head>', `${scriptToInject}\n</head>`);
 
-        await fs.writeFile(destPath, content);
-        console.log(`Processed: ${path.relative(path.join(__dirname, '..'), destPath)}`);
+            }
 
-    } else if (path.basename(sourcePath) !== '.DS_Store') { // Exclude .DS_Store and other unwanted files
-        // For other files (CSS, images, videos, fonts, data JSONs etc.), just copy them
-        // This will copy admin/, data/, videos/, etc. into each language directory.
-        try {
+            // For JavaScript files, we are now relying on a runtime t() function.
+            // So, we don't replace t('key') calls here anymore.
+            // We might still want to inject language or specific translations if needed,
+            // but the global object in HTML is often sufficient.
+
+            await fs.writeFile(destPath, content);
+            console.log(`Processed: ${path.relative(path.join(__dirname, '..'), destPath)}`);
+
+        } else if (path.basename(sourcePath) !== '.DS_Store') {
             await fs.copy(sourcePath, destPath);
             console.log(`Copied:    ${path.relative(path.join(__dirname, '..'), destPath)}`);
-        } catch (copyError) {
-            console.error(`Error copying ${sourcePath} to ${destPath}: ${copyError.message}`);
         }
+    } catch (error) {
+        const errorMessage = `Error processing file ${relativeSourcePath}: ${error.message}`;
+        console.error(errorMessage);
+        fileProcessingErrors.push({ filePath: relativeSourcePath, error: errorMessage });
     }
 }
 
 // Run the build
 build().catch(err => {
-    console.error('Build failed:', err);
+    console.error('Build failed with unhandled exception:', err);
     process.exit(1);
 });
