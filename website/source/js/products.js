@@ -5,25 +5,25 @@ let allProducts = [];
 let currentProductDetail = null; 
 
 async function fetchAndDisplayProducts(category = 'all') {
-    const productsGrid = document.getElementById('products-grid'); // Assumes this ID is on nos-produits.html
-    const loadingMessageElement = document.getElementById('products-loading-message'); // Assumes this ID is on nos-produits.html
+    const productsGrid = document.getElementById('products-grid'); 
+    const loadingMessageElement = document.getElementById('products-loading-message'); 
     
     if (!productsGrid || !loadingMessageElement) {
-        console.error(t('public.js.product_grid_or_loading_missing')); // New key: public.js.product_grid_or_loading_missing
+        console.error(t('public.js.product_grid_or_loading_missing')); 
         return;
     }
 
-    loadingMessageElement.textContent = t('public.products_page.loading'); // Key: public.products_page.loading
+    loadingMessageElement.textContent = t('public.products_page.loading'); 
     loadingMessageElement.style.display = 'block';
     productsGrid.innerHTML = ''; 
 
     try {
-        const endpoint = category === 'all' ? '/products' : `/products?category_slug=${encodeURIComponent(category)}`; // Assuming API filters by category_slug
+        const endpoint = category === 'all' ? '/products' : `/products?category_slug=${encodeURIComponent(category)}`; 
         const response = await makeApiRequest(endpoint); 
         
         if (!response || !response.success || !Array.isArray(response.products)) {
-            console.error("Invalid product response format:", response); // Dev-facing
-            throw new Error(response.message || t('public.js.product_load_error')); // Key: public.js.product_load_error
+            console.error("Invalid product response format:", response); 
+            throw new Error(response.message || t('public.js.product_load_error')); 
         }
 
         const productsToDisplay = response.products;
@@ -33,7 +33,7 @@ async function fetchAndDisplayProducts(category = 'all') {
         }
 
         if (productsToDisplay.length === 0) {
-            loadingMessageElement.textContent = t('public.js.no_products_found'); // Key: public.js.no_products_found
+            loadingMessageElement.textContent = t('public.js.no_products_found'); 
             const p = document.createElement('p');
             p.className = "col-span-full text-center text-brand-earth-brown py-8";
             p.textContent = t('public.js.no_products_found');
@@ -41,24 +41,23 @@ async function fetchAndDisplayProducts(category = 'all') {
         } else {
             loadingMessageElement.style.display = 'none';
             productsToDisplay.forEach(product => {
-                let stockMessageHTML = ''; // This might remain HTML if it's simple static translated strings
-                let addToCartButtonHTML = ''; // This will be a button or link, structure is important
-                const productDetailUrl = `produit-detail.html?slug=${product.slug}`; // Use slug for detail URL
+                let stockMessageHTML = ''; 
+                let addToCartButtonHTML = ''; 
+                const productDetailUrl = `produit-detail.html?slug=${product.slug}`; 
 
                 if (product.weight_options && product.weight_options.length > 0) {
-                     // For variable products, link to detail page to select options
                     addToCartButtonHTML = `
                         <a href="${productDetailUrl}" class="block w-full text-center bg-brand-warm-taupe hover:bg-brand-warm-taupe/90 text-brand-cream font-semibold py-2 px-4 rounded transition-colors duration-300">
                             ${t('public.products_page.view_options')}
-                        </a>`; // New key: public.products_page.view_options (e.g., "View Options" / "Voir les options")
+                        </a>`; 
                 } else { 
-                    if (product.aggregate_stock_quantity > 0) { // Check aggregate_stock_quantity for simple products
+                    if (product.aggregate_stock_quantity > 0) { 
                         addToCartButtonHTML = `
                             <button data-product-id="${product.id}" class="add-to-cart-list-btn w-full bg-brand-warm-taupe hover:bg-brand-warm-taupe/90 text-brand-cream font-semibold py-2 px-4 rounded transition-colors duration-300">
                                 ${t('public.products_page.add_to_cart')}
-                            </button>`; // Key: public.products_page.add_to_cart
+                            </button>`; 
                     } else {
-                        stockMessageHTML = `<p class="text-xs text-brand-truffle-burgundy mb-1">${t('public.products_page.out_of_stock')}</p>`; // Key: public.products_page.out_of_stock
+                        stockMessageHTML = `<p class="text-xs text-brand-truffle-burgundy mb-1">${t('public.products_page.out_of_stock')}</p>`; 
                         addToCartButtonHTML = `
                             <button class="w-full bg-stone-400 text-white font-semibold py-2 px-4 rounded cursor-not-allowed" disabled>
                                 ${t('public.products_page.out_of_stock')}
@@ -66,7 +65,7 @@ async function fetchAndDisplayProducts(category = 'all') {
                     }
                 }
                 
-                if (product.aggregate_stock_quantity <= 0 && (!product.weight_options || product.weight_options.length === 0)) { // This check remains
+                if (product.aggregate_stock_quantity <= 0 && (!product.weight_options || product.weight_options.length === 0)) { 
                      addToCartButtonHTML = `
                         <button class="w-full bg-brand-warm-taupe text-brand-cream font-semibold py-2 px-4 rounded cursor-not-allowed opacity-50" disabled>
                             ${t('public.products_page.out_of_stock')}
@@ -81,7 +80,7 @@ async function fetchAndDisplayProducts(category = 'all') {
 
                 const img = document.createElement('img');
                 img.src = product.main_image_full_url || 'https://placehold.co/400x300/F5EEDE/7D6A4F?text=Image+Indisponible';
-                img.alt = product.name; // Use product.name directly, assuming it's sanitized if from user input, or trusted internal data.
+                img.alt = product.name; 
                 img.className = 'w-full h-64 object-cover';
                 img.onerror = () => { img.src = 'https://placehold.co/400x300/F5EEDE/7D6A4F?text=Image+Error'; };
                 linkWrapper.appendChild(img);
@@ -106,18 +105,20 @@ async function fetchAndDisplayProducts(category = 'all') {
 
                 if (stockMessageHTML) {
                     const stockMessageDiv = document.createElement('div');
-                    stockMessageDiv.innerHTML = stockMessageHTML; // Assuming this is safe, trusted HTML (translated string)
+                    // Assuming stockMessageHTML is safe, trusted HTML (e.g., a <p> tag with a translated string)
+                    // If it could ever contain user input, it must be sanitized or built with safe DOM methods.
+                    stockMessageDiv.innerHTML = stockMessageHTML; 
                     contentDiv.appendChild(stockMessageDiv);
                 }
                 
                 const footerDiv = document.createElement('div');
                 footerDiv.className = 'mt-auto pt-2';
-                footerDiv.innerHTML = addToCartButtonHTML; // Buttons/links are generally safe as HTML if attributes are controlled.
+                // Assuming addToCartButtonHTML is safe (links/buttons with translated text)
+                footerDiv.innerHTML = addToCartButtonHTML; 
                 contentDiv.appendChild(footerDiv);
                 
                 productCard.appendChild(contentDiv);
                 productsGrid.appendChild(productCard);
-
 
                 const addToCartBtn = productCard.querySelector('.add-to-cart-list-btn');
                 if (addToCartBtn) {
@@ -132,33 +133,34 @@ async function fetchAndDisplayProducts(category = 'all') {
         const p = document.createElement('p');
         p.className = "col-span-full text-center text-brand-truffle-burgundy py-8";
         p.textContent = `${t('public.js.product_load_error')} ${error.message || ''}`;
+        productsGrid.innerHTML = ''; // Clear previous
         productsGrid.appendChild(p);
     }
 }
 
 function setupCategoryFilters() {
-    const filterContainer = document.getElementById('product-categories-filter'); // Assumes ID on nos-produits.html
+    const filterContainer = document.getElementById('product-categories-filter'); 
     if (filterContainer) {
         const buttons = filterContainer.querySelectorAll('button');
         buttons.forEach(button => {
             button.addEventListener('click', () => {
                 buttons.forEach(btn => btn.classList.remove('filter-active', 'bg-brand-earth-brown', 'text-brand-cream'));
                 button.classList.add('filter-active', 'bg-brand-earth-brown', 'text-brand-cream');
-                const categorySlug = button.dataset.categorySlug; // Assuming buttons have data-category-slug
+                const categorySlug = button.dataset.categorySlug; 
                 fetchAndDisplayProducts(categorySlug);
             });
         });
     }
 }
 
-async function loadProductDetail() { // For produit-detail.html
+async function loadProductDetail() { 
     const params = new URLSearchParams(window.location.search);
-    const productSlug = params.get('slug'); // Expecting slug
+    const productSlug = params.get('slug'); 
     const loadingDiv = document.getElementById('product-detail-loading');
     const contentDiv = document.getElementById('product-detail-content');
 
     if (!productSlug) {
-        if(loadingDiv) loadingDiv.textContent = t('public.js.no_product_specified'); // Key: public.js.no_product_specified
+        if(loadingDiv) loadingDiv.textContent = t('public.js.no_product_specified'); 
         if(contentDiv) contentDiv.style.display = 'none';
         return;
     }
@@ -167,17 +169,17 @@ async function loadProductDetail() { // For produit-detail.html
     if(contentDiv) contentDiv.style.display = 'none';
 
     try {
-        const product = await makeApiRequest(`/products/${productSlug}`); // API expects slug or code
-        if (!product || !product.success || !product.product) { // Assuming API wraps single product in { success: true, product: {...} }
-            throw new Error(product.message || t('public.js.product_not_found')); // New key: public.js.product_not_found
+        const product = await makeApiRequest(`/products/${productSlug}`); 
+        if (!product || !product.success || !product.product) { 
+            throw new Error(product.message || t('public.js.product_not_found')); 
         }
-        currentProductDetail = product.product; // Store the actual product object
+        currentProductDetail = product.product; 
 
-        document.title = `${currentProductDetail.name} - ${t('public.js.maison_truvra_title_suffix')}`; // New key: public.js.maison_truvra_title_suffix (e.g., "Maison Trüvra")
+        document.title = `${currentProductDetail.name} - ${t('public.js.maison_truvra_title_suffix')}`; 
         document.getElementById('product-name').textContent = currentProductDetail.name; // XSS: Using textContent
         const mainImage = document.getElementById('main-product-image');
         mainImage.src = currentProductDetail.main_image_full_url || 'https://placehold.co/600x500/F5EEDE/7D6A4F?text=Image';
-        mainImage.alt = currentProductDetail.name; // Use product name directly for alt
+        mainImage.alt = currentProductDetail.name; 
         mainImage.onerror = () => { mainImage.src = 'https://placehold.co/600x500/F5EEDE/7D6A4F?text=Image+Error'; };
 
         document.getElementById('product-short-description').textContent = currentProductDetail.description || ''; // XSS: Using textContent
@@ -193,7 +195,7 @@ async function loadProductDetail() { // For produit-detail.html
             weightOptionsSelect.innerHTML = '';
             currentProductDetail.weight_options.forEach(opt => {
                 const optionElement = document.createElement('option');
-                optionElement.value = opt.option_id; // Assuming weight_options have an option_id
+                optionElement.value = opt.option_id; 
                 let optionText = `${opt.weight_grams}g - ${parseFloat(opt.price).toFixed(2)} €`;
                 if(opt.aggregate_stock_quantity <= 0) optionText += ` (${t('public.products_page.out_of_stock')})`;
                 optionElement.textContent = optionText; // XSS: Using textContent for option text
@@ -209,7 +211,6 @@ async function loadProductDetail() { // For produit-detail.html
                 if(!weightOptionsSelect.options[i].disabled) { firstEnabledIndex = i; break; }
             }
             if(firstEnabledIndex !== -1) weightOptionsSelect.selectedIndex = firstEnabledIndex;
-            else { /* All options out of stock */ }
             
             updatePriceFromSelection(); 
             weightOptionsSelect.addEventListener('change', updatePriceFromSelection);
@@ -236,8 +237,7 @@ async function loadProductDetail() { // For produit-detail.html
         document.getElementById('product-uses').textContent = currentProductDetail.ideal_uses || t('common.notApplicable'); // XSS: Using textContent
         
         const longDesc = currentProductDetail.long_description || currentProductDetail.sensory_description || t('public.product_detail.no_description');
-        // XSS: Using textContent for long description. If HTML is required, sanitization is crucial.
-        // For now, assuming plain text for safety or that sanitization happens server-side if HTML is intended.
+        // XSS: Using textContent for long description. Backend should sanitize if HTML is intended.
         document.getElementById('product-sensory-description').textContent = longDesc;
         
         document.getElementById('product-pairing-suggestions').textContent = currentProductDetail.pairing_suggestions || t('public.product_detail.no_pairings'); // XSS: Using textContent
@@ -250,7 +250,7 @@ async function loadProductDetail() { // For produit-detail.html
                 if (thumbUrl) {
                     const img = document.createElement('img');
                     img.src = thumbUrl;
-                    img.alt = `${currentProductDetail.name} ${t('public.js.thumbnail_alt_suffix')}`; // Alt text
+                    img.alt = `${currentProductDetail.name} ${t('public.js.thumbnail_alt_suffix')}`; 
                     img.className = 'w-full h-24 object-cover rounded cursor-pointer hover:opacity-75 transition-opacity';
                     img.onclick = () => { 
                         const mainImgToUpdate = document.getElementById('main-product-image');
@@ -266,14 +266,13 @@ async function loadProductDetail() { // For produit-detail.html
         initializeQuantityControls(); 
     } catch (error) {
         currentProductDetail = null; 
-        console.error("Error in loadProductDetail:", error); // Dev-facing
-        const errorMsg = (error.data?.message || error.message || t('public.js.product_detail_load_error')); // Key: public.js.product_detail_load_error
+        console.error("Error in loadProductDetail:", error); 
+        const errorMsg = (error.data?.message || error.message || t('public.js.product_detail_load_error')); 
         if (loadingDiv) {
-            // XSS: Using textContent for error messages
             const p = document.createElement('p');
             p.className = "text-brand-truffle-burgundy";
             p.textContent = `${t('public.js.product_detail_load_error_prefix')}: ${errorMsg}`;
-            loadingDiv.innerHTML = ''; // Clear previous content
+            loadingDiv.innerHTML = ''; 
             loadingDiv.appendChild(p);
             loadingDiv.style.display = 'block'; 
         }
@@ -314,35 +313,35 @@ function updatePriceFromSelection() {
     const selectedOptionEl = weightOptionsSelect.options[weightOptionsSelect.selectedIndex];
 
     if (selectedOptionEl && selectedOptionEl.value) { 
-        priceDisplay.textContent = `${parseFloat(selectedOptionEl.dataset.price).toFixed(2)} €`; // XSS: Price, safe
-        priceUnit.textContent = `/ ${selectedOptionEl.dataset.weightGrams}g`; // XSS: Weight, safe
+        priceDisplay.textContent = `${parseFloat(selectedOptionEl.dataset.price).toFixed(2)} €`; 
+        priceUnit.textContent = `/ ${selectedOptionEl.dataset.weightGrams}g`; 
         if (parseInt(selectedOptionEl.dataset.stock) <= 0 || selectedOptionEl.disabled) {
-            addToCartButton.textContent = t('public.products_page.out_of_stock'); // XSS: Translated string, assumed safe
+            addToCartButton.textContent = t('public.products_page.out_of_stock'); 
             addToCartButton.disabled = true;
             addToCartButton.classList.replace('btn-gold','btn-secondary');
             addToCartButton.classList.add('opacity-50', 'cursor-not-allowed');
         } else {
-            addToCartButton.textContent = t('public.products_page.add_to_cart'); // XSS: Translated string, assumed safe
+            addToCartButton.textContent = t('public.products_page.add_to_cart'); 
             addToCartButton.disabled = false;
             addToCartButton.classList.replace('btn-secondary','btn-gold');
             addToCartButton.classList.remove('opacity-50', 'cursor-not-allowed');
         }
     } else if (currentProductDetail && currentProductDetail.base_price === null && (!currentProductDetail.weight_options || currentProductDetail.weight_options.length === 0)) {
-        priceDisplay.textContent = t('public.product_detail.price_on_request'); // XSS: Translated string, assumed safe
-        addToCartButton.textContent = t('public.product_detail.unavailable'); // XSS: Translated string, assumed safe
+        priceDisplay.textContent = t('public.product_detail.price_on_request'); 
+        addToCartButton.textContent = t('public.product_detail.unavailable'); 
         addToCartButton.disabled = true;
         addToCartButton.classList.replace('btn-gold','btn-secondary');
         addToCartButton.classList.add('opacity-50', 'cursor-not-allowed');
-    } else if (currentProductDetail && currentProductDetail.base_price !== null) { // Simple product
-        priceDisplay.textContent = `${parseFloat(currentProductDetail.base_price).toFixed(2)} €`; // XSS: Price, safe
+    } else if (currentProductDetail && currentProductDetail.base_price !== null) { 
+        priceDisplay.textContent = `${parseFloat(currentProductDetail.base_price).toFixed(2)} €`; 
         priceUnit.textContent = '';
         if (currentProductDetail.aggregate_stock_quantity <= 0) {
-            addToCartButton.textContent = t('public.products_page.out_of_stock'); // XSS: Translated string, assumed safe
+            addToCartButton.textContent = t('public.products_page.out_of_stock'); 
             addToCartButton.disabled = true;
             addToCartButton.classList.replace('btn-gold','btn-secondary');
             addToCartButton.classList.add('opacity-50', 'cursor-not-allowed');
         } else {
-             addToCartButton.textContent = t('public.products_page.add_to_cart'); // XSS: Translated string, assumed safe
+             addToCartButton.textContent = t('public.products_page.add_to_cart'); 
             addToCartButton.disabled = false;
             addToCartButton.classList.replace('btn-secondary','btn-gold');
             addToCartButton.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -350,15 +349,44 @@ function updatePriceFromSelection() {
     }
 }
 
-function updateDetailQuantity(change) { // Used by inline +/- buttons if any, not directly present in provided HTML
+/**
+ * Updates the quantity input field on the product detail page.
+ * @param {number} change - The amount to change the quantity by (e.g., 1 or -1).
+ */
+function updateDetailQuantity(change) {
     const quantityInput = document.getElementById('quantity-select');
-    if (!quantityInput) return;
-    // ... (rest of the logic is fine)
+    if (!quantityInput) {
+        console.warn("Quantity input field ('quantity-select') not found on product detail page.");
+        return;
+    }
+
+    let currentValue = parseInt(quantityInput.value, 10);
+    const minVal = parseInt(quantityInput.min, 10) || 1; // Default min to 1 if not set
+    const maxVal = parseInt(quantityInput.max, 10) || 99; // Default max if not set
+
+    if (isNaN(currentValue)) {
+        currentValue = minVal; // Reset to min if current value is not a number
+    }
+
+    let newValue = currentValue + change;
+
+    if (newValue < minVal) {
+        newValue = minVal;
+    } else if (newValue > maxVal) {
+        newValue = maxVal;
+    }
+
+    quantityInput.value = newValue;
+    
+    // Optionally, trigger an 'input' or 'change' event if other parts of the page listen for it
+    // quantityInput.dispatchEvent(new Event('input'));
+    // quantityInput.dispatchEvent(new Event('change'));
 }
+
 
 function handleAddToCartFromDetail() {
     if (!currentProductDetail) {
-        showGlobalMessage(t('public.js.add_to_cart_error_missing_details'), "error"); // Key: public.js.add_to_cart_error_missing_details
+        showGlobalMessage(t('public.js.add_to_cart_error_missing_details'), "error"); 
         return;
     }
 
@@ -377,34 +405,31 @@ function handleAddToCartFromDetail() {
 
             if (selectedVariantData) {
                 variantInfoForCart = { 
-                    id: selectedVariantData.option_id, // This should be the variant's unique ID from product_weight_options table
+                    id: selectedVariantData.option_id, 
                     weight_grams: selectedVariantData.weight_grams,
                     price: parseFloat(selectedVariantData.price),
-                    sku_suffix: selectedVariantData.sku_suffix // Important for cart item identification
+                    sku_suffix: selectedVariantData.sku_suffix 
                 };
             } else {
-                showGlobalMessage(t('public.js.invalid_variant_selected'), "error"); // Key: public.js.invalid_variant_selected
+                showGlobalMessage(t('public.js.invalid_variant_selected'), "error"); 
                 return;
             }
         }  else {
-             showGlobalMessage(t('public.js.select_valid_option'), "error"); // New key: public.js.select_valid_option (e.g. "Please select a valid option.")
+             showGlobalMessage(t('public.js.select_valid_option'), "error"); 
             return;
         }
     }
-    // For simple products, variantInfoForCart remains null.
     addToCart(currentProductDetail, quantity, variantInfoForCart); 
 }
-window.handleAddToCartFromDetail = handleAddToCartFromDetail; // Expose if called from HTML inline event
+window.handleAddToCartFromDetail = handleAddToCartFromDetail; 
 
-// Event listeners for nos-produits.html page (if product list)
 if (document.body.id === 'page-nos-produits') {
     document.addEventListener('DOMContentLoaded', () => {
-        fetchAndDisplayProducts('all'); // Default load
+        fetchAndDisplayProducts('all'); 
         setupCategoryFilters();
     });
 }
 
-// Event listener for produit-detail.html page
 if (document.body.id === 'page-produit-detail') {
     document.addEventListener('DOMContentLoaded', () => {
         loadProductDetail();
@@ -412,5 +437,10 @@ if (document.body.id === 'page-produit-detail') {
         if (addToCartBtn) {
             addToCartBtn.addEventListener('click', handleAddToCartFromDetail);
         }
+        // Example: Hook up hypothetical +/- buttons if they existed with these IDs
+        // const plusButton = document.getElementById('quantity-plus-btn');
+        // const minusButton = document.getElementById('quantity-minus-btn');
+        // if (plusButton) plusButton.addEventListener('click', () => updateDetailQuantity(1));
+        // if (minusButton) minusButton.addEventListener('click', () => updateDetailQuantity(-1));
     });
 }
