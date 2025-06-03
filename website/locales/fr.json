@@ -715,4 +715,21 @@
   "invoiceStatus.partially_refunded": "Partiellement remboursée",
   "invoiceStatus.on_hold": "En attente",
   "invoiceStatus.failed": "Échouée"
+  "admin.invoices.loading_users": "Chargement des professionnels...",
+  "admin.invoices.select_user": "Sélectionner un Utilisateur",
+  "admin.invoices.no_pro_users_found": "Aucun utilisateur professionnel trouvé",
+  "admin.invoices.error_loading_users": "Erreur chargement utilisateurs",
+  "admin.invoices.error_loading_users_toast": "Erreur chargement des utilisateurs professionnels.",
+  "admin.invoices.item_desc_placeholder": "Description de l'article",
+  "admin.invoices.qty_placeholder": "Qté",
+  "admin.invoices.unit_price_placeholder": "Prix Unitaire",
+  "admin.invoices.remove_item_label": "Supprimer la ligne",
+  "admin.invoices.error_select_user_and_items": "Veuillez sélectionner un utilisateur et ajouter au moins une ligne valide.",
+  "admin.invoices.generating_invoice": "Génération en cours...",
+  "admin.invoices.generate_invoice_btn": "Générer la Facture",
+  "admin.invoices.create_success_toast": "Facture {invoice_number} créée avec succès !",
+  "admin.invoices.table.loading": "Chargement des factures...",
+  "admin.invoices.table.no_invoices_found": "Aucune facture trouvée.",
+  "admin.invoices.table.load_error": "Erreur de chargement des factures.",
+  "admin.invoices.table.download_btn": "PDF"
 }
