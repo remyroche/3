@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timezone, timedelta
-import enum
+from datetime import datetime, timezone
+import enum 
 import pyotp 
 from flask import current_app 
 
@@ -12,7 +12,6 @@ class UserRoleEnum(enum.Enum):
     B2C_CUSTOMER = "b2c_customer"
     B2B_PROFESSIONAL = "b2b_professional"
     ADMIN = "admin"
-    MANAGER = "manager"
     STAFF = "staff"
 
 class ProfessionalStatusEnum(enum.Enum):
@@ -78,6 +77,7 @@ class AuditLogStatusEnum(enum.Enum):
     PENDING = "pending"
     INFO = "info"
 
+# --- Model Definitions ---
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -112,12 +112,13 @@ class User(db.Model):
     
     simplelogin_user_id = db.Column(db.String(255), unique=True, nullable=True, index=True) 
 
+    # Relationships
     orders = db.relationship('Order', backref='customer', lazy='dynamic')
     reviews = db.relationship('Review', backref='user', lazy='dynamic')
-    cart = db.relationship('Cart', backref='user', uselist=False, lazy='joined') # uselist=False for one-to-one
+    cart = db.relationship('Cart', backref='user', uselist=False, lazy='joined') 
     professional_documents = db.relationship('ProfessionalDocument', backref='user', lazy='dynamic')
     b2b_invoices = db.relationship('Invoice', foreign_keys='Invoice.b2b_user_id', backref='b2b_user', lazy='dynamic')
-    audit_logs_initiated = db.relationship('AuditLog', foreign_keys='AuditLog.user_id', backref='acting_user', lazy='dynamic') # Renamed for clarity
+    audit_logs_initiated = db.relationship('AuditLog', foreign_keys='AuditLog.user_id', backref='acting_user', lazy='dynamic')
 
 
     def set_password(self, password):
@@ -195,26 +196,18 @@ class Product(db.Model):
     name = db.Column(db.String(150), nullable=False, index=True)
     description = db.Column(db.Text)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), index=True)
-    # product_code is the base SKU for the product. Unique variants will append a suffix.
     product_code = db.Column(db.String(100), unique=True, nullable=False, index=True) 
-    # sku_prefix removed as product_code serves this purpose.
     brand = db.Column(db.String(100), index=True)
     type = db.Column(db.Enum(ProductTypeEnum, name="product_type_enum_sqlalchemy"), 
                      nullable=False, 
                      default=ProductTypeEnum.SIMPLE, 
                      index=True)
-    base_price = db.Column(db.Float) # Price for simple products or a reference for variable.
+    base_price = db.Column(db.Float)
     currency = db.Column(db.String(10), default='EUR')
     main_image_url = db.Column(db.String(255))
-    # aggregate_stock_quantity is the total physical units for simple products,
-    # or sum of variant quantities for variable_weight products.
     aggregate_stock_quantity = db.Column(db.Integer, default=0) 
-    # aggregate_stock_weight_grams is relevant for variable_weight products.
-    # It should be dynamically calculated or updated via triggers/logic based on
-    # SerializedInventoryItem.actual_weight_grams or ProductWeightOption stock.
-    # Making it nullable as it might not apply to all simple products or be calculated on demand.
     aggregate_stock_weight_grams = db.Column(db.Float, nullable=True) 
-    unit_of_measure = db.Column(db.String(50)) # e.g., 'piece', 'bottle', 'g' (for reference if base_price is per unit)
+    unit_of_measure = db.Column(db.String(50))
     is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
     is_featured = db.Column(db.Boolean, default=False, index=True)
     meta_title = db.Column(db.String(255))
@@ -261,7 +254,7 @@ class ProductWeightOption(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
     weight_grams = db.Column(db.Float, nullable=False)
     price = db.Column(db.Float, nullable=False)
-    sku_suffix = db.Column(db.String(50), nullable=False) # e.g., "-20G", "-50G"
+    sku_suffix = db.Column(db.String(50), nullable=False) 
     aggregate_stock_quantity = db.Column(db.Integer, default=0)
     is_active = db.Column(db.Boolean, default=True, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -286,7 +279,7 @@ class SerializedInventoryItem(db.Model):
     expiry_date = db.Column(db.DateTime, index=True)
     actual_weight_grams = db.Column(db.Float)
     cost_price = db.Column(db.Float)
-    purchase_price = db.Column(db.Float) # Renamed from 'price' in schema.sql to avoid confusion
+    purchase_price = db.Column(db.Float)
     status = db.Column(db.Enum(SerializedInventoryItemStatusEnum, name="sii_status_enum_sqlalchemy"), 
                        nullable=False, 
                        default=SerializedInventoryItemStatusEnum.AVAILABLE, 
@@ -295,7 +288,7 @@ class SerializedInventoryItem(db.Model):
     passport_url = db.Column(db.String(255))
     label_url = db.Column(db.String(255))
     notes = db.Column(db.Text)
-    supplier_id = db.Column(db.Integer) # Consider a Supplier model if more details needed
+    supplier_id = db.Column(db.Integer) 
     received_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     sold_at = db.Column(db.DateTime)
     order_item_id = db.Column(db.Integer, db.ForeignKey('order_items.id'), unique=True, index=True)
@@ -326,11 +319,11 @@ class StockMovement(db.Model):
     movement_type = db.Column(db.Enum(StockMovementTypeEnum, name="stock_movement_type_enum_sqlalchemy"), 
                               nullable=False, 
                               index=True)
-    quantity_change = db.Column(db.Integer) # For non-serialized or aggregate changes
-    weight_change_grams = db.Column(db.Float) # For weight-based changes
+    quantity_change = db.Column(db.Integer) 
+    weight_change_grams = db.Column(db.Float) 
     reason = db.Column(db.Text)
     related_order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), index=True)
-    related_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True) # Admin/Staff performing adjustment
+    related_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True) 
     movement_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     notes = db.Column(db.Text)
 
@@ -379,7 +372,7 @@ class Order(db.Model):
     
     items = db.relationship('OrderItem', backref='order', lazy='dynamic', cascade="all, delete-orphan")
     stock_movements = db.relationship('StockMovement', backref='related_order', lazy='dynamic')
-    invoice = db.relationship('Invoice', backref=db.backref('order_link', uselist=False)) # Corrected for one-to-one
+    invoice = db.relationship('Invoice', backref=db.backref('order_link', uselist=False)) 
 
 class OrderItem(db.Model):
     __tablename__ = 'order_items'
@@ -402,13 +395,12 @@ class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    rating = db.Column(db.Integer, nullable=False) # CHECK constraint in schema.sql
+    rating = db.Column(db.Integer, nullable=False) 
     comment = db.Column(db.Text)
     review_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     is_approved = db.Column(db.Boolean, default=False, index=True)
     
     __table_args__ = (db.CheckConstraint('rating >= 1 AND rating <= 5', name='ck_review_rating'),)
-
 
 class Cart(db.Model):
     __tablename__ = 'carts'
@@ -432,13 +424,13 @@ class ProfessionalDocument(db.Model):
     __tablename__ = 'professional_documents'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    document_type = db.Column(db.String(100), nullable=False) # E.g., 'kbis', 'vat_certificate'
-    file_path = db.Column(db.String(255), nullable=False) # Relative path to the stored file
+    document_type = db.Column(db.String(100), nullable=False)
+    file_path = db.Column(db.String(255), nullable=False) 
     upload_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    status = db.Column(db.String(50), default='pending_review', index=True) # E.g., 'pending_review', 'approved', 'rejected'
-    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id')) # Admin user ID
+    status = db.Column(db.String(50), default='pending_review', index=True) 
+    reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id')) 
     reviewed_at = db.Column(db.DateTime)
-    notes = db.Column(db.Text) # Admin notes on the document review
+    notes = db.Column(db.Text)
 
 class Invoice(db.Model):
     __tablename__ = 'invoices'
@@ -474,8 +466,7 @@ class InvoiceItem(db.Model):
 class AuditLog(db.Model):
     __tablename__ = 'audit_log'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True, nullable=True) # User performing the action
-    # username removed, use user_id to link to User model for details
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True, nullable=True) 
     action = db.Column(db.String(255), nullable=False, index=True)
     target_type = db.Column(db.String(50), index=True) 
     target_id = db.Column(db.Integer, index=True)
@@ -493,12 +484,12 @@ class NewsletterSubscription(db.Model):
     subscribed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     is_active = db.Column(db.Boolean, default=True, index=True)
     source = db.Column(db.String(100)) 
-    consent = db.Column(db.String(10), nullable=False, default='Y') # 'Y', 'N', or more detailed consent string
+    consent = db.Column(db.String(10), nullable=False, default='Y') 
 
 class Setting(db.Model):
     __tablename__ = 'settings'
-    key = db.Column(db.String(100), primary_key=True) # e.g., 'site_name', 'maintenance_mode'
-    value = db.Column(db.Text) # Store value as text, parse as needed
+    key = db.Column(db.String(100), primary_key=True)
+    value = db.Column(db.Text)
     description = db.Column(db.Text)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -506,8 +497,8 @@ class ProductLocalization(db.Model):
     __tablename__ = 'product_localizations'
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
-    lang_code = db.Column(db.String(5), nullable=False) # e.g., 'fr', 'en'
-    name_fr = db.Column(db.String(150)) # Example, adjust actual fields as needed
+    lang_code = db.Column(db.String(5), nullable=False) 
+    name_fr = db.Column(db.String(150)) 
     name_en = db.Column(db.String(150))
     description_fr = db.Column(db.Text)
     description_en = db.Column(db.Text)
@@ -551,8 +542,8 @@ class CategoryLocalization(db.Model):
 class GeneratedAsset(db.Model):
     __tablename__ = 'generated_assets'
     id = db.Column(db.Integer, primary_key=True)
-    asset_type = db.Column(db.String(50), nullable=False, index=True) # E.g., 'qr_code', 'passport_html', 'label_pdf'
+    asset_type = db.Column(db.String(50), nullable=False, index=True) 
     related_item_uid = db.Column(db.String(100), db.ForeignKey('serialized_inventory_items.item_uid'), index=True)
     related_product_id = db.Column(db.Integer, db.ForeignKey('products.id'), index=True)
-    file_path = db.Column(db.String(255), nullable=False, unique=True) # Relative path to the asset file
+    file_path = db.Column(db.String(255), nullable=False, unique=True) 
     generated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
