@@ -6,50 +6,62 @@ document.addEventListener('DOMContentLoaded', function() {
     const categoryForm = document.getElementById('categoryForm');
     const categoriesTableBody = document.getElementById('categoriesTableBody');
     const categoryFormTitle = document.getElementById('categoryFormTitle');
-    const categoryCodeInput = document.getElementById('categoryCode'); // For category_code field
+    const categoryCodeInput = document.getElementById('categoryCode'); // For category_code field// website/source/admin/js/admin_categories.js
+// This script handles the "Manage Categories" page in the admin panel.
+
+document.addEventListener('DOMContentLoaded', function() {
+    // --- DOM Element References ---
+    const categoryForm = document.getElementById('categoryForm');
+    const categoriesTableBody = document.getElementById('categoriesTableBody');
+    const categoryFormTitle = document.getElementById('categoryFormTitle');
+    const categoryCodeInput = document.getElementById('categoryCode'); 
     const saveCategoryButton = document.getElementById('saveCategoryButton');
     const cancelCategoryEditButton = document.getElementById('cancelCategoryEditButton');
 
     // --- State Variables ---
-    let editingCategoryOriginalCode = null; // Stores the original category_code when editing
+    let editingCategoryOriginalCode = null; 
 
     // --- Initialization ---
-    loadCategoriesTable(); // Load categories when the page loads
+    loadCategoriesTable(); 
 
     /**
      * Renders the list of categories into the table.
      * @param {Array<object>} categoriesToRender - The array of category objects to display.
      */
     function renderCategoriesTable(categoriesToRender) {
-        categoriesTableBody.innerHTML = ''; // Clear existing rows
+        categoriesTableBody.innerHTML = ''; 
         if (!categoriesToRender || categoriesToRender.length === 0) {
-            categoriesTableBody.innerHTML = '<tr><td colspan="6">No categories found.</td></tr>';
+            const emptyRow = categoriesTableBody.insertRow();
+            const cell = emptyRow.insertCell();
+            cell.colSpan = 6;
+            cell.textContent = "No categories found."; // XSS: static text
             return;
         }
         categoriesToRender.forEach(category => {
             const row = categoriesTableBody.insertRow();
-            // Populate cells, using category_code as the main identifier
-            row.insertCell().textContent = category.category_code;
-            row.insertCell().textContent = category.name;
-            row.insertCell().textContent = category.description || 'N/A'; // Display N/A if no description
-            row.insertCell().innerHTML = category.is_active ? '<span style="color: green;">Yes</span>' : '<span style="color: red;">No</span>';
+            row.insertCell().textContent = category.category_code; // XSS
+            row.insertCell().textContent = category.name; // XSS
+            row.insertCell().textContent = category.description || 'N/A'; // XSS
             
-            // Display product count (assuming backend provides 'product_count')
+            const activeCell = row.insertCell();
+            const activeSpan = document.createElement('span');
+            activeSpan.textContent = category.is_active ? 'Yes' : 'No'; // XSS: static text
+            activeSpan.style.color = category.is_active ? 'green' : 'red';
+            activeCell.appendChild(activeSpan);
+            
             const productCountCell = row.insertCell();
-            productCountCell.textContent = category.product_count !== undefined ? category.product_count : 'N/A';
+            productCountCell.textContent = category.product_count !== undefined ? category.product_count : 'N/A'; // XSS
 
-            // Actions cell (Edit, Delete)
             const actionsCell = row.insertCell();
             const editButton = document.createElement('button');
-            editButton.textContent = 'Edit';
-            editButton.classList.add('small-button');
+            editButton.textContent = 'Edit'; // XSS: static text
+            editButton.classList.add('small-button', 'btn', 'btn-admin-secondary'); // Added btn classes
             editButton.onclick = () => populateCategoryFormForEdit(category);
             actionsCell.appendChild(editButton);
 
             const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Delete';
-            deleteButton.classList.add('small-button', 'delete');
-             // Disable delete if product_count > 0, as per backend constraint
+            deleteButton.textContent = 'Delete'; // XSS: static text
+            deleteButton.classList.add('small-button', 'delete', 'btn', 'btn-admin-danger'); // Added btn classes
             if (category.product_count > 0) {
                 deleteButton.disabled = true;
                 deleteButton.title = "Cannot delete: This category is associated with existing products.";
@@ -64,13 +76,24 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function loadCategoriesTable() {
         try {
-            categoriesTableBody.innerHTML = '<tr><td colspan="6">Loading categories...</td></tr>';
-            const categories = await adminApi.getCategories();
+            const loadingRow = categoriesTableBody.insertRow();
+            const cell = loadingRow.insertCell();
+            cell.colSpan = 6;
+            cell.textContent = "Loading categories..."; // XSS: static text
+            categoriesTableBody.innerHTML = ''; // Clear after creating, then replace
+            categoriesTableBody.appendChild(loadingRow);
+
+            const response = await adminApi.getCategories(); // Expects { categories: [...] }
+            const categories = response.categories || []; // Defensive
             renderCategoriesTable(categories);
         } catch (error) {
             console.error('Failed to load categories:', error);
-            showAdminMessage('Error loading categories list. Please try refreshing.', 'error');
-            categoriesTableBody.innerHTML = '<tr><td colspan="6">Error loading categories.</td></tr>';
+            showAdminToast('Error loading categories list. Please try refreshing.', 'error'); // Using showAdminToast
+            categoriesTableBody.innerHTML = ''; // Clear loading
+            const errorRow = categoriesTableBody.insertRow();
+            const cell = errorRow.insertCell();
+            cell.colSpan = 6;
+            cell.textContent = "Error loading categories."; // XSS: static text
         }
     }
     
@@ -79,23 +102,18 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {object} category - The category object to edit.
      */
     function populateCategoryFormForEdit(category) {
-        categoryFormTitle.textContent = `Edit Category: ${category.name} (${category.category_code})`;
-        saveCategoryButton.textContent = 'Update Category';
-        cancelCategoryEditButton.style.display = 'inline-block'; // Show cancel button
+        categoryFormTitle.textContent = `Edit Category: ${category.name} (${category.category_code})`; // XSS: category data
+        saveCategoryButton.textContent = 'Update Category'; // XSS: static
+        cancelCategoryEditButton.style.display = 'inline-block'; 
         
-        editingCategoryOriginalCode = category.category_code; // Store original code for the PUT request
+        editingCategoryOriginalCode = category.category_code; 
         
-        // Populate form fields
         categoryCodeInput.value = category.category_code;
-        // categoryCodeInput.readOnly = true; // Category code can be updatable based on backend logic.
-                                           // If not updatable, set to true. Current backend allows it.
-
         document.getElementById('categoryName').value = category.name;
         document.getElementById('categoryDescription').value = category.description || '';
         document.getElementById('categoryImageUrl').value = category.image_url || '';
         document.getElementById('categoryIsActive').checked = category.is_active;
         
-        // Scroll to the form for better UX
         const categoryFormContainer = document.getElementById('categoryFormContainer');
         if (categoryFormContainer) {
             categoryFormContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -106,14 +124,12 @@ document.addEventListener('DOMContentLoaded', function() {
      * Resets the category form to its default state for adding a new category.
      */
     function resetCategoryForm() {
-        categoryFormTitle.textContent = 'Add New Category';
-        saveCategoryButton.textContent = 'Save Category';
-        categoryForm.reset(); // Resets all form fields
-        categoryCodeInput.readOnly = false; // Ensure category code is editable for new categories
-        editingCategoryOriginalCode = null; // Clear editing state
-        cancelCategoryEditButton.style.display = 'none'; // Hide cancel button
-
-        // Explicitly set default for checkbox if `reset()` doesn't handle it as expected
+        categoryFormTitle.textContent = 'Add New Category'; // XSS: static
+        saveCategoryButton.textContent = 'Save Category'; // XSS: static
+        categoryForm.reset(); 
+        categoryCodeInput.readOnly = false; 
+        editingCategoryOriginalCode = null; 
+        cancelCategoryEditButton.style.display = 'none'; 
         document.getElementById('categoryIsActive').checked = true;
     }
 
@@ -123,56 +139,47 @@ document.addEventListener('DOMContentLoaded', function() {
      * Handles the submission of the category form (for both add and update).
      */
     categoryForm.addEventListener('submit', async function(event) {
-        event.preventDefault(); // Prevent default form submission
+        event.preventDefault(); 
         const formData = new FormData(categoryForm);
-        const categoryData = {};
+        // No need to convert to plain object if adminApi.updateCategory/addCategory handles FormData
         
-        // Convert FormData to a plain object
-        for (const [key, value] of formData.entries()) {
-            if (key === 'is_active') {
-                // Checkbox value is handled by its 'checked' property
-                categoryData[key] = document.getElementById('categoryIsActive').checked;
-            } else {
-                categoryData[key] = value.trim(); // Trim whitespace for string fields
-            }
-        }
-
-        // --- Basic Client-Side Validation ---
-        if (!categoryData.category_code) {
-            showAdminMessage('Category Code is required.', 'error', 'Validation Error');
+        if (!formData.get('category_code').trim()) {
+            showAdminToast('Category Code is required.', 'error'); // Using showAdminToast
             return;
         }
-        if (!categoryData.name) {
-            showAdminMessage('Category Name is required.', 'error', 'Validation Error');
+        if (!formData.get('name').trim()) {
+            showAdminToast('Category Name is required.', 'error'); // Using showAdminToast
             return;
         }
         
-        // Disable button to prevent multiple submissions
         saveCategoryButton.disabled = true;
-        saveCategoryButton.textContent = editingCategoryOriginalCode ? 'Updating...' : 'Saving...';
+        saveCategoryButton.textContent = editingCategoryOriginalCode ? 'Updating...' : 'Saving...'; // XSS: static
 
         try {
             let response;
             if (editingCategoryOriginalCode) {
-                // Update existing category
-                response = await adminApi.updateCategory(editingCategoryOriginalCode, categoryData);
+                // Pass FormData directly to the API method
+                response = await adminApi.updateCategory(editingCategoryOriginalCode, formData);
             } else {
-                // Add new category
-                response = await adminApi.addCategory(categoryData);
+                response = await adminApi.addCategory(formData);
             }
-            showAdminMessage(response.message || `Category ${editingCategoryOriginalCode ? 'updated' : 'added'} successfully!`, 'success');
-            resetCategoryForm(); // Clear form and editing state
-            await loadCategoriesTable(); // Refresh the categories list
+            // Assuming adminApi methods return { success: true/false, message: "...", category: {...} (optional) }
+            if (response.success) {
+                showAdminToast(response.message || `Category ${editingCategoryOriginalCode ? 'updated' : 'added'} successfully!`, 'success');
+                resetCategoryForm(); 
+                await loadCategoriesTable(); 
+            } else {
+                 showAdminToast(response.message || 'Failed to save category.', 'error');
+            }
         } catch (error) {
             console.error('Failed to save category:', error);
-            // Display a user-friendly error message from the API response if available
-            const errorMessage = error.response?.data?.error || error.message || 'An unknown error occurred while saving the category.';
-            showAdminMessage(errorMessage, 'error', 'Save Category Error');
+            // Error toast is likely handled by adminApi itself now.
+            // If not, uncomment:
+            // const errorMessage = error.data?.message || error.message || 'An unknown error occurred.';
+            // showAdminToast(errorMessage, 'error');
         } finally {
-            // Re-enable button
             saveCategoryButton.disabled = false;
-            // Restore button text based on whether it was an edit or add
-            saveCategoryButton.textContent = editingCategoryOriginalCode ? 'Update Category' : 'Save Category';
+            saveCategoryButton.textContent = editingCategoryOriginalCode ? 'Update Category' : 'Save Category'; // XSS: static
         }
     });
 
@@ -182,22 +189,30 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {string} categoryName - The name of the category (for confirmation message).
      */
     function confirmDeleteCategory(categoryCode, categoryName) {
+        const messageParagraph = document.createElement('p');
+        messageParagraph.textContent = `Are you sure you want to delete the category: `; // XSS: static
+        const strongElement = document.createElement('strong');
+        strongElement.textContent = `${categoryName} (${categoryCode})`; // XSS: category data
+        messageParagraph.appendChild(strongElement);
+        messageParagraph.append("? This action cannot be undone. Ensure no products are associated with this category."); // XSS: static
+
         showAdminConfirm(
             'Confirm Delete Category',
-            `Are you sure you want to delete the category: <strong>${categoryName} (${categoryCode})</strong>? This action cannot be undone. Ensure no products are associated with this category.`,
-            async () => { // This is the onConfirmCallback
+            messageParagraph.innerHTML, // Using innerHTML as it was safely constructed
+            async () => { 
                 try {
-                    await adminApi.deleteCategory(categoryCode);
-                    showAdminMessage(`Category "${categoryName}" (${categoryCode}) deleted successfully!`, 'success');
-                    await loadCategoriesTable(); // Refresh the categories list
+                    const response = await adminApi.deleteCategory(categoryCode);
+                    if(response.success) {
+                        showAdminToast(response.message || `Category "${categoryName}" (${categoryCode}) deleted successfully!`, 'success');
+                        await loadCategoriesTable(); 
+                    } // Error toast handled by adminApi
                 } catch (error) {
                     console.error('Failed to delete category:', error);
-                    const errorMessage = error.response?.data?.error || 'Failed to delete category. It might still be associated with products or another issue occurred.';
-                    showAdminMessage(errorMessage, 'error', 'Delete Category Error');
+                     // Error toast handled by adminApi
                 }
             },
-            'Delete Category', // Confirm button text
-            'Cancel'           // Cancel button text
+            'Delete Category', 
+            'Cancel'           
         );
     }
 });
