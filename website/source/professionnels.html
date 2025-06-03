@@ -42,10 +42,10 @@
             <div class="text-center">
                 <h2 class="text-3xl font-serif text-brand-near-black mb-4">{{ professionnels.bienvenue }}, <span id="user-name-placeholder"></span>!</h2>
                 <p class="text-lg text-brand-earth-brown mb-8">{{ professionnels.connecteMessage }}</p>
-                <div class="flex justify-center gap-6">
-                    <a href="invoices-pro.html" class="btn-primary">{{ professionnels.mesFacturesBtn }}</a>
-                    <a href="compte.html" class="btn-secondary">{{ professionnels.monCompteBtn }}</a>
-                    <button id="pro-logout-btn" class="btn-secondary bg-brand-truffle-burgundy">{{ professionnels.deconnexionBtn }}</button>
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6">
+                    <button id="pro-view-invoices-btn" class="btn-primary w-full sm:w-auto">{{ professionnels.mesFacturesBtn }}</button>
+                    <a href="compte.html" class="btn-secondary w-full sm:w-auto">{{ professionnels.monCompteBtn }}</a>
+                    <button id="pro-logout-btn" class="btn-secondary bg-brand-truffle-burgundy w-full sm:w-auto">{{ professionnels.deconnexionBtn }}</button>
                 </div>
             </div>
         </div>
