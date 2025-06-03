@@ -6,6 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const bodyId = document.body.id;
     const pagePath = window.location.pathname;
+// website/source/admin/js/admin_main.js
+// Main script for initializing the Admin Panel and page-specific logic.
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("admin_main.js: DOMContentLoaded");
+
+    const bodyId = document.body.id;
+    const pagePath = window.location.pathname;
 
     if (bodyId === 'page-admin-login' || pagePath.includes('admin_login.html')) {
         console.log("admin_main.js: On admin_login.html");
@@ -21,13 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 adminLoginForm.addEventListener('submit', handleAdminLoginFormSubmit);
                 console.log("admin_main.js: Admin login form event listener attached.");
 
-                // Add event listener for TOTP submission button if it exists (it's on login page)
                 const submitTotpButton = document.getElementById('submit-totp-button');
-                if (submitTotpButton && typeof handleTotpVerification === 'function') { // handleTotpVerification is in admin_auth.js
+                if (submitTotpButton && typeof handleTotpVerification === 'function') { 
                     submitTotpButton.addEventListener('click', handleTotpVerification);
                 }
-                 // Add event listener for pressing Enter in TOTP code input on login page
-                const totpCodeInputLogin = document.getElementById('admin-totp-code'); // ID from admin_login.html
+                const totpCodeInputLogin = document.getElementById('admin-totp-code'); 
                 if (totpCodeInputLogin && typeof handleTotpVerification === 'function') {
                     totpCodeInputLogin.addEventListener('keypress', function(event) {
                         if (event.key === 'Enter') {
@@ -42,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             console.warn("admin_main.js: Admin login form not found on this page.");
         }
-        // Add event listener for SimpleLogin button on login page
         const simpleLoginButton = document.getElementById('simplelogin-button');
         if (simpleLoginButton) {
             simpleLoginButton.addEventListener('click', () => {
@@ -77,8 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (bodyId === 'page-admin-profile' || pagePath.includes('admin_profile.html')) {
         console.log("admin_main.js: Initializing Admin Profile page.");
         // admin_profile.js self-initializes.
-    } else if (bodyId === 'page-admin-manage-products' || pagePath.includes('admin_manage_products.html') || pagePath.includes('admin_panel.html')) { 
-        console.log("admin_main.js: Initializing Product Management page.");
+    } else if (bodyId === 'page-admin-manage-products' || pagePath.includes('admin_manage_products.html') || bodyId === 'page-admin-panel' || pagePath.includes('admin_panel.html')) { 
+        // Combined old admin_panel.html with new admin_manage_products.html
+        console.log("admin_main.js: Initializing Product Management page (admin_manage_products.html or admin_panel.html).");
         // admin_products.js self-initializes.
     } else if (bodyId === 'page-admin-manage-inventory' || pagePath.includes('admin_manage_inventory.html')) {
         console.log("admin_main.js: Initializing Inventory Management page.");
@@ -101,9 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("admin_main.js: Initializing Review Management page.");
         // admin_reviews.js self-initializes.
     } else if (bodyId === 'page-admin-invoices' || pagePath.includes('admin_invoices.html') || bodyId === 'page-admin-create-invoice' || pagePath.includes('admin_create_invoice.html')) {
-        console.log("admin_main.js: Initializing Invoice Management page.");
-        // admin_invoices.js self-initializes.
+        console.log("admin_main.js: Initializing Invoice Management page (list or create).");
+        // admin_invoices.js self-initializes based on specific body ID.
     }
+
 
     document.querySelectorAll('.admin-modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', function(event) {
@@ -115,6 +122,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Set current year in footer if element exists and is not page-specific
+    const currentYearGlobal = document.getElementById('currentYear');
+    if (currentYearGlobal && !document.querySelector('[id^="currentYear"]')) { // Avoid if page-specific one exists
+        currentYearGlobal.textContent = new Date().getFullYear();
+    }
 });
 
 
@@ -122,9 +135,9 @@ function setupAdminUIGlobals() {
     const adminUser = getAdminUser(); 
     const greetingElement = document.getElementById('admin-user-greeting');
     if (greetingElement && adminUser) {
-        greetingElement.textContent = `Bonjour, ${adminUser.prenom || adminUser.email}!`;
+        greetingElement.textContent = `Bonjour, ${adminUser.prenom || adminUser.email}!`; // XSS: name/email generally safe
     } else if (greetingElement) {
-        greetingElement.textContent = 'Bonjour, Admin!'; 
+        greetingElement.textContent = 'Bonjour, Admin!'; // XSS: static text
     }
 
     const logoutButton = document.getElementById('admin-logout-button');
@@ -145,20 +158,16 @@ function setupAdminUIGlobals() {
             backToDashboardButton.style.display = 'none';
         } else {
             backToDashboardButton.classList.remove('hidden'); 
-            // Ensure it's styled appropriately to be visible, e.g. display: 'inline-flex' or 'block'
-            // This might depend on your Tailwind setup or direct CSS.
-            // For the provided HTML, it uses 'flex items-center', so 'inline-flex' or 'flex' is good.
              backToDashboardButton.style.display = 'inline-flex';
         }
     }
     
-    // Set active navigation link
     const currentPageFilename = window.location.pathname.split("/").pop();
     document.querySelectorAll('nav.bg-gray-800 .admin-nav-link').forEach(link => {
-        link.classList.remove('active', 'bg-gray-900'); 
+        link.classList.remove('active', 'bg-gray-900'); // Ensure consistent class for active state
         const linkHref = link.getAttribute('href');
         if (linkHref && linkHref === currentPageFilename) {
-            link.classList.add('active', 'bg-gray-900'); 
+            link.classList.add('active', 'bg-gray-900'); // Use a distinct active style
         }
     });
     console.log("Admin UI Globals (greeting, logout, nav) setup.");
