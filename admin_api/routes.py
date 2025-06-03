@@ -29,24 +29,25 @@ import pyotp # Added for TOTP setup routes
 
 from . import admin_api_bp # Assuming limiter is initialized elsewhere and applied to blueprint or app
 
-def _create_admin_session_and_get_response(admin_user, redirect_url):
-    """Helper to create JWT, set cookies, and prepare a redirect response."""
+# --- Admin Authentication (Password, TOTP, SimpleLogin) ---
+def _create_admin_session_and_get_response(admin_user, redirect_url=None): # redirect_url for SSO
     identity = admin_user.id
     additional_claims = {
-        "role": admin_user.role, "email": admin_user.email, "is_admin": True,
+        "role": admin_user.role.value, "email": admin_user.email, "is_admin": True,
         "first_name": admin_user.first_name, "last_name": admin_user.last_name
     }
     access_token = create_access_token(identity=identity, additional_claims=additional_claims)
     
-    response = redirect(redirect_url)
-    # Explicitly set the access token in cookies if JWT_TOKEN_LOCATION includes 'cookies'
-    # and if Flask-JWT-Extended doesn't automatically do it on redirect responses.
-    if 'cookies' in current_app.config.get('JWT_TOKEN_LOCATION', ['headers']):
-        set_access_cookies(response, access_token)
-        current_app.logger.info(f"Access cookie set for admin {admin_user.email} during SSO redirect.")
-    
-    current_app.logger.info(f"SSO successful for {admin_user.email}, redirecting. Token (prefix): {access_token[:20]}...")
-    return response
+    if redirect_url: # For SimpleLogin callback
+        response = redirect(redirect_url)
+        if 'cookies' in current_app.config.get('JWT_TOKEN_LOCATION', ['headers']):
+            set_access_cookies(response, access_token) # Ensure cookie is set on redirect
+        current_app.logger.info(f"SSO successful for {admin_user.email}, redirecting. Token (prefix): {access_token[:20]}...")
+        return response
+    else: # For regular password/TOTP login
+        user_info_to_return = admin_user.to_dict()
+        return jsonify(success=True, message="Admin login successful!", token=access_token, user=user_info_to_return), 200
+
 
 # ... (other routes like admin_login_step1_password, admin_login_step2_verify_totp, simplelogin_initiate remain the same) ...
 # Make sure the _create_admin_session helper from the previous turn is also included or adapted if it was separate.
@@ -894,7 +895,10 @@ def _create_admin_session(admin_user):
     user_info_to_return = admin_user.to_dict() 
     return jsonify(success=True, message="Admin login successful!", token=access_token, user=user_info_to_return), 200
 
+
+
 @admin_api_bp.route('/login', methods=['POST'])
+@limiter.limit(lambda: current_app.config.get('ADMIN_LOGIN_RATELIMITS', "10 per 5 minutes"))
 def admin_login_step1_password():
     data = request.json
     email = data.get('email')
@@ -904,36 +908,33 @@ def admin_login_step1_password():
     if not email or not password:
         audit_logger.log_action(action='admin_login_fail_step1', email=email, details="Email and password required.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Email and password are required", success=False, totp_required=False), 400
-
     try:
-        admin_user = User.query.filter_by(email=email, role='admin').first()
-
+        admin_user = User.query.filter_by(email=email, role=UserRoleEnum.ADMIN).first()
         if admin_user and admin_user.check_password(password):
             if not admin_user.is_active:
                 audit_logger.log_action(user_id=admin_user.id, action='admin_login_fail_inactive_step1', target_type='user_admin', target_id=admin_user.id, details="Admin account is inactive.", status='failure', ip_address=request.remote_addr)
                 return jsonify(message="Admin account is inactive. Please contact support.", success=False, totp_required=False), 403
-
+            
             if admin_user.is_totp_enabled and admin_user.totp_secret:
                 session['pending_totp_admin_id'] = admin_user.id
                 session['pending_totp_admin_email'] = admin_user.email 
                 session.permanent = True 
                 current_app.permanent_session_lifetime = current_app.config.get('TOTP_LOGIN_STATE_TIMEOUT', timedelta(minutes=5))
-
                 audit_logger.log_action(user_id=admin_user.id, action='admin_login_totp_required', target_type='user_admin', target_id=admin_user.id, status='pending', ip_address=request.remote_addr)
                 return jsonify(message="Password verified. Please enter your TOTP code.", success=True, totp_required=True, email=admin_user.email), 200 
             else:
                 audit_logger.log_action(user_id=admin_user.id, action='admin_login_success_no_totp', target_type='user_admin', target_id=admin_user.id, status='success', ip_address=request.remote_addr)
-                return _create_admin_session(admin_user)
+                return _create_admin_session_and_get_response(admin_user)
         else:
             audit_logger.log_action(action='admin_login_fail_credentials_step1', email=email, details="Invalid admin credentials.", status='failure', ip_address=request.remote_addr)
             return jsonify(message="Invalid admin email or password", success=False, totp_required=False), 401
-
     except Exception as e:
         current_app.logger.error(f"Error during admin login step 1 for {email}: {e}", exc_info=True)
         audit_logger.log_action(action='admin_login_fail_server_error_step1', email=email, details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message="Admin login failed due to a server error", success=False, totp_required=False), 500
+        return jsonify(message="Admin login failed due to a server error. Please try again later.", success=False, totp_required=False), 500
 
 @admin_api_bp.route('/login/verify-totp', methods=['POST'])
+@limiter.limit(lambda: current_app.config.get('ADMIN_LOGIN_RATELIMITS', "10 per 5 minutes")) # Same limit as step 1
 def admin_login_step2_verify_totp():
     data = request.json
     totp_code = data.get('totp_code')
@@ -949,33 +950,32 @@ def admin_login_step2_verify_totp():
     if not totp_code:
         audit_logger.log_action(user_id=pending_admin_id, action='admin_totp_verify_fail_no_code', email=pending_admin_email, details="TOTP code missing.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="TOTP code is required.", success=False), 400
-
     try:
         admin_user = User.query.get(pending_admin_id)
-        if not admin_user or not admin_user.is_active or admin_user.role != 'admin':
+        if not admin_user or not admin_user.is_active or admin_user.role != UserRoleEnum.ADMIN:
             session.pop('pending_totp_admin_id', None)
             session.pop('pending_totp_admin_email', None)
             audit_logger.log_action(user_id=pending_admin_id, action='admin_totp_verify_fail_user_invalid', email=pending_admin_email, details="Admin user not found, inactive, or not admin role during TOTP.", status='failure', ip_address=request.remote_addr)
-            return jsonify(message="Invalid user state for TOTP verification.", success=False), 403
+            return jsonify(message="Invalid user state for TOTP verification. Please log in again.", success=False), 403
 
-        if admin_user.verify_totp(totp_code):
+        if admin_user.verify_totp(totp_code): # Uses User model method
             session.pop('pending_totp_admin_id', None)
             session.pop('pending_totp_admin_email', None)
             audit_logger.log_action(user_id=admin_user.id, action='admin_login_success_totp_verified', target_type='user_admin', target_id=admin_user.id, status='success', ip_address=request.remote_addr)
-            return _create_admin_session(admin_user)
+            return _create_admin_session_and_get_response(admin_user)
         else:
             audit_logger.log_action(user_id=admin_user.id, action='admin_totp_verify_fail_invalid_code', email=pending_admin_email, details="Invalid TOTP code.", status='failure', ip_address=request.remote_addr)
-            return jsonify(message="Invalid TOTP code.", success=False), 401
+            return jsonify(message="Invalid TOTP code. Please try again.", success=False), 401
             
     except Exception as e:
         current_app.logger.error(f"Error during admin TOTP verification for {pending_admin_email}: {e}", exc_info=True)
         audit_logger.log_action(user_id=pending_admin_id, action='admin_totp_verify_fail_server_error', email=pending_admin_email, details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message="TOTP verification failed due to a server error.", success=False), 500
+        return jsonify(message="TOTP verification failed due to a server error. Please try again.", success=False), 500
 
 @admin_api_bp.route('/login/simplelogin/initiate', methods=['GET'])
 def simplelogin_initiate():
     client_id = current_app.config.get('SIMPLELOGIN_CLIENT_ID')
-    redirect_uri = current_app.config.get('SIMPLELOGIN_REDIRECT_URI_ADMIN')
+    redirect_uri = current_app.config.get('SIMPLELOGIN_REDIRECT_URI_ADMIN') # This should be the backend callback
     authorize_url = current_app.config.get('SIMPLELOGIN_AUTHORIZE_URL')
     scopes = current_app.config.get('SIMPLELOGIN_SCOPES')
 
@@ -983,249 +983,163 @@ def simplelogin_initiate():
         current_app.logger.error("SimpleLogin OAuth settings are not fully configured in the backend.")
         return jsonify(message="SimpleLogin SSO is not configured correctly on the server.", success=False), 500
 
-    session['oauth_state_sl'] = secrets.token_urlsafe(16) # Store state for CSRF protection
-
-    params = {
-        'response_type': 'code',
-        'client_id': client_id,
-        'redirect_uri': redirect_uri,
-        'scope': scopes,
-        'state': session['oauth_state_sl'] 
-    }
+    session['oauth_state_sl'] = secrets.token_urlsafe(16)
+    params = {'response_type': 'code', 'client_id': client_id, 'redirect_uri': redirect_uri, 'scope': scopes, 'state': session['oauth_state_sl']}
     auth_redirect_url = f"{authorize_url}?{urlencode(params)}"
     current_app.logger.info(f"Redirecting admin to SimpleLogin for authentication: {auth_redirect_url}")
     return redirect(auth_redirect_url)
-
 
 @admin_api_bp.route('/login/simplelogin/callback', methods=['GET'])
 def simplelogin_callback():
     auth_code = request.args.get('code')
     state_returned = request.args.get('state')
     audit_logger = current_app.audit_log_service
+    base_admin_login_url = current_app.config.get('APP_BASE_URL_FRONTEND', 'http://localhost:8000') + '/admin/admin_login.html' # Frontend login page for errors
+    admin_dashboard_url = current_app.config.get('APP_BASE_URL_FRONTEND', 'http://localhost:8000') + '/admin/admin_dashboard.html' # Frontend dashboard
 
-    # Verify state parameter for CSRF protection
     expected_state = session.pop('oauth_state_sl', None)
     if not expected_state or expected_state != state_returned:
         audit_logger.log_action(action='simplelogin_callback_fail_state_mismatch', details="OAuth state mismatch.", status='failure', ip_address=request.remote_addr)
-        return jsonify(message="SimpleLogin authentication failed (state mismatch).", success=False), 400
+        return redirect(f"{base_admin_login_url}?error=sso_state_mismatch")
 
-
-    if not auth_code:
-        audit_logger.log_action(action='simplelogin_callback_fail_no_code', details="No authorization code received from SimpleLogin.", status='failure', ip_address=request.remote_addr)
-        return jsonify(message="SimpleLogin authentication failed (no code).", success=False), 400
+    if not auth_code: # ... (handle no code) ...
+        return redirect(f"{base_admin_login_url}?error=sso_no_code")
 
     token_url = current_app.config['SIMPLELOGIN_TOKEN_URL']
-    payload = {
-        'grant_type': 'authorization_code',
-        'code': auth_code,
-        'redirect_uri': current_app.config['SIMPLELOGIN_REDIRECT_URI_ADMIN'],
-        'client_id': current_app.config['SIMPLELOGIN_CLIENT_ID'],
-        'client_secret': current_app.config['SIMPLELOGIN_CLIENT_SECRET'],
-    }
+    payload = { 'grant_type': 'authorization_code', 'code': auth_code, 'redirect_uri': current_app.config['SIMPLELOGIN_REDIRECT_URI_ADMIN'],
+                'client_id': current_app.config['SIMPLELOGIN_CLIENT_ID'], 'client_secret': current_app.config['SIMPLELOGIN_CLIENT_SECRET'],}
     try:
-        token_response = requests.post(token_url, data=payload)
+        token_response = requests.post(token_url, data=payload, timeout=10)
         token_response.raise_for_status() 
-        token_data = token_response.json()
-        sl_access_token = token_data.get('access_token')
+        sl_access_token = token_response.json().get('access_token')
+        if not sl_access_token: # ... (handle no SL token) ...
+            return redirect(f"{base_admin_login_url}?error=sso_token_error")
 
-        if not sl_access_token:
-            audit_logger.log_action(action='simplelogin_callback_fail_no_access_token', details="No access token from SimpleLogin.", status='failure', ip_address=request.remote_addr)
-            return jsonify(message="Failed to get access token from SimpleLogin.", success=False), 500
-
-        userinfo_url = current_app.config['SIMPLELOGIN_USERINFO_URL']
-        headers = {'Authorization': f'Bearer {sl_access_token}'}
-        userinfo_response = requests.get(userinfo_url, headers=headers)
+        userinfo_response = requests.get(current_app.config['SIMPLELOGIN_USERINFO_URL'], headers={'Authorization': f'Bearer {sl_access_token}'}, timeout=10)
         userinfo_response.raise_for_status()
         sl_user_info = userinfo_response.json()
-        
         sl_email = sl_user_info.get('email')
-        sl_simplelogin_user_id = sl_user_info.get('sub') # SimpleLogin's unique user ID
+        sl_simplelogin_user_id = sl_user_info.get('sub') 
 
-        if not sl_email:
-            audit_logger.log_action(action='simplelogin_callback_fail_no_email', details="No email in userinfo from SimpleLogin.", status='failure', ip_address=request.remote_addr)
-            return jsonify(message="Could not retrieve email from SimpleLogin.", success=False), 500
+        if not sl_email: # ... (handle no email from SL) ...
+            return redirect(f"{base_admin_login_url}?error=sso_email_error")
+        
+        # Configurable list of allowed admin emails for SimpleLogin
+        allowed_admin_emails_str = current_app.config.get('SIMPLELOGIN_ALLOWED_ADMIN_EMAILS', "")
+        allowed_admin_emails = [email.strip().lower() for email in allowed_admin_emails_str.split(',') if email.strip()]
 
-        admin_user = User.query.filter_by(email=sl_email, role='admin').first()
+        if not allowed_admin_emails: # If not configured, deny all SimpleLogin attempts for safety
+            current_app.logger.error("SIMPLELOGIN_ALLOWED_ADMIN_EMAILS is not configured. Denying SimpleLogin attempt.")
+            audit_logger.log_action(action='simplelogin_callback_fail_config_missing', email=sl_email, details="Allowed admin emails for SSO not configured.", status='failure', ip_address=request.remote_addr)
+            return redirect(f"{base_admin_login_url}?error=sso_config_error")
 
+        if sl_email.lower() not in allowed_admin_emails:
+            audit_logger.log_action(action='simplelogin_callback_fail_email_not_allowed', email=sl_email, details=f"SSO attempt from non-allowed email: {sl_email}", status='failure', ip_address=request.remote_addr)
+            return redirect(f"{base_admin_login_url}?error=sso_unauthorized_email")
+
+        admin_user = User.query.filter(func.lower(User.email) == sl_email.lower(), User.role == UserRoleEnum.ADMIN).first()
         if admin_user and admin_user.is_active:
-            # Optionally link SimpleLogin ID if not already linked
             if not admin_user.simplelogin_user_id and sl_simplelogin_user_id:
-                admin_user.simplelogin_user_id = sl_simplelogin_user_id
+                admin_user.simplelogin_user_id = sl_simplelogin_user_id # Link SL ID
                 db.session.commit()
-            
             audit_logger.log_action(user_id=admin_user.id, action='admin_login_success_simplelogin', target_type='user_admin', target_id=admin_user.id, details=f"Admin {sl_email} logged in via SimpleLogin.", status='success', ip_address=request.remote_addr)
-            
-            # Create JWT and set cookies
-            identity = admin_user.id
-            additional_claims = {
-                "role": admin_user.role, "email": admin_user.email, "is_admin": True,
-                "first_name": admin_user.first_name, "last_name": admin_user.last_name
-            }
-            access_token = create_access_token(identity=identity, additional_claims=additional_claims)
-            
-            # Redirect to admin dashboard. Flask-JWT-Extended will handle setting cookies if configured.
-            admin_dashboard_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_dashboard.html'
-            
-            response = redirect(admin_dashboard_url)
-            # If JWT_TOKEN_LOCATION includes 'cookies', Flask-JWT-Extended should set them on this response.
-            # To be explicit, you might use set_access_cookies from flask_jwt_extended if needed,
-            # but usually it's automatic on responses from decorated endpoints or by returning the token in JSON.
-            # Since we are redirecting, the cookie setting relies on the global response handling of Flask-JWT-Extended.
-            # If it doesn't work, you might need to redirect to a frontend page that makes one more call to get the token.
-            current_app.logger.info(f"SimpleLogin successful for {sl_email}, redirecting to dashboard. Token: {access_token[:20]}...") # Log part of token
-            return response
-
-        else:
-            audit_logger.log_action(action='simplelogin_callback_fail_user_not_admin_or_inactive', email=sl_email, details="User found but not an active admin.", status='failure', ip_address=request.remote_addr)
-            login_page_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_login.html?error=sso_admin_not_found'
-            return redirect(login_page_url)
-
+            return _create_admin_session_and_get_response(admin_user, admin_dashboard_url) # Redirect to frontend dashboard
+        elif admin_user and not admin_user.is_active:
+            return redirect(f"{base_admin_login_url}?error=sso_account_inactive")
+        else: 
+            return redirect(f"{base_admin_login_url}?error=sso_admin_not_found")
     except requests.exceptions.RequestException as e:
-        current_app.logger.error(f"SimpleLogin OAuth request failed: {e}", exc_info=True)
-        audit_logger.log_action(action='simplelogin_callback_fail_request_exception', details=str(e), status='failure', ip_address=request.remote_addr)
-        login_page_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_login.html?error=sso_communication_error'
-        return redirect(login_page_url)
+        current_app.logger.error(f"SimpleLogin OAuth request exception: {e}", exc_info=True)
+        return redirect(f"{base_admin_login_url}?error=sso_communication_error")
     except Exception as e:
-        current_app.logger.error(f"Error during SimpleLogin callback: {e}", exc_info=True)
-        audit_logger.log_action(action='simplelogin_callback_fail_server_error', details=str(e), status='failure', ip_address=request.remote_addr)
-        login_page_url = current_app.config.get('APP_BASE_URL', 'http://localhost:8000') + '/admin/admin_login.html?error=sso_server_error'
-        return redirect(login_page_url)
+        current_app.logger.error(f"Generic error during SimpleLogin callback: {e}", exc_info=True)
+        return redirect(f"{base_admin_login_url}?error=sso_server_error")
 
-
-# --- TOTP Setup Routes ---
 @admin_api_bp.route('/totp/setup-initiate', methods=['POST'])
 @admin_required
 @limiter.limit(lambda: current_app.config.get('ADMIN_TOTP_SETUP_RATELIMITS', "5 per 10 minutes"))
 def totp_setup_initiate():
     current_admin_id = get_jwt_identity()
-    data = request.json
-    password = data.get('password')
+    data = request.json; password = data.get('password')
     audit_logger = current_app.audit_log_service
-
     admin_user = User.query.get(current_admin_id)
-    if not admin_user or admin_user.role != 'admin':
-        return jsonify(message="Admin user not found or invalid.", success=False), 403
 
+    if not admin_user or admin_user.role != UserRoleEnum.ADMIN: return jsonify(message="Admin user not found or invalid.", success=False), 403
     if not password or not admin_user.check_password(password):
         audit_logger.log_action(user_id=current_admin_id, action='totp_setup_initiate_fail_password', details="Incorrect password for TOTP setup.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Incorrect current password.", success=False), 401
-
     try:
-        # Generate a new secret. If one exists but TOTP is not enabled, this will overwrite it,
-        # which is generally desired for a fresh setup.
         new_secret = admin_user.generate_totp_secret()
-        # Store the new secret temporarily in the session for verification step
         session['pending_totp_secret_for_setup'] = new_secret 
         session['pending_totp_user_id_for_setup'] = admin_user.id
         session.permanent = True
         current_app.permanent_session_lifetime = current_app.config.get('TOTP_SETUP_SECRET_TIMEOUT', timedelta(minutes=10))
-        
-        # Do NOT save the secret to DB yet, only after verification.
-        # The user.generate_totp_secret() method just creates it in memory on the instance.
-        
-        provisioning_uri = admin_user.get_totp_uri() # This will use the newly generated in-memory secret
-        if not provisioning_uri:
-             raise Exception("Could not generate provisioning URI.")
-
-        audit_logger.log_action(user_id=current_admin_id, action='totp_setup_initiate_success', details="TOTP secret generated, provisioning URI provided.", status='success', ip_address=request.remote_addr)
-        return jsonify(
-            message="TOTP setup initiated. Scan the QR code and verify.",
-            totp_provisioning_uri=provisioning_uri,
-            totp_manual_secret=new_secret, # Send secret for manual entry
-            success=True
-        ), 200
+        provisioning_uri = admin_user.get_totp_uri()
+        if not provisioning_uri: raise Exception("Could not generate provisioning URI.")
+        audit_logger.log_action(user_id=current_admin_id, action='totp_setup_initiate_success', details="TOTP secret generated.", status='success', ip_address=request.remote_addr)
+        return jsonify(message="TOTP setup initiated. Scan QR code and verify.", totp_provisioning_uri=provisioning_uri, totp_manual_secret=new_secret, success=True), 200
     except Exception as e:
         current_app.logger.error(f"Error initiating TOTP setup for admin {current_admin_id}: {e}", exc_info=True)
-        audit_logger.log_action(user_id=current_admin_id, action='totp_setup_initiate_fail_exception', details=str(e), status='failure', ip_address=request.remote_addr)
         return jsonify(message=f"Failed to initiate TOTP setup: {str(e)}", success=False), 500
-
 
 @admin_api_bp.route('/totp/setup-verify', methods=['POST'])
 @admin_required
 @limiter.limit(lambda: current_app.config.get('ADMIN_TOTP_SETUP_RATELIMITS', "5 per 10 minutes"))
 def totp_setup_verify_and_enable():
-    current_admin_id = get_jwt_identity()
-    data = request.json
-    totp_code = data.get('totp_code')
+    current_admin_id = get_jwt_identity(); data = request.json; totp_code = data.get('totp_code')
     audit_logger = current_app.audit_log_service
-
     pending_secret = session.get('pending_totp_secret_for_setup')
     pending_user_id = session.get('pending_totp_user_id_for_setup')
 
     if not pending_secret or not pending_user_id or pending_user_id != current_admin_id:
-        audit_logger.log_action(user_id=current_admin_id, action='totp_setup_verify_fail_no_pending_state', details="No pending TOTP setup state found or user mismatch.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="TOTP setup session expired or invalid. Please start over.", success=False), 400
-    
-    if not totp_code:
-        return jsonify(message="TOTP code is required for verification.", success=False), 400
+    if not totp_code: return jsonify(message="TOTP code is required for verification.", success=False), 400
 
     admin_user = User.query.get(current_admin_id)
-    if not admin_user: # Should not happen if JWT is valid
-        return jsonify(message="Admin user not found.", success=False), 404
+    if not admin_user: return jsonify(message="Admin user not found.", success=False), 404
     
-    # Use the temporary secret from session for verification
     temp_totp_instance = pyotp.TOTP(pending_secret)
     if temp_totp_instance.verify(totp_code):
         try:
-            admin_user.totp_secret = pending_secret # Now save the verified secret
-            admin_user.is_totp_enabled = True
+            admin_user.totp_secret = pending_secret; admin_user.is_totp_enabled = True
             admin_user.updated_at = datetime.now(timezone.utc)
             db.session.commit()
-
-            session.pop('pending_totp_secret_for_setup', None)
-            session.pop('pending_totp_user_id_for_setup', None)
-            
-            audit_logger.log_action(user_id=current_admin_id, action='totp_setup_verify_success', details="TOTP enabled successfully.", status='success', ip_address=request.remote_addr)
+            session.pop('pending_totp_secret_for_setup', None); session.pop('pending_totp_user_id_for_setup', None)
+            audit_logger.log_action(user_id=current_admin_id, action='totp_setup_verify_success', details="TOTP enabled.", status='success', ip_address=request.remote_addr)
             return jsonify(message="Two-Factor Authentication (TOTP) enabled successfully!", success=True), 200
         except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Error saving TOTP setup for admin {current_admin_id}: {e}", exc_info=True)
-            audit_logger.log_action(user_id=current_admin_id, action='totp_setup_verify_fail_db_error', details=str(e), status='failure', ip_address=request.remote_addr)
+            db.session.rollback(); current_app.logger.error(f"Error saving TOTP setup for admin {current_admin_id}: {e}", exc_info=True)
             return jsonify(message="Failed to save TOTP settings.", success=False), 500
     else:
         audit_logger.log_action(user_id=current_admin_id, action='totp_setup_verify_fail_invalid_code', details="Invalid TOTP code during setup.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Invalid TOTP code. Please try again.", success=False), 400
 
-
 @admin_api_bp.route('/totp/disable', methods=['POST'])
 @admin_required
-@limiter.limit(lambda: current_app.config.get('ADMIN_TOTP_SETUP_RATELIMITS', "5 per 10 minutes"))
+@limiter.limit(lambda: current_app.config.get('ADMIN_TOTP_SETUP_RATELIMITS', "5 per 10 minutes")) # Same rate limit for disable
 def totp_disable():
-    current_admin_id = get_jwt_identity()
-    data = request.json
-    password = data.get('password')
-    totp_code = data.get('totp_code') # Current TOTP code to confirm disabling
+    current_admin_id = get_jwt_identity(); data = request.json
+    password = data.get('password'); totp_code = data.get('totp_code')
     audit_logger = current_app.audit_log_service
-
     admin_user = User.query.get(current_admin_id)
-    if not admin_user or admin_user.role != 'admin':
-        return jsonify(message="Admin user not found or invalid.", success=False), 403
 
+    if not admin_user or admin_user.role != UserRoleEnum.ADMIN: return jsonify(message="Admin user not found or invalid.", success=False), 403
     if not admin_user.is_totp_enabled or not admin_user.totp_secret:
         return jsonify(message="TOTP is not currently enabled for your account.", success=False), 400
-
     if not password or not admin_user.check_password(password):
-        audit_logger.log_action(user_id=current_admin_id, action='totp_disable_fail_password', details="Incorrect password for TOTP disable.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Incorrect current password.", success=False), 401
-    
     if not totp_code or not admin_user.verify_totp(totp_code):
-        audit_logger.log_action(user_id=current_admin_id, action='totp_disable_fail_invalid_code', details="Invalid TOTP code for disable.", status='failure', ip_address=request.remote_addr)
         return jsonify(message="Invalid current TOTP code.", success=False), 401
-
     try:
-        admin_user.is_totp_enabled = False
-        admin_user.totp_secret = None # Clear the secret
+        admin_user.is_totp_enabled = False; admin_user.totp_secret = None
         admin_user.updated_at = datetime.now(timezone.utc)
         db.session.commit()
-        audit_logger.log_action(user_id=current_admin_id, action='totp_disable_success', details="TOTP disabled successfully.", status='success', ip_address=request.remote_addr)
+        audit_logger.log_action(user_id=current_admin_id, action='totp_disable_success', details="TOTP disabled.", status='success', ip_address=request.remote_addr)
         return jsonify(message="Two-Factor Authentication (TOTP) has been disabled.", success=True), 200
     except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error disabling TOTP for admin {current_admin_id}: {e}", exc_info=True)
-        audit_logger.log_action(user_id=current_admin_id, action='totp_disable_fail_exception', details=str(e), status='failure', ip_address=request.remote_addr)
+        db.session.rollback(); current_app.logger.error(f"Error disabling TOTP for admin {current_admin_id}: {e}", exc_info=True)
         return jsonify(message=f"Failed to disable TOTP: {str(e)}", success=False), 500
-
-
+        
 
 @admin_api_bp.route('/dashboard/stats', methods=['GET'])
 @admin_required
