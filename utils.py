@@ -15,6 +15,31 @@ from datetime import datetime, timezone, timedelta
 from . import db 
 from .models import Product, Category, ProductWeightOption, ProductImage, ProductLocalization, CategoryLocalization
 
+# --- Sanitization Helper ---
+def sanitize_input(value, allow_html=False, max_length=None):
+    """
+    Basic input sanitizer.
+    - Strips leading/trailing whitespace.
+    - Optionally removes HTML tags (very basic, for more robust use a library like bleach).
+    - Optionally truncates to max_length.
+    """
+    if value is None:
+        return None
+    
+    value_str = str(value).strip()
+    
+    if not allow_html:
+        # Basic HTML tag stripping - NOT for security against XSS if rendered as HTML.
+        # For security, use libraries like Bleach on output or a stricter input validation.
+        # This is more for cleaning up accidental simple HTML.
+        value_str = re.sub(r'<[^>]*>', '', value_str)
+    
+    if max_length is not None and len(value_str) > max_length:
+        value_str = value_str[:max_length]
+        # Optionally log truncation:
+        # current_app.logger.debug(f"Input truncated to {max_length} chars: {value_str[:30]}...")
+
+    return value_str
 
 # --- Constants for Selective Field Export ---
 # Define which fields to include in the public JSON for products
