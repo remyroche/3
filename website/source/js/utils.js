@@ -48,29 +48,42 @@ function getTranslatedText(item, fieldKey) {
 }
 
 function setLanguageAndReload(lang) {
-    setLanguage(lang); 
-    const currentPath = window.location.pathname; 
-    const pathSegments = currentPath.split('/').filter(segment => segment !== '');
-    let pageName = pathSegments[pathSegments.length -1] || "index.html";
-    if (languages.includes(pageName) && pathSegments.length > 0 && pathSegments[0] === pageName) { // handles case like /fr becoming /en when pageName is fr
-        pageName = "index.html";
+    setLanguage(lang); // Updates currentLang and localStorage
+
+    try {
+        const currentUrl = new URL(window.location.href);
+        const newUrl = new URL(currentUrl); // Create a mutable copy
+
+        let pathSegments = newUrl.pathname.split('/').filter(segment => segment !== '');
+        
+        // Remove existing language prefix if present
+        if (pathSegments.length > 0 && (pathSegments[0] === 'fr' || pathSegments[0] === 'en')) {
+            pathSegments.shift(); 
+        }
+
+        // Prepend the new language code
+        newUrl.pathname = `/${lang}/${pathSegments.join('/')}`;
+
+        // Ensure index.html for root paths of a language directory
+        if (newUrl.pathname === `/${lang}/` || newUrl.pathname === `/${lang}`) {
+            newUrl.pathname = `/${lang}/index.html`;
+        }
+        // Ensure path doesn't end with just / if it's not the root of the language
+        if (newUrl.pathname.endsWith('/') && newUrl.pathname !== `/${lang}/`) {
+            newUrl.pathname = newUrl.pathname.slice(0, -1);
+        }
+        
+        window.location.href = newUrl.href; // newUrl.href includes existing query parameters
+
+    } catch (error) {
+        console.error("Error constructing new language URL:", error);
+        // Fallback to simpler, potentially less robust mechanism if URL parsing fails
+        const currentPath = window.location.pathname;
+        const queryParams = window.location.search;
+        let pageName = currentPath.split('/').pop() || "index.html";
+        if (pageName === 'fr' || pageName === 'en') pageName = "index.html"; // Basic check for lang code as page name
+        window.location.href = `/${lang}/${pageName}${queryParams}`;
     }
-
-
-    let newPath;
-    const langPathRegex = /^\/(fr|en)(\/|$)/; // Matches /fr/ or /en or /fr or /en/
-
-    if (langPathRegex.test(currentPath)) {
-        newPath = currentPath.replace(langPathRegex, `/${lang}$2`);
-    } else {
-        // If no language code, prepend. This is a fallback.
-        // Assumes currentPath could be like "/nos-produits.html"
-        newPath = `/${lang}${currentPath.startsWith('/') ? '' : '/'}${currentPath.startsWith('/') ? currentPath.substring(1) : currentPath}`;
-        if (newPath === `/${lang}/`) newPath = `/${lang}/index.html`; // Ensure index.html for root path of language
-    }
-    
-    const queryParams = window.location.search;
-    window.location.href = newPath + queryParams;
 }
 
 async function fetchData(jsonPath) {
