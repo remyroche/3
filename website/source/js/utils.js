@@ -13,19 +13,47 @@ function setLanguage(lang) {
     }
 }
 
+let currentLang = getInitialLanguage(); // From existing utils.js
+
 function getInitialLanguage() {
+    // Use the lang injected by build.js if available, otherwise fallback
+    if (window.MAISON_TRUVRA_CURRENT_LANG) {
+        return window.MAISON_TRUVRA_CURRENT_LANG;
+    }
     const storedLang = localStorage.getItem('preferredLang');
-    if (storedLang && ['fr', 'en'].includes(storedLang)) {
-        return storedLang;
-    }
+    if (storedLang && ['fr', 'en'].includes(storedLang)) return storedLang;
     const browserLang = navigator.language.split('-')[0];
-    if (['fr', 'en'].includes(browserLang)) {
-        return browserLang;
-    }
-    return 'fr'; 
+    if (['fr', 'en'].includes(browserLang)) return browserLang;
+    return 'fr'; // Default
 }
 
-currentLang = getInitialLanguage();
+/**
+ * Runtime translation function.
+ * @param {string} key - The translation key.
+ * @param {object} [options] - Optional object for interpolation (e.g., { name: "User" }).
+ * @returns {string} - The translated string, or the key if not found.
+ */
+function t(key, options) {
+    const lang = window.MAISON_TRUVRA_CURRENT_LANG || currentLang || 'fr';
+    const dictionary = window.MAISON_TRUVRA_TRANSLATIONS ? (window.MAISON_TRUVRA_TRANSLATIONS[lang] || window.MAISON_TRUVRA_TRANSLATIONS['fr'] || {}) : {};
+    
+    let translatedString = dictionary[key] || key; // Fallback to key
+
+    if (options && typeof translatedString === 'string') {
+        for (const placeholder in options) {
+            // Supports {placeholder} and %placeholder% style for flexibility
+            const regex1 = new RegExp(`\\{${placeholder}\\}`, 'g');
+            const regex2 = new RegExp(`%${placeholder}%`, 'g');
+            translatedString = translatedString.replace(regex1, options[placeholder]);
+            translatedString = translatedString.replace(regex2, options[placeholder]);
+        }
+    }
+    return translatedString;
+}
+
+// Make t function globally available if not using modules, or export it
+window.t = t;
+
 
 function getTranslatedText(item, fieldKey) {
     if (!item || typeof item !== 'object') {
