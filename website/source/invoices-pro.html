@@ -1,52 +1,172 @@
 <!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ professionnels.mesFacturesBtn }} - Maison Trüvra</title> <script src="https://cdn.tailwindcss.com"></script>
+<html lang="fr"> <head>
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>{{ invoicesPro.titre }} - Maison Trüvra</title> <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <script>
+        // Standard Tailwind configuration, consistent with other pages
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-cream': '#F5EEDE',
+                        'brand-near-black': '#11120D',
+                        'brand-classic-gold': '#D4AF37',
+                        'brand-warm-taupe': '#A28C6A',
+                        'brand-earth-brown': '#7D6A4F',
+                        'brand-slate-blue-grey': '#6E7582',
+                        'brand-deep-sage-green': '#4B5A59',
+                        'brand-truffle-burgundy': '#8A3E3E',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #F5EEDE; color: #7D6A4F; }
-        h1, h2, .font-serif { font-family: 'Playfair Display', serif; }
-        .btn-primary { background-color: #7D6A4F; color: #F5EEDE; padding: 0.75rem 1.5rem; border-radius: 0.375rem; transition: background-color 0.3s ease; font-weight: 500; display: inline-block; text-align: center; }
-        .btn-primary:hover { background-color: #11120D; }
-        .btn-secondary { background-color: #A28C6A; color: #F5EEDE; padding: 0.6rem 1.2rem; border-radius: 0.375rem; transition: background-color 0.3s ease; font-weight: 500; display: inline-block; text-align: center; }
-        .btn-secondary:hover { background-color: #7D6A4F; }
-        .table-container { background-color: #FFFFFF; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1); }
-        .admin-table { width: 100%; border-collapse: collapse; }
-        .admin-table th, .admin-table td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #E5E7EB; }
-        .admin-table th { background-color: #F9FAFB; font-weight: 600; color: #4B5563; font-size: 0.875rem; }
-        .admin-table td { font-size: 0.875rem; color: #374151; }
-        .pagination-controls button, .pagination-controls span { margin: 0 0.25rem; padding: 0.5rem 0.75rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; background-color: white; cursor: pointer; }
-        .pagination-controls button:disabled { background-color: #F3F4F6; cursor: not-allowed; color: #9CA3AF; }
-        .pagination-controls .active-page { background-color: #7D6A4F; color: #F5EEDE; border-color: #7D6A4F; }
-        .status-paid { background-color: #D1FAE5; color: #065F46; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
-        .status-issued, .status-sent { background-color: #DBEAFE; color: #1E40AF; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
-        .status-pending_payment, .status-draft, .status-overdue { background-color: #FEF3C7; color: #92400E; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
-        .status-cancelled, .status-voided { background-color: #FEE2E2; color: #991B1B; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
-        .modal-message { /* From your ui.js styles */ }
+        /* Base styles consistent with other public pages */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: tailwind.config.theme.extend.colors['brand-cream']; /* #F5EEDE */
+            color: tailwind.config.theme.extend.colors['brand-earth-brown']; /* #7D6A4F */
+        }
+        h1, h2, h3, .font-serif { 
+            font-family: 'Playfair Display', serif; 
+        }
+        .btn-primary { /* Consistent primary button style */
+            background-color: tailwind.config.theme.extend.colors['brand-earth-brown']; /* #7D6A4F */
+            color: tailwind.config.theme.extend.colors['brand-cream']; /* #F5EEDE */
+            padding: 0.75rem 1.5rem; 
+            border-radius: 0.375rem; /* rounded-md */
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: 500; 
+            display: inline-block; 
+            text-align: center;
+            cursor: pointer;
+        }
+        .btn-primary:hover { 
+            background-color: tailwind.config.theme.extend.colors['brand-near-black']; /* #11120D */
+            transform: translateY(-1px);
+        }
+        .btn-secondary { /* Consistent secondary button style */
+            background-color: tailwind.config.theme.extend.colors['brand-warm-taupe']; /* #A28C6A */
+            color: tailwind.config.theme.extend.colors['brand-cream']; /* #F5EEDE */
+            padding: 0.6rem 1.2rem; 
+            border-radius: 0.375rem; /* rounded-md */
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: 500; 
+            display: inline-block; 
+            text-align: center;
+            cursor: pointer;
+        }
+        .btn-secondary:hover { 
+            background-color: tailwind.config.theme.extend.colors['brand-earth-brown']; /* #7D6A4F */
+            transform: translateY(-1px);
+        }
+        .table-container { /* Styling for the table's wrapper */
+            background-color: #FFFFFF; 
+            padding: 1.5rem; /* p-6 */
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1); /* shadow-md */
+        }
+        .data-table { /* Generic class for data tables */
+            width: 100%; 
+            border-collapse: collapse; 
+        }
+        .data-table th, .data-table td { 
+            padding: 0.75rem 1rem; /* py-3 px-4 */
+            text-align: left; 
+            border-bottom: 1px solid #E5E7EB; /* border-gray-200 */
+        }
+        .data-table th { 
+            background-color: #F9FAFB; /* bg-gray-50 */
+            font-weight: 600; /* font-semibold */
+            color: #4B5563; /* text-gray-600 */
+            font-size: 0.875rem; /* text-sm */
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        .data-table td { 
+            font-size: 0.875rem; /* text-sm */
+            color: #374151; /* text-gray-700 */
+        }
+        .data-table tbody tr:hover {
+            background-color: #F9FAFB; /* bg-gray-50 on hover */
+        }
+        .pagination-controls { /* Container for pagination buttons */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+            gap: 0.5rem; /* space-x-2 equivalent */
+        }
+        .pagination-controls button, .pagination-controls span { 
+            margin: 0.25rem; /* Add some margin for wrapped items */
+            padding: 0.5rem 0.75rem; 
+            border: 1px solid #D1D5DB; /* border-gray-300 */
+            border-radius: 0.375rem; /* rounded-md */
+            background-color: white; 
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .pagination-controls button:hover:not(:disabled) {
+            background-color: #F3F4F6; /* bg-gray-100 */
+        }
+        .pagination-controls button:disabled { 
+            background-color: #F3F4F6; /* bg-gray-100 */
+            cursor: not-allowed; 
+            color: #9CA3AF; /* text-gray-400 */
+        }
+        .pagination-controls .active-page { 
+            background-color: tailwind.config.theme.extend.colors['brand-earth-brown']; /* #7D6A4F */
+            color: tailwind.config.theme.extend.colors['brand-cream']; /* #F5EEDE */
+            border-color: tailwind.config.theme.extend.colors['brand-earth-brown']; /* #7D6A4F */
+        }
+        /* Status pill styles (can be expanded) */
+        .status-pill { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; display: inline-block; }
+        .status-paid { background-color: #D1FAE5; color: #065F46; /* green-100, green-700 */ }
+        .status-issued, .status-sent { background-color: #DBEAFE; color: #1E40AF; /* blue-100, blue-700 */ }
+        .status-pending_payment, .status-draft, .status-overdue { background-color: #FEF3C7; color: #92400E; /* amber-100, amber-700 */ }
+        .status-cancelled, .status-voided, .status-failed { background-color: #FEE2E2; color: #991B1B; /* red-100, red-700 */ }
+        .status-unknown, .status-processing, .status-awaiting_shipment, .status-delivered, .status-completed, .status-refunded, .status-partially_refunded, .status-on_hold { background-color: #E5E7EB; color: #4B5563; /* gray-200, gray-600 */}
+
+        /* Global message toast (ensure consistent with ui.js if defined there) */
+        .modal-message { 
+            position: fixed; bottom: 1.25rem; right: 1.25rem; 
+            background-color: tailwind.config.theme.extend.colors['brand-deep-sage-green']; /* #4B5A59 */
+            color: tailwind.config.theme.extend.colors['brand-cream']; /* #F5EEDE */
+            padding: 1rem; border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); /* shadow-xl */
+            z-index: 100;
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            opacity: 0;
+            transform: translateY(2.5rem); /* translate-y-10 */
+        }
+        .modal-message.show { opacity: 1; transform: translateY(0); }
     </style>
 </head>
-<body id="page-invoices-pro" class="antialiased">
+<body id="page-invoices-pro" class="antialiased min-h-screen flex flex-col">
 
     <div id="header-placeholder"></div>
 
-    <main class="container mx-auto p-6 py-12">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-serif text-brand-near-black" data-translate="invoicesPro.titre">{{invoicesPro.titre}}</h1>
-            <a href="professionnels.html" class="btn-secondary text-sm" data-translate="invoicesPro.retourEspacePro">{{invoicesPro.retourEspacePro}}</a>
+    <main class="container mx-auto p-4 sm:p-6 py-12 flex-grow">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <h1 class="text-2xl sm:text-3xl font-serif text-brand-near-black" data-translate="invoicesPro.titre">{{invoicesPro.titre}}</h1>
+            <a href="professionnels.html" class="btn-secondary text-sm whitespace-nowrap" data-translate="invoicesPro.retourEspacePro">{{invoicesPro.retourEspacePro}}</a>
         </div>
 
         <div id="invoices-list-container" class="table-container">
             <div class="overflow-x-auto">
-                <table class="admin-table min-w-full">
+                <table class="data-table min-w-full">
                     <thead>
                         <tr>
                             <th data-translate="invoicesPro.table.numeroFacture">{{invoicesPro.table.numeroFacture}}</th>
                             <th data-translate="invoicesPro.table.dateEmission">{{invoicesPro.table.dateEmission}}</th>
-                            <th data-translate="invoicesPro.table.montantTotal">{{invoicesPro.table.montantTotal}}</th>
+                            <th class="text-right" data-translate="invoicesPro.table.montantTotal">{{invoicesPro.table.montantTotal}}</th>
                             <th data-translate="invoicesPro.table.statut">{{invoicesPro.table.statut}}</th>
-                            <th data-translate="invoicesPro.table.action">{{invoicesPro.table.action}}</th>
+                            <th class="text-center" data-translate="invoicesPro.table.action">{{invoicesPro.table.action}}</th>
                         </tr>
                     </thead>
                     <tbody id="invoices-table-body">
@@ -56,7 +176,7 @@
             </div>
         </div>
         
-        <div id="pagination-controls-container" class="mt-8 text-center">
+        <div id="pagination-controls-container" class="mt-8 text-center pagination-controls">
             </div>
 
         <div id="no-invoices-message" class="hidden text-center mt-8 p-6 bg-white rounded-lg shadow">
@@ -64,171 +184,17 @@
         </div>
     </main>
 
-    <div id="footer-placeholder"></div>
+    <div id="footer-placeholder" class="mt-auto"></div>
     <div id="global-message-toast" class="modal-message" style="display:none;">
         <p id="global-message-text"></p>
     </div>
 
     <script src="js/config.js"></script>
-    <script src="js/utils.js"></script> <script src="js/api.js"></script>
+    <script src="js/utils.js"></script> 
+    <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/invoices-pro.js"></script> 
     <script src="js/main.js"></script> 
 </body>
 </html>
-
-2. JavaScript (website/source/js/invoices-pro.js)
-
-This new JavaScript file will handle fetching and displaying paginated invoices.
-
-// website/source/js/invoices-pro.js
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Ensure this script only runs on the B2B invoices page
-    if (document.body.id !== 'page-invoices-pro') {
-        return;
-    }
-
-    // Check if user is logged in and is a B2B professional
-    if (typeof isUserLoggedIn !== 'function' || !isUserLoggedIn()) {
-        showGlobalMessage(t('public.cart.login_prompt'), 'error'); // Using a generic login prompt key
-        // Redirect to login or professionals page after a delay
-        setTimeout(() => { window.location.href = 'professionnels.html'; }, 3000);
-        return;
-    }
-    
-    const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
-    if (!currentUser || currentUser.role !== 'b2b_professional') {
-        showGlobalMessage(t('professionnels.erreurProduite'), 'error'); // Or a more specific "access denied" message
-        setTimeout(() => { window.location.href = 'index.html'; }, 3000);
-        return;
-    }
-
-    loadInvoices(1); // Load the first page initially
-});
-
-let currentPage = 1;
-const invoicesPerPage = 10; // Or get from config, or let backend decide and use its per_page
-
-async function loadInvoices(page = 1) {
-    currentPage = page;
-    const tableBody = document.getElementById('invoices-table-body');
-    const noInvoicesMessage = document.getElementById('no-invoices-message');
-    const paginationContainer = document.getElementById('pagination-controls-container');
-
-    if (!tableBody || !noInvoicesMessage || !paginationContainer) {
-        console.error("Required elements for invoice display or pagination not found.");
-        return;
-    }
-
-    tableBody.innerHTML = `<tr><td colspan="5" class="text-center p-8">${t('invoicesPro.table.chargement')}</td></tr>`;
-    noInvoicesMessage.classList.add('hidden');
-    paginationContainer.innerHTML = ''; // Clear old pagination
-
-    try {
-        // API call to the paginated endpoint
-        const response = await makeApiRequest(`/professional/invoices?page=${page}&per_page=${invoicesPerPage}`, 'GET', null, true);
-        
-        if (response.success && response.invoices) {
-            const { invoices, total_invoices, total_pages } = response;
-
-            if (invoices.length > 0) {
-                tableBody.innerHTML = ''; // Clear loading message
-                invoices.forEach(invoice => {
-                    const row = tableBody.insertRow();
-                    row.innerHTML = `
-                        <td class="py-3 px-4 whitespace-nowrap">${invoice.invoice_number || 'N/A'}</td>
-                        <td class="py-3 px-4 whitespace-nowrap">${invoice.issue_date || 'N/A'}</td>
-                        <td class="py-3 px-4 whitespace-nowrap text-right">${invoice.total_amount !== null ? parseFloat(invoice.total_amount).toFixed(2) : 'N/A'} ${invoice.currency || ''}</td>
-                        <td class="py-3 px-4 whitespace-nowrap">
-                            <span class="status-${(invoice.status || 'unknown').toLowerCase().replace(/\s+/g, '_')}">
-                                ${t(`invoiceStatus.${(invoice.status || 'unknown').toLowerCase().replace(/\s+/g, '_')}`) || invoice.status || 'Unknown'}
-                            </span>
-                        </td>
-                        <td class="py-3 px-4 whitespace-nowrap text-center">
-                            ${invoice.pdf_download_url ? `<a href="${invoice.pdf_download_url}" class="btn-secondary text-xs py-1 px-2" target="_blank" rel="noopener noreferrer">${t('invoicesPro.table.telecharger')}</a>` : t('common.notApplicable')}
-                        </td>
-                    `;
-                });
-                renderInvoicePaginationControls(total_invoices, total_pages, page, invoicesPerPage);
-            } else {
-                tableBody.innerHTML = '';
-                noInvoicesMessage.classList.remove('hidden');
-            }
-        } else {
-            tableBody.innerHTML = `<tr><td colspan="5" class="text-center p-8 text-red-600">${response.message || t('invoicesPro.erreurChargement')}</td></tr>`;
-            noInvoicesMessage.classList.remove('hidden');
-            noInvoicesMessage.querySelector('p').textContent = response.message || t('invoicesPro.erreurChargement');
-        }
-    } catch (error) {
-        console.error('Failed to load invoices:', error);
-        const errorMsg = error.data?.message || error.message || t('invoicesPro.erreurChargement');
-        tableBody.innerHTML = `<tr><td colspan="5" class="text-center p-8 text-red-500">${errorMsg}</td></tr>`;
-        noInvoicesMessage.classList.remove('hidden');
-        noInvoicesMessage.querySelector('p').textContent = errorMsg;
-        if (error.status === 401 || error.status === 403) { // Unauthorized or Forbidden
-            setTimeout(() => { window.location.href = 'professionnels.html'; }, 3000);
-        }
-    }
-}
-
-function renderInvoicePaginationControls(totalItems, totalPages, currentPage, itemsPerPage) {
-    const paginationContainer = document.getElementById('pagination-controls-container');
-    if (!paginationContainer || totalPages <= 1) {
-        if (paginationContainer) paginationContainer.innerHTML = '';
-        return;
-    }
-
-    let paginationHTML = '';
-
-    // Previous Button
-    paginationHTML += `<button onclick="loadInvoices(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; ${t('public.pagination.previous') || 'Previous'}</button>`;
-
-    // Page Numbers (simplified version)
-    // For a more complex pagination (e.g., with ellipses for many pages), more logic is needed.
-    const maxPagesToShow = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-
-    if (endPage - startPage + 1 < maxPagesToShow) {
-        startPage = Math.max(1, endPage - maxPagesToShow + 1);
-    }
-    
-    if (startPage > 1) {
-        paginationHTML += `<button onclick="loadInvoices(1)">1</button>`;
-        if (startPage > 2) {
-            paginationHTML += `<span>...</span>`;
-        }
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-        if (i === currentPage) {
-            paginationHTML += `<button class="active-page" disabled>${i}</button>`;
-        } else {
-            paginationHTML += `<button onclick="loadInvoices(${i})">${i}</button>`;
-        }
-    }
-
-    if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-            paginationHTML += `<span>...</span>`;
-        }
-        paginationHTML += `<button onclick="loadInvoices(${totalPages})">${totalPages}</button>`;
-    }
-
-    // Next Button
-    paginationHTML += `<button onclick="loadInvoices(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>${t('public.pagination.next') || 'Next'} &raquo;</button>`;
-
-    paginationContainer.innerHTML = paginationHTML;
-
-    // Add translation keys for pagination:
-    // "public.pagination.previous": "Précédent" / "Previous"
-    // "public.pagination.next": "Suivant" / "Next"
-}
-
-// Helper to get translated status text (if not already handled by t() and CSS classes)
-// This is an example, your t() function and CSS classes for status might be enough.
-// function getInvoiceStatusText(statusKey) {
-//    return t(`invoiceStatus.${statusKey.toLowerCase().replace(/\s+/g, '_')}`) || statusKey;
-// }
