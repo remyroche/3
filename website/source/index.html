@@ -102,7 +102,10 @@
             <video autoplay loop muted playsinline poster="https://placehold.co/1920x600/A28C6A/F5EEDE?text=Maison+Trüvra+Hero">
                 <!-- Make sure this path is correct relative to your index.html -->
                 <!-- It's good practice to place videos in a 'videos' folder -->
-                <source src="videos/hero-video.mp4" type="video/mp4"> {/* Corrected: Simplified filename */}
+                <video autoplay loop muted playsinline poster="..." aria-hidden="true">
+                    <source src="videos/hero-video.mp4" type="video/mp4">
+                    Your browser does not support the video tag. Please upgrade your browser.
+                </video>
                 Your browser does not support the video tag. Please upgrade your browser.
             </video>
             <!-- If you want to add text or buttons over the video, you can add them here, perhaps wrapped in a div with .hero-content-overlay -->
