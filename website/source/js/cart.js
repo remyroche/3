@@ -62,14 +62,7 @@ function addToCart(product, quantity = 1, variantInfo = null) {
     saveCart(cart);
     updateCartDisplay();
     
-    // For dynamic messages like this, direct string construction is often clearer if t() doesn't handle placeholders well with build.js
-    // Option 1: Using a template key if your build.js and locale files support it (e.g. %qty% x %name% added to cart!)
-    // let message = t('public.js.added_to_cart_toast'); 
-    // message = message.replace('%qty%', quantity).replace('%name%', itemName);
-    // showGlobalMessage(message, "success");
-    // Option 2: Simpler, construct in JS with a translated suffix
     showGlobalMessage(`${quantity} x ${itemName} ${t('public.js.added_to_cart_suffix')}`, "success"); 
-    // New key: public.js.added_to_cart_suffix (e.g., "added to cart!" or "ajouté(s) au panier !")
 }
 
 function removeFromCart(productId, variantId = null) {
@@ -101,7 +94,6 @@ function updateCartItemQuantity(productId, newQuantity, variantId = null) {
         }
         saveCart(cart);
         updateCartDisplay();
-        // Optional: showGlobalMessage(t('public.js.cart_updated'), "info"); // New key: public.js.cart_updated
     }
 }
 
@@ -129,24 +121,20 @@ function updateCartDisplay() {
     if (typeof updateCartIcon === 'function') { // from ui.js
         updateCartIcon(); 
     }
-    // If on the cart page, refresh its content
     if (document.body.id === 'page-panier' && typeof initCartPage === 'function') {
         initCartPage();
     }
-    // If on the payment page, refresh its summary
     if (document.body.id === 'page-paiement' && typeof displayCheckoutSummary === 'function') { // from checkout.js
         displayCheckoutSummary();
     }
 }
 
-// Initialize or update cart display when the cart page is loaded
 function initCartPage() {
     const cartLoginPrompt = document.getElementById('cart-login-prompt');
     const cartContentWrapper = document.getElementById('cart-content-wrapper');
 
     if (!cartLoginPrompt || !cartContentWrapper) return;
 
-    // Assuming isUserLoggedIn is globally available from auth.js
     if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
         cartLoginPrompt.style.display = 'none';
         cartContentWrapper.style.display = 'block'; 
@@ -167,101 +155,143 @@ function displayCartOnPage() {
 
     if (!cartItemsContainer || !emptyCartMessage || !cartSummaryContainer || !cartSubtotalEl || !cartTotalEl) return;
 
-    // Clear previous items, but keep the empty message element if it's part of the static HTML.
-    // If emptyCartMessage is dynamically added, this clear is fine.
-    // Assuming emptyCartMessage is static and its display is toggled.
-    while (cartItemsContainer.firstChild && cartItemsContainer.firstChild !== emptyCartMessage) {
-        cartItemsContainer.removeChild(cartItemsContainer.firstChild);
-    }
+    // Clear previous items, but preserve the emptyCartMessage element.
+    Array.from(cartItemsContainer.children).forEach(child => {
+        if (child !== emptyCartMessage) {
+            cartItemsContainer.removeChild(child);
+        }
+    });
 
 
     if (cartItems.length === 0) {
-        emptyCartMessage.style.display = 'block'; // Show empty message
-        if (cartItemsContainer.children.length > 1) { // If other items were there, clear them (safety)
-            cartItemsContainer.innerHTML = ''; // Clear fully
-            cartItemsContainer.appendChild(emptyCartMessage); // Re-add if needed
-        }
+        emptyCartMessage.style.display = 'block'; 
         cartSummaryContainer.style.display = 'none';
     } else {
-        emptyCartMessage.style.display = 'none'; // Hide empty message
+        emptyCartMessage.style.display = 'none'; 
         cartItems.forEach(item => {
             const itemElement = document.createElement('div');
             itemElement.classList.add('cart-item'); 
-            // The t('public.cart.remove_item') will be replaced by build.js
-            itemElement.innerHTML = `
-                <img src="${item.image || 'https://placehold.co/80x80/F5EEDE/7D6A4F?text=Img'}" alt="${item.name}" class="cart-item-image">
-                <div class="flex-grow mx-4">
-                    <p class="font-semibold text-brand-near-black">${item.name}</p>
-                    <div class="flex items-center mt-1">
-                        <div class="quantity-input-controls flex items-center">
-                            <button data-product-id="${item.id}" data-variant-id="${item.variantId || ''}" data-change="-1" class="quantity-change-btn px-2 py-0.5 border border-brand-warm-taupe/50 text-brand-near-black hover:bg-brand-warm-taupe/20 text-sm rounded-l">-</button>
-                            <input type="number" value="${item.quantity}" min="1" max="99" 
-                                   class="w-10 sm:w-12 text-center border-y border-brand-warm-taupe/50 py-1 text-sm appearance-none quantity-value-input" 
-                                   data-product-id="${item.id}" data-variant-id="${item.variantId || ''}" readonly>
-                            <button data-product-id="${item.id}" data-variant-id="${item.variantId || ''}" data-change="1" class="quantity-change-btn px-2 py-0.5 border border-brand-warm-taupe/50 text-brand-near-black hover:bg-brand-warm-taupe/20 text-sm rounded-r">+</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <p class="font-semibold text-brand-earth-brown">${(item.price * item.quantity).toFixed(2)} €</p>
-                    <button class="text-xs text-brand-truffle-burgundy hover:underline mt-1 remove-item-btn" 
-                            data-product-id="${item.id}" data-variant-id="${item.variantId || ''}">
-                        ${t('public.cart.remove_item')} 
-                    </button>
-                </div>
-            `;
+            
+            const img = document.createElement('img');
+            img.src = item.image || 'https://placehold.co/80x80/F5EEDE/7D6A4F?text=Img';
+            img.alt = item.name; // Alt text from item name
+            img.className = 'cart-item-image';
+            itemElement.appendChild(img);
+
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'flex-grow mx-4';
+            
+            const nameP = document.createElement('p');
+            nameP.className = 'font-semibold text-brand-near-black';
+            nameP.textContent = item.name; // XSS: Using textContent
+            infoDiv.appendChild(nameP);
+
+            const quantityControlsDiv = document.createElement('div');
+            quantityControlsDiv.className = 'flex items-center mt-1';
+            const innerQuantityDiv = document.createElement('div');
+            innerQuantityDiv.className = 'quantity-input-controls flex items-center';
+
+            const minusButton = document.createElement('button');
+            minusButton.dataset.productId = item.id;
+            minusButton.dataset.variantId = item.variantId || '';
+            minusButton.dataset.change = "-1";
+            minusButton.className = 'quantity-change-btn px-2 py-0.5 border border-brand-warm-taupe/50 text-brand-near-black hover:bg-brand-warm-taupe/20 text-sm rounded-l';
+            minusButton.textContent = '-';
+            innerQuantityDiv.appendChild(minusButton);
+
+            const quantityInput = document.createElement('input');
+            quantityInput.type = 'number';
+            quantityInput.value = item.quantity;
+            quantityInput.min = "1";
+            quantityInput.max = "99";
+            quantityInput.className = 'w-10 sm:w-12 text-center border-y border-brand-warm-taupe/50 py-1 text-sm appearance-none quantity-value-input';
+            quantityInput.dataset.productId = item.id;
+            quantityInput.dataset.variantId = item.variantId || '';
+            quantityInput.readOnly = true;
+            innerQuantityDiv.appendChild(quantityInput);
+
+            const plusButton = document.createElement('button');
+            plusButton.dataset.productId = item.id;
+            plusButton.dataset.variantId = item.variantId || '';
+            plusButton.dataset.change = "1";
+            plusButton.className = 'quantity-change-btn px-2 py-0.5 border border-brand-warm-taupe/50 text-brand-near-black hover:bg-brand-warm-taupe/20 text-sm rounded-r';
+            plusButton.textContent = '+';
+            innerQuantityDiv.appendChild(plusButton);
+            
+            quantityControlsDiv.appendChild(innerQuantityDiv);
+            infoDiv.appendChild(quantityControlsDiv);
+            itemElement.appendChild(infoDiv);
+
+            const priceDiv = document.createElement('div');
+            priceDiv.className = 'text-right';
+            const itemTotalP = document.createElement('p');
+            itemTotalP.className = 'font-semibold text-brand-earth-brown';
+            itemTotalP.textContent = `${(item.price * item.quantity).toFixed(2)} €`; // XSS: Price, safe
+            priceDiv.appendChild(itemTotalP);
+
+            const removeButton = document.createElement('button');
+            removeButton.className = 'text-xs text-brand-truffle-burgundy hover:underline mt-1 remove-item-btn';
+            removeButton.dataset.productId = item.id;
+            removeButton.dataset.variantId = item.variantId || '';
+            removeButton.textContent = t('public.cart.remove_item'); // XSS: Translated string, assumed safe
+            priceDiv.appendChild(removeButton);
+            
+            itemElement.appendChild(priceDiv);
             cartItemsContainer.appendChild(itemElement);
         });
 
         const total = getCartTotal();
-        cartSubtotalEl.textContent = `${total.toFixed(2)} €`;
-        cartTotalEl.textContent = `${total.toFixed(2)} €`; 
+        cartSubtotalEl.textContent = `${total.toFixed(2)} €`; // XSS: Price, safe
+        cartTotalEl.textContent = `${total.toFixed(2)} €`; // XSS: Price, safe
         cartSummaryContainer.style.display = 'block'; // md:flex based on Tailwind, block is fine.
     }
 
     // Re-attach event listeners for quantity and remove buttons
     document.querySelectorAll('.quantity-change-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const btn = e.currentTarget;
-            const productId = parseInt(btn.dataset.productId);
-            // Ensure variantId is correctly parsed or null
-            const variantIdStr = btn.dataset.variantId;
-            const variantId = variantIdStr && variantIdStr !== 'null' && variantIdStr !== 'undefined' ? parseInt(variantIdStr) : null;
-
-            const change = parseInt(btn.dataset.change);
-            const inputField = btn.parentElement.querySelector('.quantity-value-input');
-            let currentQuantity = parseInt(inputField.value);
-            let newQuantity = currentQuantity + change;
-            if (newQuantity < 1 && change < 0) newQuantity = 0; // Allow reducing to 0 to remove
-            else if (newQuantity < 1) newQuantity = 1; // Don't go below 1 if incrementing from 0 or direct set
-            if (newQuantity > 99) newQuantity = 99; 
-            
-            if (newQuantity !== currentQuantity) { 
-                updateCartItemQuantity(productId, newQuantity, variantId);
-            }
-        });
+        button.removeEventListener('click', handleQuantityChange); // Remove old listener first
+        button.addEventListener('click', handleQuantityChange);
     });
 
     document.querySelectorAll('.remove-item-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const btn = e.currentTarget;
-            const productId = parseInt(btn.dataset.productId);
-            const variantIdStr = btn.dataset.variantId;
-            const variantId = variantIdStr && variantIdStr !== 'null' && variantIdStr !== 'undefined' ? parseInt(variantIdStr) : null;
-            removeFromCart(productId, variantId);
-        });
+        button.removeEventListener('click', handleRemoveItem); // Remove old listener first
+        button.addEventListener('click', handleRemoveItem);
     });
 }
 
-// Initial display update on DOMContentLoaded
+function handleQuantityChange(e) {
+    const btn = e.currentTarget;
+    const productId = parseInt(btn.dataset.productId);
+    const variantIdStr = btn.dataset.variantId;
+    const variantId = variantIdStr && variantIdStr !== 'null' && variantIdStr !== 'undefined' ? parseInt(variantIdStr) : null;
+    const change = parseInt(btn.dataset.change);
+    const inputField = btn.parentElement.querySelector('.quantity-value-input');
+    let currentQuantity = parseInt(inputField.value);
+    let newQuantity = currentQuantity + change;
+    if (newQuantity < 1 && change < 0) newQuantity = 0; 
+    else if (newQuantity < 1) newQuantity = 1; 
+    if (newQuantity > 99) newQuantity = 99; 
+    
+    if (newQuantity !== currentQuantity) { 
+        updateCartItemQuantity(productId, newQuantity, variantId);
+    }
+}
+
+function handleRemoveItem(e) {
+    const btn = e.currentTarget;
+    const productId = parseInt(btn.dataset.productId);
+    const variantIdStr = btn.dataset.variantId;
+    const variantId = variantIdStr && variantIdStr !== 'null' && variantIdStr !== 'undefined' ? parseInt(variantIdStr) : null;
+    removeFromCart(productId, variantId);
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
-    if (document.body.id === 'page-panier') { // Only run initCartPage if on the cart page
+    if (document.body.id === 'page-panier') { 
         initCartPage();
     }
-    updateCartDisplay(); // Update icon globally
+    updateCartDisplay(); 
 });
 
-// Expose functions to global scope if not using modules
 window.addToCart = addToCart;
 window.removeFromCart = removeFromCart;
 window.updateCartItemQuantity = updateCartItemQuantity;
