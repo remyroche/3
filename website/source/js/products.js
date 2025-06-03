@@ -202,7 +202,7 @@ async function loadProductDetail() { // For produit-detail.html
         document.getElementById('product-uses').textContent = currentProductDetail.ideal_uses || t('common.notApplicable');
         // Assuming long_description is preferred, then sensory_description
         const longDesc = currentProductDetail.long_description || currentProductDetail.sensory_description || t('public.product_detail.no_description'); // Key: public.product_detail.no_description
-        document.getElementById('product-sensory-description').innerHTML = longDesc; // Use innerHTML if description can contain HTML
+        document.getElementById('product-sensory-description').textContent = longDesc; = longDesc; // Use innerHTML if description can contain HTML
         document.getElementById('product-pairing-suggestions').textContent = currentProductDetail.pairing_suggestions || t('public.product_detail.no_pairings'); // Key: public.product_detail.no_pairings
         
         const thumbnailGallery = document.getElementById('product-thumbnail-gallery');
