@@ -10,6 +10,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const itemsContainer = document.getElementById('checkout-summary-items');
         const totalEl = document.getElementById('checkout-summary-total');
+        // Maison Trüvra - Checkout Logic
+
+document.addEventListener('DOMContentLoaded', () => {
+    const paymentForm = document.getElementById('payment-form');
+    const checkoutSummaryContainer = document.getElementById('checkout-summary-container');
+    const paymentButtonAmount = document.getElementById('payment-amount-button');
+    
+    async function displayCheckoutSummary() {
+        if (!checkoutSummaryContainer) return;
+
+        const itemsContainer = document.getElementById('checkout-summary-items');
+        const totalEl = document.getElementById('checkout-summary-total');
         
         if (!itemsContainer || !totalEl) return;
 
@@ -17,7 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsContainer.innerHTML = ''; 
 
         if (cartItems.length === 0) {
-            itemsContainer.innerHTML = `<p class="text-gray-600">${t('public.cart.empty_message')}</p>`; // Key: public.cart.empty_message
+            const p = document.createElement('p');
+            p.className = "text-gray-600";
+            p.textContent = t('public.cart.empty_message'); // XSS: Translated string, assumed safe
+            itemsContainer.appendChild(p);
             totalEl.textContent = '0.00 €';
             if(paymentButtonAmount) paymentButtonAmount.textContent = '0.00';
             const paymentButton = document.getElementById('submit-payment-button');
@@ -31,16 +46,21 @@ document.addEventListener('DOMContentLoaded', () => {
         cartItems.forEach(item => {
             const itemDiv = document.createElement('div');
             itemDiv.classList.add('flex', 'justify-between', 'text-sm', 'text-gray-600', 'py-1');
-            itemDiv.innerHTML = `
-                <span>${item.name} (x${item.quantity})</span>
-                <span>${(item.price * item.quantity).toFixed(2)} €</span>
-            `;
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = `${item.name} (x${item.quantity})`; // XSS: item.name set via textContent
+            itemDiv.appendChild(nameSpan);
+
+            const priceSpan = document.createElement('span');
+            priceSpan.textContent = `${(item.price * item.quantity).toFixed(2)} €`; // XSS: Price, safe
+            itemDiv.appendChild(priceSpan);
+            
             itemsContainer.appendChild(itemDiv);
         });
 
         const cartTotal = getCartTotal(); 
-        totalEl.textContent = `${cartTotal.toFixed(2)} €`;
-        if(paymentButtonAmount) paymentButtonAmount.textContent = cartTotal.toFixed(2);
+        totalEl.textContent = `${cartTotal.toFixed(2)} €`; // XSS: Price, safe
+        if(paymentButtonAmount) paymentButtonAmount.textContent = cartTotal.toFixed(2); // XSS: Price, safe
         const paymentButton = document.getElementById('submit-payment-button');
         if (paymentButton) {
             paymentButton.disabled = false;
@@ -157,10 +177,7 @@ function initializeCheckoutPage() { // Called from main.js for page-paiement
     const shippingAddress = JSON.parse(localStorage.getItem('shippingAddress'));
     if (!shippingAddress && (window.location.pathname.includes('payment.html') || window.location.pathname.includes('checkout.html'))) {
         showGlobalMessage(t('public.js.missing_shipping_info_redirect_checkout'), "error"); // New key: public.js.missing_shipping_info_redirect_checkout (e.g., "Shipping info missing. Please complete address first. Redirecting...")
-        // Consider redirecting to the address step of checkout if it exists, or cart.
-        // setTimeout(() => { window.location.href = 'panier.html'; }, 3000); 
     }
-     // Initialize Stripe or other payment elements here if not done elsewhere
 }
 
 function initializeConfirmationPage() { // Called from main.js for page-confirmation-commande
@@ -170,14 +187,14 @@ function initializeConfirmationPage() { // Called from main.js for page-confirma
     const lastOrderTotal = localStorage.getItem('lastOrderTotal');
 
     if (orderIdEl && totalAmountEl && lastOrderId && lastOrderTotal) {
-        orderIdEl.textContent = lastOrderId;
-        totalAmountEl.textContent = `${lastOrderTotal} €`;
+        orderIdEl.textContent = lastOrderId; // XSS: Order ID, generally safe (numeric/specific format)
+        totalAmountEl.textContent = `${lastOrderTotal} €`; // XSS: Price, safe
         localStorage.removeItem('lastOrderId');
         localStorage.removeItem('lastOrderTotal');
     } else if (orderIdEl) { 
-        orderIdEl.textContent = t('common.notApplicable'); // Key: common.notApplicable (e.g., N/A)
+        orderIdEl.textContent = t('common.notApplicable'); // XSS: Translated string, assumed safe
         if(totalAmountEl) totalAmountEl.textContent = t('common.notApplicable');
         const confirmationMessageEl = document.getElementById('confirmation-message');
-        if(confirmationMessageEl) confirmationMessageEl.textContent = t('public.js.order_details_not_found'); // Key: public.js.order_details_not_found
+        if(confirmationMessageEl) confirmationMessageEl.textContent = t('public.js.order_details_not_found'); // XSS: Translated string, assumed safe
     }
 }
