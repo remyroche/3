@@ -1,15 +1,18 @@
 // website/source/admin/js/admin_api.js
-
 const adminApi = {
     BASE_URL: typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : '/api/admin',
 
-    async _request(method, endpoint, data = null, isFormData = false) {
+    async _request(method, endpoint, data = null, isFormData = false, timeout = 20000) { // Added timeout parameter
         if (typeof this.BASE_URL === 'undefined') {
-            console.error("Admin API_BASE_URL is not defined. Ensure admin_config.js is loaded and defines API_BASE_URL.");
+            console.error("Admin API_BASE_URL is not defined. Ensure admin_config.js is loaded.");
             throw new Error("Admin API configuration error.");
         }
         const url = endpoint.startsWith('http') ? endpoint : `${this.BASE_URL}${endpoint}`;
         
+        const controller = new AbortController(); // For timeout
+        const signal = controller.signal;
+        let timeoutId;
+
         const headers = {};
         if (!isFormData) {
             headers['Content-Type'] = 'application/json';
@@ -19,7 +22,6 @@ const adminApi = {
         if (storedToken) {
             headers['Authorization'] = `Bearer ${storedToken}`;
         } else {
-            // Allow login, verify-totp, and simplelogin initiation/callback without token
             const noTokenEndpoints = ['/login', '/login/verify-totp', '/login/simplelogin/initiate', '/login/simplelogin/callback'];
             if (!noTokenEndpoints.some(ep => url.endsWith(ep))) { 
                  console.warn(`Admin API request to ${url} without token.`);
@@ -29,6 +31,7 @@ const adminApi = {
         const config = {
             method: method,
             headers: headers,
+            signal: signal // Add signal to fetch config
         };
 
         if (data) {
@@ -41,8 +44,15 @@ const adminApi = {
         
         console.log(`Making Admin API request: ${method} ${url}`);
 
+        timeoutId = setTimeout(() => {
+            controller.abort();
+            console.error(`Admin API request to ${url} timed out after ${timeout}ms.`);
+        }, timeout);
+
         try {
-            const response = await fetch(url, config);
+            const response = await fetch(url, config); 
+            clearTimeout(timeoutId);
+            
             if (!response.ok) {
                 let errorData = { message: `API Error: ${response.status} ${response.statusText}` };
                 try {
@@ -61,22 +71,36 @@ const adminApi = {
                 return { success: true, message: "Operation successful (no content)." };
             }
             const responseData = await response.json();
-            if (responseData.success === undefined && response.status < 300) { // Assume success for 2xx if not specified
+            // Ensure a 'success' field is present if backend doesn't always send it for 2xx
+            if (responseData.success === undefined && response.status >= 200 && response.status < 300) {
                 responseData.success = true;
             }
             return responseData;
         } catch (error) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                const timeoutError = new Error(`Request to ${url} timed out.`);
+                timeoutError.status = 408; // Request Timeout
+                timeoutError.data = { message: `Request timed out after ${timeout/1000} seconds.`};
+                console.error(`Admin API Error for ${method} ${url}:`, timeoutError.data.message, error);
+                if (typeof showAdminToast === 'function') { // Added check
+                    showAdminToast(timeoutError.data.message || 'Request timed out.', 'error');
+                }
+                throw timeoutError;
+            }
             console.error(`Admin API ${method} request to ${url} failed:`, error.data || error.message, error);
-            if (typeof showAdminToast === 'function') {
+            if (typeof showAdminToast === 'function') { // Added check
                 showAdminToast(error.data?.message || error.message || 'An unexpected Admin API error occurred.', 'error');
             }
             throw error; 
         }
     },
 
-    loginAdminStep1Password: function(email, password) { // Renamed for clarity
+    loginAdminStep1Password: function(email, password) {
         return this._request('POST', '/login', { email, password });
     },
+    getDashboardStats: function() { 
+        return this._request('GET', '/dashboard/stats');
 
     loginAdminStep2VerifyTotp: function(email, totp_code) { // New method for TOTP verification
         return this._request('POST', '/login/verify-totp', { email, totp_code });
