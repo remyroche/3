@@ -1,33 +1,51 @@
 # backend/admin_api/routes.py
+
+# Standard Library Imports
 import os
 import uuid
-import requests 
-from urllib.parse import urlencode 
-import secrets # Make sure secrets is imported
-
-from werkzeug.utils import secure_filename
-from flask import request, jsonify, current_app, url_for, redirect, session, abort as flask_abort 
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt, set_access_cookies # Added set_access_cookies
-from sqlalchemy import func, or_, and_ 
+import secrets
 from datetime import datetime, timezone, timedelta
+from urllib.parse import urlencode
 
-from .. import db 
+# Third-Party Library Imports
+import pyotp # For TOTP
+import requests # For SimpleLogin OAuth
+from flask import (
+    request, jsonify, current_app, url_for, 
+    redirect, session, abort as flask_abort, send_from_directory
+)
+from flask_jwt_extended import (
+    create_access_token, jwt_required, get_jwt_identity, 
+    get_jwt, set_access_cookies
+)
+from sqlalchemy import func, or_, and_
+from werkzeug.utils import secure_filename
+
+# Local Application/Library Specific Imports
+from .. import db # Assuming db is your SQLAlchemy instance from the main __init__.py
 from ..models import ( 
     User, Category, Product, ProductImage, ProductWeightOption,
     Order, OrderItem, Review, Setting, SerializedInventoryItem,
     StockMovement, Invoice, InvoiceItem, ProfessionalDocument,
-    ProductLocalization, CategoryLocalization, GeneratedAsset
+    ProductLocalization, CategoryLocalization, GeneratedAsset,
+    # Enums (ensure all used Enums are listed or imported from where they are defined, e.g., models.py)
+    UserRoleEnum, ProfessionalStatusEnum, ProductTypeEnum, OrderStatusEnum, 
+    SerializedInventoryItemStatusEnum, StockMovementTypeEnum, InvoiceStatusEnum, AuditLogStatusEnum
 )
 from ..utils import (
-    admin_required, staff_or_admin_required, format_datetime_for_display, parse_datetime_from_iso,
-    generate_slug, allowed_file, get_file_extension, format_datetime_for_storage,
-    generate_static_json_files
+    admin_required, staff_or_admin_required, 
+    format_datetime_for_display, parse_datetime_from_iso,
+    generate_slug, allowed_file, get_file_extension, 
+    format_datetime_for_storage, generate_static_json_files,
+    sanitize_input # Make sure this utility is defined and imported
 )
 from ..services.invoice_service import InvoiceService 
 from ..database import record_stock_movement 
-import pyotp # Added for TOTP setup routes
 
-from . import admin_api_bp # Assuming limiter is initialized elsewhere and applied to blueprint or app
+# Blueprint import
+from . import admin_api_bp 
+
+
 
 # --- Admin Authentication (Password, TOTP, SimpleLogin) ---
 def _create_admin_session_and_get_response(admin_user, redirect_url=None): # redirect_url for SSO
@@ -1898,19 +1916,26 @@ def delete_product(product_id):
         audit_logger.log_action(user_id=current_user_id, action='delete_product_fail_exception', target_type='product', target_id=product_id, details=str(e), status='failure', ip_address=request.remote_addr)
         return jsonify(message=f"Failed to delete product: {str(e)}", success=False), 500
         
-# --- User Management ---
 @admin_api_bp.route('/users', methods=['GET'])
 @admin_required
-def get_users():
-    role_filter = request.args.get('role')
-    status_filter_str = request.args.get('is_active') 
-    search_term = request.args.get('search')
+def get_users_admin(): # Renamed to avoid conflict if a public /users endpoint exists
+    # Filters
+    role_filter_str = sanitize_input(request.args.get('role'))
+    status_filter_str = sanitize_input(request.args.get('is_active'))
+    search_term = sanitize_input(request.args.get('search'))
 
     query = User.query
-    if role_filter: query = query.filter(User.role == role_filter)
+    if role_filter_str:
+        try:
+            role_enum = UserRoleEnum(role_filter_str)
+            query = query.filter(User.role == role_enum)
+        except ValueError:
+            return jsonify(message=f"Invalid role filter value: {role_filter_str}", success=False), 400
+            
     if status_filter_str is not None:
         is_active_val = status_filter_str.lower() == 'true'
         query = query.filter(User.is_active == is_active_val)
+    
     if search_term:
         term_like = f"%{search_term.lower()}%"
         query = query.filter(
@@ -1919,189 +1944,248 @@ def get_users():
                 func.lower(User.first_name).like(term_like),
                 func.lower(User.last_name).like(term_like),
                 func.lower(User.company_name).like(term_like),
-                func.cast(User.id, db.String).like(term_like) # Cast ID to string for LIKE
+                func.cast(User.id, db.String).like(term_like)
             )
         )
     
-    users_models = query.order_by(User.created_at.desc()).all()
-    users_data = [{
-        "id": u.id, "email": u.email, "first_name": u.first_name, "last_name": u.last_name,
-        "role": u.role, "is_active": u.is_active, "is_verified": u.is_verified,
-        "company_name": u.company_name, "professional_status": u.professional_status,
-        "created_at": format_datetime_for_display(u.created_at)
-    } for u in users_models]
-    return jsonify(users=users_data, success=True), 200
+    try:
+        users_models = query.order_by(User.created_at.desc()).all()
+        users_data = [u.to_dict() for u in users_models] # Leverage to_dict for consistency
+        return jsonify(users=users_data, success=True), 200
+    except Exception as e:
+        current_app.logger.error(f"Error fetching users for admin: {e}", exc_info=True)
+        return jsonify(message="Failed to fetch users. Please try again later.", success=False), 500
 
 @admin_api_bp.route('/users/<int:user_id>', methods=['GET'])
 @admin_required
-def get_user_admin_detail(user_id):
-    user_model = User.query.get(user_id)
-    if not user_model: return jsonify(message="User not found", success=False), 404
-    
-    user_data = {
-        "id": user_model.id, "email": user_model.email, "first_name": user_model.first_name, 
-        "last_name": user_model.last_name, "role": user_model.role, "is_active": user_model.is_active, 
-        "is_verified": user_model.is_verified, "company_name": user_model.company_name, 
-        "vat_number": user_model.vat_number, "siret_number": user_model.siret_number, 
-        "professional_status": user_model.professional_status,
-        "created_at": format_datetime_for_display(user_model.created_at),
-        "updated_at": format_datetime_for_display(user_model.updated_at),
-        "orders": []
-    }
-    for order_model in user_model.orders.order_by(Order.order_date.desc()).limit(10).all(): # Example: last 10 orders
-        user_data['orders'].append({
-            "order_id": order_model.id, "order_date": format_datetime_for_display(order_model.order_date),
-            "total_amount": order_model.total_amount, "status": order_model.status
-        })
-    return jsonify(user=user_data, success=True), 200
+def get_user_admin_detail(user_id): # Renamed
+    try:
+        user_model = User.query.get(user_id)
+        if not user_model: 
+            return jsonify(message="User not found.", success=False), 404
+        
+        user_data = user_model.to_dict()
+        # Add more details if to_dict() is too brief for admin view, e.g., order history
+        user_data['created_at_display'] = format_datetime_for_display(user_model.created_at)
+        user_data['updated_at_display'] = format_datetime_for_display(user_model.updated_at)
+        # Example: Fetch recent orders
+        # user_data['recent_orders'] = [o.to_dict_summary() for o in user_model.orders.order_by(Order.order_date.desc()).limit(5).all()]
+        return jsonify(user=user_data, success=True), 200
+    except Exception as e:
+        current_app.logger.error(f"Error fetching admin user detail for ID {user_id}: {e}", exc_info=True)
+        return jsonify(message="Failed to fetch user details. Please try again later.", success=False), 500
 
 @admin_api_bp.route('/users/<int:user_id>', methods=['PUT'])
 @admin_required
-def update_user_admin(user_id):
+def update_user_admin(user_id): # Renamed
     current_admin_id = get_jwt_identity()
     audit_logger = current_app.audit_log_service
     data = request.json
-    if not data: return jsonify(message="No data provided", success=False), 400
+    if not data: return jsonify(message="No data provided for update.", success=False), 400
 
     user = User.query.get(user_id)
-    if not user: return jsonify(message="User not found", success=False), 404
+    if not user: return jsonify(message="User not found.", success=False), 404
 
     allowed_fields = ['first_name', 'last_name', 'role', 'is_active', 'is_verified', 
                       'company_name', 'vat_number', 'siret_number', 'professional_status']
     updated_fields_log = []
+    validation_errors = {}
 
     for field in allowed_fields:
         if field in data:
-            if field == 'is_active' or field == 'is_verified':
-                setattr(user, field, str(data[field]).lower() == 'true')
-            else:
-                setattr(user, field, data[field])
-            updated_fields_log.append(field)
+            new_value_raw = data[field]
+            new_value_sanitized = sanitize_input(str(new_value_raw) if new_value_raw is not None else None) # Basic sanitize
+
+            current_value = getattr(user, field)
+            # Handle Enum conversions and boolean conversions
+            try:
+                if field == 'role' and new_value_sanitized:
+                    new_value_processed = UserRoleEnum(new_value_sanitized)
+                elif field == 'professional_status' and new_value_sanitized:
+                    new_value_processed = ProfessionalStatusEnum(new_value_sanitized)
+                elif field in ['is_active', 'is_verified']:
+                    new_value_processed = str(new_value_sanitized).lower() == 'true'
+                else:
+                    new_value_processed = new_value_sanitized
+            except ValueError as e_enum: # Invalid enum value
+                validation_errors[field] = f"Invalid value for {field}: {new_value_sanitized}"
+                continue # Skip this field
+
+            if new_value_processed != current_value:
+                setattr(user, field, new_value_processed)
+                updated_fields_log.append(field)
     
-    if not updated_fields_log: return jsonify(message="No valid fields to update", success=False), 400
+    if validation_errors:
+        return jsonify(message="Validation errors occurred.", errors=validation_errors, success=False), 400
+    if not updated_fields_log: 
+        return jsonify(message="No changes detected or no updatable fields provided.", success=True), 200 # Not an error
 
     try:
+        user.updated_at = datetime.now(timezone.utc)
         db.session.commit()
         audit_logger.log_action(user_id=current_admin_id, action='update_user_admin_success', target_type='user', target_id=user_id, details=f"User {user_id} updated. Fields: {', '.join(updated_fields_log)}", status='success', ip_address=request.remote_addr)
-        return jsonify(message="User updated successfully", success=True), 200
+        return jsonify(message="User updated successfully.", user=user.to_dict(), success=True), 200
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f"Failed to update user ID {user_id}: {e}", exc_info=True)
         audit_logger.log_action(user_id=current_admin_id, action='update_user_admin_fail', target_type='user', target_id=user_id, details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message=f"Failed to update user: {str(e)}", success=False), 500
+        return jsonify(message="Failed to update user due to a server error.", success=False), 500
 
-# --- Order Management ---
+
+# backend/admin_api/routes.py (Continued - Order Management)
+from ..models import Order, OrderItem, User, OrderStatusEnum # Ensure Enums imported
+
 @admin_api_bp.route('/orders', methods=['GET'])
 @admin_required
-def get_orders_admin():
-    search_filter = request.args.get('search')
-    status_filter = request.args.get('status')
-    date_filter_str = request.args.get('date')
+def get_orders_admin(): # Renamed
+    search_filter = sanitize_input(request.args.get('search'))
+    status_filter_str = sanitize_input(request.args.get('status'))
+    date_filter_str = sanitize_input(request.args.get('date'))
 
-    query = Order.query.join(User, Order.user_id == User.id)
+    query = Order.query.join(User, Order.user_id == User.id) # Join for customer info
     if search_filter:
         term_like = f"%{search_filter.lower()}%"
         query = query.filter(
-            or_(
-                func.cast(Order.id, db.String).like(term_like),
+            or_(func.cast(Order.id, db.String).like(term_like),
                 func.lower(User.email).like(term_like),
                 func.lower(User.first_name).like(term_like),
                 func.lower(User.last_name).like(term_like),
-                Order.payment_transaction_id.like(term_like)
-            )
-        )
-    if status_filter: query = query.filter(Order.status == status_filter)
+                Order.payment_transaction_id.like(term_like)))
+    if status_filter_str:
+        try:
+            status_enum = OrderStatusEnum(status_filter_str)
+            query = query.filter(Order.status == status_enum)
+        except ValueError:
+            return jsonify(message=f"Invalid status filter: {status_filter_str}", success=False), 400
     if date_filter_str: 
         try:
             filter_date = datetime.strptime(date_filter_str, '%Y-%m-%d').date()
             query = query.filter(func.date(Order.order_date) == filter_date)
-        except ValueError: return jsonify(message="Invalid date format. Use YYYY-MM-DD.", success=False), 400
+        except ValueError: 
+            return jsonify(message="Invalid date format. Use YYYY-MM-DD.", success=False), 400
     
-    orders_models = query.order_by(Order.order_date.desc()).all()
-    orders_data = [{
-        "order_id": o.id, "user_id": o.user_id, 
-        "order_date": format_datetime_for_display(o.order_date),
-        "status": o.status, "total_amount": o.total_amount, "currency": o.currency,
-        "customer_email": o.customer.email, 
-        "customer_name": f"{o.customer.first_name or ''} {o.customer.last_name or ''}".strip()
-    } for o in orders_models]
-    return jsonify(orders=orders_data, success=True), 200
+    try:
+        orders_models = query.order_by(Order.order_date.desc()).all()
+        orders_data = []
+        for o in orders_models:
+            orders_data.append({
+                "order_id": o.id, "user_id": o.user_id, 
+                "order_date": format_datetime_for_display(o.order_date),
+                "status": o.status.value if o.status else None, # Enum value
+                "total_amount": o.total_amount, "currency": o.currency,
+                "customer_email": o.customer.email, 
+                "customer_name": f"{o.customer.first_name or ''} {o.customer.last_name or ''}".strip()
+            })
+        return jsonify(orders=orders_data, success=True), 200
+    except Exception as e:
+        current_app.logger.error(f"Error fetching admin orders: {e}", exc_info=True)
+        return jsonify(message="Failed to fetch orders. Please try again later.", success=False), 500
 
 @admin_api_bp.route('/orders/<int:order_id>', methods=['GET'])
 @admin_required
-def get_order_admin_detail(order_id):
-    order_model = Order.query.get(order_id)
-    if not order_model: return jsonify(message="Order not found", success=False), 404
-    
-    order_data = {
-        "id": order_model.id, "user_id": order_model.user_id, 
-        "customer_email": order_model.customer.email,
-        "customer_name": f"{order_model.customer.first_name or ''} {order_model.customer.last_name or ''}".strip(),
-        "order_date": format_datetime_for_display(order_model.order_date), "status": order_model.status,
-        "total_amount": order_model.total_amount, "currency": order_model.currency,
-        "shipping_address_line1": order_model.shipping_address_line1, # ... and other address fields ...
-        "payment_method": order_model.payment_method, "payment_transaction_id": order_model.payment_transaction_id,
-        "notes_internal": order_model.notes_internal, "notes_customer": order_model.notes_customer,
-        "tracking_number": order_model.tracking_number, "shipping_method": order_model.shipping_method,
-        "items": []
-    }
-    for item_model in order_model.items:
-        item_dict = {
-            "id": item_model.id, "product_id": item_model.product_id, "product_name": item_model.product_name,
-            "quantity": item_model.quantity, "unit_price": item_model.unit_price,
-            "total_price": item_model.total_price, "variant_description": item_model.variant_description,
-            "product_image_full_url": None
+def get_order_admin_detail(order_id): # Renamed
+    try:
+        order_model = Order.query.options(
+            selectinload(Order.items).joinedload(OrderItem.product), # Eager load items and their products
+            selectinload(Order.customer) # Eager load customer
+        ).get(order_id)
+
+        if not order_model: return jsonify(message="Order not found.", success=False), 404
+        
+        order_data = {
+            "id": order_model.id, "user_id": order_model.user_id, 
+            "customer_email": order_model.customer.email,
+            "customer_name": f"{order_model.customer.first_name or ''} {order_model.customer.last_name or ''}".strip(),
+            "order_date": format_datetime_for_display(order_model.order_date), 
+            "status": order_model.status.value if order_model.status else None,
+            "total_amount": order_model.total_amount, "currency": order_model.currency,
+            "shipping_address_line1": order_model.shipping_address_line1, 
+            "shipping_address_line2": order_model.shipping_address_line2,
+            "shipping_city": order_model.shipping_city,
+            "shipping_postal_code": order_model.shipping_postal_code,
+            "shipping_country": order_model.shipping_country,
+            "billing_address_line1": order_model.billing_address_line1, # ... and other billing fields
+            "payment_method": order_model.payment_method, 
+            "payment_transaction_id": order_model.payment_transaction_id,
+            "notes_internal": order_model.notes_internal, 
+            "notes_customer": order_model.notes_customer,
+            "tracking_number": order_model.tracking_number, 
+            "shipping_method": order_model.shipping_method,
+            "items": []
         }
-        if item_model.product and item_model.product.main_image_url:
-            try: item_dict['product_image_full_url'] = url_for('serve_public_asset', filepath=item_model.product.main_image_url, _external=True)
-            except Exception: pass
-        order_data['items'].append(item_dict)
-    return jsonify(order=order_data, success=True), 200
+        for item_model in order_model.items: # Access eager-loaded items
+            item_dict = {
+                "id": item_model.id, "product_id": item_model.product_id, 
+                "product_name": item_model.product_name, # Stored at order time
+                "quantity": item_model.quantity, "unit_price": item_model.unit_price,
+                "total_price": item_model.total_price, 
+                "variant_description": item_model.variant_description, # Stored at order time
+                "product_image_full_url": None
+            }
+            if item_model.product and item_model.product.main_image_url: # Access related product
+                try: item_dict['product_image_full_url'] = url_for('serve_public_asset', filepath=item_model.product.main_image_url, _external=True)
+                except Exception: pass
+            order_data['items'].append(item_dict)
+        return jsonify(order=order_data, success=True), 200
+    except Exception as e:
+        current_app.logger.error(f"Error fetching admin order detail for ID {order_id}: {e}", exc_info=True)
+        return jsonify(message="Failed to fetch order details. Please try again later.", success=False), 500
+
 
 @admin_api_bp.route('/orders/<int:order_id>/status', methods=['PUT'])
 @admin_required
-def update_order_status_admin(order_id):
+def update_order_status_admin(order_id): # Renamed
     current_admin_id = get_jwt_identity(); audit_logger = current_app.audit_log_service
     data = request.json
-    new_status = data.get('status'); tracking_number = data.get('tracking_number'); carrier = data.get('carrier')
+    new_status_str = sanitize_input(data.get('status'))
+    tracking_number = sanitize_input(data.get('tracking_number'))
+    carrier = sanitize_input(data.get('carrier'))
     
-    if not new_status: return jsonify(message="New status not provided", success=False), 400
-    # Add more comprehensive list of statuses from your Order model
-    allowed_statuses = ['pending_payment', 'paid', 'processing', 'awaiting_shipment', 'shipped', 'delivered', 'completed', 'cancelled', 'refunded', 'on_hold', 'failed']
-    if new_status not in allowed_statuses: return jsonify(message=f"Invalid status. Allowed: {', '.join(allowed_statuses)}", success=False), 400
+    if not new_status_str: return jsonify(message="New status not provided.", success=False), 400
+    try:
+        new_status_enum = OrderStatusEnum(new_status_str)
+    except ValueError:
+        return jsonify(message=f"Invalid status value: {new_status_str}", success=False), 400
 
     order = Order.query.get(order_id)
-    if not order: return jsonify(message="Order not found", success=False), 404
+    if not order: return jsonify(message="Order not found.", success=False), 404
     
-    old_status = order.status
-    order.status = new_status
-    if new_status in ['shipped', 'delivered']:
+    old_status = order.status.value if order.status else "None"
+    order.status = new_status_enum
+    if new_status_enum in [OrderStatusEnum.SHIPPED, OrderStatusEnum.DELIVERED]:
         if tracking_number: order.tracking_number = tracking_number
-        if carrier: order.shipping_method = carrier # Or a dedicated carrier field
+        if carrier: order.shipping_method = carrier 
     
     try:
+        order.updated_at = datetime.now(timezone.utc)
         db.session.commit()
-        audit_logger.log_action(user_id=current_admin_id, action='update_order_status_admin_success', target_type='order', target_id=order_id, details=f"Order {order_id} status from '{old_status}' to '{new_status}'. Tracking: {tracking_number or 'N/A'}", status='success', ip_address=request.remote_addr)
-        return jsonify(message=f"Order status updated to {new_status}", success=True), 200
+        audit_logger.log_action(user_id=current_admin_id, action='update_order_status_admin_success', target_type='order', target_id=order_id, details=f"Order {order_id} status from '{old_status}' to '{new_status_enum.value}'. Tracking: {tracking_number or 'N/A'}", status='success', ip_address=request.remote_addr)
+        return jsonify(message=f"Order status updated to {new_status_enum.value}.", success=True), 200
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f"Failed to update order status for ID {order_id}: {e}", exc_info=True)
         audit_logger.log_action(user_id=current_admin_id, action='update_order_status_admin_fail', target_type='order', target_id=order_id, details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message=f"Failed to update order status: {str(e)}", success=False), 500
+        return jsonify(message="Failed to update order status due to a server error.", success=False), 500
 
 @admin_api_bp.route('/orders/<int:order_id>/notes', methods=['POST'])
 @admin_required
-def add_order_note_admin(order_id):
+def add_order_note_admin(order_id): # Renamed
     current_admin_id = get_jwt_identity(); audit_logger = current_app.audit_log_service
-    data = request.json; note_content = data.get('note')
-    if not note_content or not note_content.strip(): return jsonify(message="Note content cannot be empty.", success=False), 400
+    data = request.json; note_content_raw = data.get('note')
+    note_content = sanitize_input(note_content_raw, allow_html=False) # Disallow HTML in internal notes
+
+    if not note_content or not note_content.strip(): 
+        return jsonify(message="Note content cannot be empty.", success=False), 400
 
     order = Order.query.get(order_id)
-    if not order: return jsonify(message="Order not found", success=False), 404
+    if not order: return jsonify(message="Order not found.", success=False), 404
     
     admin_user = User.query.get(current_admin_id)
-    admin_id_str = admin_user.email if admin_user else f"AdminID:{current_admin_id}"
+    admin_identifier = admin_user.email if admin_user else f"AdminID:{current_admin_id}"
     
-    new_entry = f"[{format_datetime_for_display(datetime.now(timezone.utc))} by {admin_id_str}]: {note_content}"
+    new_entry = f"[{format_datetime_for_display(datetime.now(timezone.utc))} by {admin_identifier}]: {note_content}"
     order.notes_internal = f"{order.notes_internal or ''}\n{new_entry}".strip()
+    order.updated_at = datetime.now(timezone.utc)
     
     try:
         db.session.commit()
@@ -2109,59 +2193,74 @@ def add_order_note_admin(order_id):
         return jsonify(message="Note added successfully.", new_note_entry=new_entry, success=True), 201
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f"Failed to add note to order ID {order_id}: {e}", exc_info=True)
         audit_logger.log_action(user_id=current_admin_id, action='add_order_note_admin_fail', target_type='order', target_id=order_id, details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message=f"Failed to add note: {str(e)}", success=False), 500
+        return jsonify(message="Failed to add note due to a server error.", success=False), 500
 
-# --- Review Management ---
+# backend/admin_api/routes.py (Continued - Review Management)
+from ..models import Review, Product, User # Ensure Review model is imported
+
 @admin_api_bp.route('/reviews', methods=['GET'])
 @admin_required
-def get_reviews_admin():
-    status_filter = request.args.get('status') 
-    product_filter = request.args.get('product_id') # Can be ID or name/code
-    user_filter = request.args.get('user_id') # Can be ID or email
+def get_reviews_admin(): # Renamed
+    status_filter_str = sanitize_input(request.args.get('status')) 
+    product_filter = sanitize_input(request.args.get('product_id')) # Can be ID, name, or code
+    user_filter = sanitize_input(request.args.get('user_id')) # Can be ID or email
 
-    query = Review.query.join(Product, Review.product_id == Product.id).join(User, Review.user_id == User.id)
-    if status_filter == 'pending': query = query.filter(Review.is_approved == False)
-    elif status_filter == 'approved': query = query.filter(Review.is_approved == True)
+    query = Review.query.join(Product, Review.product_id == Product.id)\
+                        .join(User, Review.user_id == User.id)
+    
+    if status_filter_str == 'pending': query = query.filter(Review.is_approved == False)
+    elif status_filter_str == 'approved': query = query.filter(Review.is_approved == True)
     
     if product_filter:
         if product_filter.isdigit():
             query = query.filter(Review.product_id == int(product_filter))
         else:
-            term_like = f"%{product_filter.lower()}%"
-            query = query.filter(or_(func.lower(Product.name).like(term_like), func.lower(Product.product_code).like(term_like)))
+            term_like_prod = f"%{product_filter.lower()}%"
+            query = query.filter(or_(func.lower(Product.name).like(term_like_prod), 
+                                     func.lower(Product.product_code).like(term_like_prod)))
     if user_filter:
         if user_filter.isdigit():
             query = query.filter(Review.user_id == int(user_filter))
         else:
             query = query.filter(func.lower(User.email).like(f"%{user_filter.lower()}%"))
             
-    reviews_models = query.order_by(Review.review_date.desc()).all()
-    reviews_data = [{
-        "id": r.id, "product_id": r.product_id, "user_id": r.user_id,
-        "rating": r.rating, "comment": r.comment, 
-        "review_date": format_datetime_for_display(r.review_date),
-        "is_approved": r.is_approved,
-        "product_name": r.product.name, "product_code": r.product.product_code,
-        "user_email": r.user.email
-    } for r in reviews_models]
-    return jsonify(reviews=reviews_data, success=True), 200
+    try:
+        reviews_models = query.order_by(Review.review_date.desc()).all()
+        reviews_data = []
+        for r in reviews_models:
+            reviews_data.append({
+                "id": r.id, "product_id": r.product_id, "user_id": r.user_id,
+                "rating": r.rating, "comment": r.comment, # Comment is stored raw
+                "review_date": format_datetime_for_display(r.review_date),
+                "is_approved": r.is_approved,
+                "product_name": r.product.name, "product_code": r.product.product_code,
+                "user_email": r.user.email
+            })
+        return jsonify(reviews=reviews_data, success=True), 200
+    except Exception as e:
+        current_app.logger.error(f"Error fetching admin reviews: {e}", exc_info=True)
+        return jsonify(message="Failed to fetch reviews. Please try again later.", success=False), 500
 
 def _update_review_approval_admin(review_id, is_approved_status):
     current_admin_id = get_jwt_identity(); audit_logger = current_app.audit_log_service
-    action = "approve" if is_approved_status else "unapprove"
+    action_str = "approve" if is_approved_status else "unapprove"
+    
     review = Review.query.get(review_id)
-    if not review: return jsonify(message="Review not found", success=False), 404
+    if not review: return jsonify(message="Review not found.", success=False), 404
     
     review.is_approved = is_approved_status
+    review.updated_at = datetime.now(timezone.utc) # Assuming Review model has updated_at
     try:
         db.session.commit()
-        audit_logger.log_action(user_id=current_admin_id, action=f'{action}_review_admin_success', target_type='review', target_id=review_id, details=f"Review {review_id} set to {is_approved_status}.", status='success', ip_address=request.remote_addr)
-        return jsonify(message=f"Review {'approved' if is_approved_status else 'unapproved'} successfully", success=True), 200
+        audit_logger.log_action(user_id=current_admin_id, action=f'{action_str}_review_admin_success', target_type='review', target_id=review_id, details=f"Review {review_id} set to approved={is_approved_status}.", status='success', ip_address=request.remote_addr)
+        return jsonify(message=f"Review successfully {action_str}d.", success=True), 200
     except Exception as e:
         db.session.rollback()
-        audit_logger.log_action(user_id=current_admin_id, action=f'{action}_review_admin_fail', target_type='review', target_id=review_id, details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message=f"Failed to {action} review: {str(e)}", success=False), 500
+        current_app.logger.error(f"Failed to {action_str} review ID {review_id}: {e}", exc_info=True)
+        audit_logger.log_action(user_id=current_admin_id, action=f'{action_str}_review_admin_fail', target_type='review', target_id=review_id, details=str(e), status='failure', ip_address=request.remote_addr)
+        return jsonify(message=f"Failed to {action_str} review due to a server error.", success=False), 500
 
 @admin_api_bp.route('/reviews/<int:review_id>/approve', methods=['PUT'])
 @admin_required
@@ -2173,215 +2272,124 @@ def unapprove_review_admin(review_id): return _update_review_approval_admin(revi
 
 @admin_api_bp.route('/reviews/<int:review_id>', methods=['DELETE'])
 @admin_required
-def delete_review_admin(review_id):
+def delete_review_admin(review_id): # Renamed
     current_admin_id = get_jwt_identity(); audit_logger = current_app.audit_log_service
     review = Review.query.get(review_id)
-    if not review: return jsonify(message="Review not found", success=False), 404
+    if not review: return jsonify(message="Review not found.", success=False), 404
     try:
         db.session.delete(review)
         db.session.commit()
         audit_logger.log_action(user_id=current_admin_id, action='delete_review_admin_success', target_type='review', target_id=review_id, details=f"Review {review_id} deleted.", status='success', ip_address=request.remote_addr)
-        return jsonify(message="Review deleted successfully", success=True), 200
+        return jsonify(message="Review deleted successfully.", success=True), 200
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f"Failed to delete review ID {review_id}: {e}", exc_info=True)
         audit_logger.log_action(user_id=current_admin_id, action='delete_review_admin_fail', target_type='review', target_id=review_id, details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message=f"Failed to delete review: {str(e)}", success=False), 500
+        return jsonify(message="Failed to delete review due to a server error.", success=False), 500
+        # backend/admin_api/routes.py (Continued - Settings Management)
+from ..models import Setting # Ensure Setting model is imported
 
-# --- Settings Management ---
 @admin_api_bp.route('/settings', methods=['GET'])
 @admin_required
-def get_settings_admin():
-    settings_models = Setting.query.all()
-    settings_data = {s.key: {'value': s.value, 'description': s.description} for s in settings_models}
-    return jsonify(settings=settings_data, success=True), 200
+def get_settings_admin(): # Renamed
+    try:
+        settings_models = Setting.query.all()
+        settings_data = {s.key: {'value': s.value, 'description': s.description} for s in settings_models}
+        return jsonify(settings=settings_data, success=True), 200
+    except Exception as e:
+        current_app.logger.error(f"Error fetching settings for admin: {e}", exc_info=True)
+        return jsonify(message="Failed to fetch settings. Please try again later.", success=False), 500
 
 @admin_api_bp.route('/settings', methods=['POST']) # Using POST for create/update simplicity
 @admin_required
-def update_settings_admin():
+def update_settings_admin(): # Renamed
     current_admin_id = get_jwt_identity(); audit_logger = current_app.audit_log_service
     data = request.json
-    if not data: return jsonify(message="No settings data provided", success=False), 400
+    if not data: return jsonify(message="No settings data provided.", success=False), 400
+    
     updated_keys = []
     try:
-        for key, value_obj in data.items():
-            value = value_obj.get('value') if isinstance(value_obj, dict) else value_obj
-            if value is not None:
-                setting = Setting.query.get(key)
-                if setting: setting.value = str(value)
-                else: db.session.add(Setting(key=key, value=str(value)))
-                updated_keys.append(key)
-        db.session.commit()
-        audit_logger.log_action(user_id=current_admin_id, action='update_settings_admin_success', target_type='application_settings', details=f"Settings updated: {', '.join(updated_keys)}", status='success', ip_address=request.remote_addr)
-        return jsonify(message="Settings updated successfully", updated_settings=updated_keys, success=True), 200
+        for key, value_obj_or_direct_value in data.items():
+            # Sanitize key to prevent unexpected characters if keys could be arbitrary
+            safe_key = sanitize_input(str(key))
+            if not safe_key: continue
+
+            # Value can be a direct value or an object like {'value': '...', 'description': '...'}
+            # For this API, assume frontend sends {'key1': 'value1', 'key2': 'value2'}
+            # If frontend sends {'key1': {'value': 'value1'}}, adjust accordingly
+            value_to_store = sanitize_input(str(value_obj_or_direct_value), allow_html=False) # Sanitize setting value, disallow HTML by default
+
+            setting = Setting.query.get(safe_key)
+            if setting:
+                if setting.value != value_to_store:
+                    setting.value = value_to_store
+                    setting.updated_at = datetime.now(timezone.utc)
+                    updated_keys.append(safe_key)
+            else:
+                # For creating new settings, a description might be useful if the form allows it.
+                # If only value is sent, description would be None for new settings.
+                db.session.add(Setting(key=safe_key, value=value_to_store, description=data.get(f"{safe_key}_description"))) # Example
+                updated_keys.append(safe_key)
+        
+        if updated_keys:
+            db.session.commit()
+            audit_logger.log_action(user_id=current_admin_id, action='update_settings_admin_success', target_type='application_settings', details=f"Settings updated: {', '.join(updated_keys)}", status='success', ip_address=request.remote_addr)
+            return jsonify(message="Settings updated successfully.", updated_settings=updated_keys, success=True), 200
+        else:
+            return jsonify(message="No settings were changed.", success=True), 200
+            
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f"Failed to update settings: {e}", exc_info=True)
         audit_logger.log_action(user_id=current_admin_id, action='update_settings_admin_fail', details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message=f"Failed to update settings: {str(e)}", success=False), 500
+        return jsonify(message="Failed to update settings due to a server error.", success=False), 500
 
-# --- Detailed Inventory View ---
-@admin_api_bp.route('/inventory/items/detailed', methods=['GET'])
-@admin_required
-def get_detailed_inventory_items_admin():
-    try:
-        # Joining with Product and ProductWeightOption to get names
-        query = db.session.query(
-            SerializedInventoryItem, 
-            Product.name.label('product_name'), 
-            Product.product_code,
-            func.coalesce(ProductLocalization.name_fr, Product.name).label('product_name_fr'), # Example localization
-            func.coalesce(ProductLocalization.name_en, Product.name).label('product_name_en'), # Example localization
-            ProductWeightOption.weight_grams.label('variant_weight_grams'),
-            ProductWeightOption.sku_suffix.label('variant_sku_suffix')
-        ).join(Product, SerializedInventoryItem.product_id == Product.id)\
-         .outerjoin(ProductWeightOption, SerializedInventoryItem.variant_id == ProductWeightOption.id)\
-         .outerjoin(ProductLocalization, and_(Product.id == ProductLocalization.product_id, ProductLocalization.lang_code == 'fr')) # Example localization join
-        
-        items_data_tuples = query.order_by(Product.name, SerializedInventoryItem.item_uid).all()
-        
-        detailed_items = []
-        for item_tuple in items_data_tuples:
-            item = item_tuple.SerializedInventoryItem # The main model instance
-            item_dict = {
-                "item_uid": item.item_uid, "product_id": item.product_id, "variant_id": item.variant_id,
-                "batch_number": item.batch_number, 
-                "production_date": format_datetime_for_storage(item.production_date) if item.production_date else None,
-                "expiry_date": format_datetime_for_storage(item.expiry_date) if item.expiry_date else None,
-                "cost_price": item.cost_price, "status": item.status, "notes": item.notes,
-                "qr_code_url": item.qr_code_url, "passport_url": item.passport_url, "label_url": item.label_url,
-                "actual_weight_grams": item.actual_weight_grams,
-                "received_at": format_datetime_for_storage(item.received_at) if item.received_at else None,
-                "sold_at": format_datetime_for_storage(item.sold_at) if item.sold_at else None,
-                "updated_at": format_datetime_for_storage(item.updated_at) if item.updated_at else None,
-                # Add joined fields
-                "product_name": item_tuple.product_name,
-                "product_name_fr": item_tuple.product_name_fr,
-                "product_name_en": item_tuple.product_name_en,
-                "product_code": item_tuple.product_code,
-                "variant_name": f"{item_tuple.product_name} - {item_tuple.variant_weight_grams}g ({item_tuple.variant_sku_suffix})" if item_tuple.variant_sku_suffix else None,
-                "qr_code_full_url": None, "passport_full_url": None, "label_full_url": None
-            }
-            if item.qr_code_url: item_dict['qr_code_full_url'] = url_for('admin_api_bp.serve_asset', asset_relative_path=item.qr_code_url, _external=True)
-            if item.passport_url: item_dict['passport_full_url'] = url_for('serve_public_asset', filepath=item.passport_url, _external=True) # Assuming passports are public
-            if item.label_url: item_dict['label_full_url'] = url_for('admin_api_bp.serve_asset', asset_relative_path=item.label_url, _external=True)
-            detailed_items.append(item_dict)
-            
-        return jsonify(detailed_items=detailed_items, success=True), 200 # Return as object with 'detailed_items' key
-    except Exception as e:
-        current_app.logger.error(f"Error fetching detailed inventory items for admin: {e}", exc_info=True)
-        return jsonify(message="Failed to fetch detailed inventory", detailed_items=[], success=False), 500 # Return empty array with success=False
 
-# --- Admin Asset Serving (for protected assets like QR codes, labels, invoices) ---
 @admin_api_bp.route('/assets/<path:asset_relative_path>')
 @admin_required 
 def serve_asset(asset_relative_path):
-    # This function was already quite robust. Added products and categories to the map as they might be stored in UPLOAD_FOLDER
-    # and an admin might want to access them via a protected route for some reason (though usually they'd be public).
+    # Security: Basic path validation
     if ".." in asset_relative_path or asset_relative_path.startswith("/"):
         current_app.logger.warning(f"Directory traversal attempt for admin asset: {asset_relative_path}")
         return flask_abort(404)
 
+    # Map asset types to their base directories (absolute paths from config)
     asset_type_map = {
-        'qr_codes': current_app.config['QR_CODE_FOLDER'],
-        'labels': current_app.config['LABEL_FOLDER'],
-        'invoices': current_app.config['INVOICE_PDF_PATH'],
-        'professional_documents': current_app.config['PROFESSIONAL_DOCS_UPLOAD_PATH'],
-        'products': os.path.join(current_app.config['UPLOAD_FOLDER'], 'products'),      # If admin needs direct access
-        'categories': os.path.join(current_app.config['UPLOAD_FOLDER'], 'categories') # If admin needs direct access
+        'qr_codes': current_app.config.get('QR_CODE_FOLDER'),
+        'labels': current_app.config.get('LABEL_FOLDER'),
+        'invoices': current_app.config.get('INVOICE_PDF_PATH'),
+        'professional_documents': current_app.config.get('PROFESSIONAL_DOCS_UPLOAD_PATH'),
+        'products': os.path.join(current_app.config.get('UPLOAD_FOLDER'), 'products'), # For product images via admin
+        'categories': os.path.join(current_app.config.get('UPLOAD_FOLDER'), 'categories') # For category images via admin
     }
     
-    path_parts = asset_relative_path.split(os.sep, 1)
-    asset_type_key = path_parts[0]
-    filename_in_type_folder = path_parts[1] if len(path_parts) > 1 else None
+    try:
+        path_parts = asset_relative_path.split(os.sep, 1)
+        asset_type_key = path_parts[0]
+        filename_in_type_folder = path_parts[1] if len(path_parts) > 1 else None
 
-    if asset_type_key in asset_type_map and filename_in_type_folder:
-        base_path = asset_type_map[asset_type_key]
-        full_path = os.path.normpath(os.path.join(base_path, filename_in_type_folder))
+        if asset_type_key in asset_type_map and filename_in_type_folder:
+            base_path_abs = asset_type_map[asset_type_key]
+            if not base_path_abs: # Check if config key returned None
+                current_app.logger.error(f"Asset base path for type '{asset_type_key}' is not configured.")
+                return flask_abort(404)
+
+            # Construct full path and perform security check
+            full_path = os.path.normpath(os.path.join(base_path_abs, filename_in_type_folder))
+            
+            # Ensure the resolved path is still within the intended base directory
+            if not os.path.abspath(full_path).startswith(os.path.abspath(base_path_abs)):
+                current_app.logger.error(f"Security violation: Attempt to access file outside designated admin asset directory. Requested: {full_path}, Base: {base_path_abs}")
+                return flask_abort(404)
+
+            if os.path.exists(full_path) and os.path.isfile(full_path):
+                current_app.logger.debug(f"Serving admin asset: {filename_in_type_folder} from directory: {base_path_abs}")
+                # send_from_directory needs the directory and the filename (which can include subpaths relative to that directory)
+                return send_from_directory(base_path_abs, filename_in_type_folder)
         
-        if not os.path.realpath(full_path).startswith(os.path.realpath(base_path)):
-            current_app.logger.error(f"Security violation: Attempt to access file outside designated admin asset directory. Requested: {full_path}, Base: {base_path}")
-            return flask_abort(404)
-
-        if os.path.exists(full_path) and os.path.isfile(full_path):
-            current_app.logger.debug(f"Serving admin asset: {filename_in_type_folder} from directory: {base_path}")
-            return send_from_directory(base_path, filename_in_type_folder)
-    
-    current_app.logger.warning(f"Admin asset not found or path not recognized: {asset_relative_path}")
-    return flask_abort(404)
-
-
-# --- Regenerate Static JSON Files ---
-@admin_api_bp.route('/regenerate-static-json', methods=['POST'])
-@admin_required
-def regenerate_static_json_endpoint():
-    current_user_id = get_jwt_identity()
-    audit_logger = current_app.audit_log_service
-    try:
-        # generate_static_json_files function (in utils.py) needs to be fully SQLAlchemy aware.
-        # This means it should query data using db.session and SQLAlchemy models.
-        generate_static_json_files() 
-        audit_logger.log_action(user_id=current_user_id, action='regenerate_static_json_success', status='success', ip_address=request.remote_addr)
-        return jsonify(message="Static JSON files regenerated successfully.", success=True), 200
+        current_app.logger.warning(f"Admin asset not found or path not recognized: {asset_relative_path}")
+        return flask_abort(404)
     except Exception as e:
-        current_app.logger.error(f"Failed to regenerate static JSON files via API: {e}", exc_info=True)
-        audit_logger.log_action(user_id=current_user_id, action='regenerate_static_json_fail', details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message=f"Failed to regenerate static JSON files: {str(e)}", success=False), 500
+        current_app.logger.error(f"Error serving admin asset '{asset_relative_path}': {e}", exc_info=True)
+        return flask_abort(500)
 
-@admin_api_bp.route('/users/professionals', methods=['GET'])
-@staff_or_admin_required 
-def get_professional_users_list(): # Already existed and seems fine with SQLAlchemy
-    try:
-        professionals = User.query.filter_by(role='b2b_professional')\
-                                  .order_by(User.company_name, User.last_name, User.first_name).all()
-        professionals_data = [{
-            "id": user.id, "email": user.email, "first_name": user.first_name,
-            "last_name": user.last_name, "company_name": user.company_name,
-            "professional_status": user.professional_status # Keep status for admin view
-        } for user in professionals]
-        return jsonify(professionals=professionals_data, success=True), 200 # Ensure consistent response structure
-    except Exception as e:
-        current_app.logger.error(f"Error fetching professional users for admin: {e}", exc_info=True)
-        return jsonify(message="Failed to fetch professional users.", success=False), 500
-
-@admin_api_bp.route('/invoices/create', methods=['POST'])
-@admin_required
-def admin_create_manual_invoice():
-    data = request.json
-    b2b_user_id = data.get('b2b_user_id')
-    line_items_data = data.get('line_items') # Expects list of dicts with description, quantity, unit_price
-    notes = data.get('notes')
-    currency = data.get('currency', 'EUR') # Default currency if not provided
-
-    if not b2b_user_id or not line_items_data or not isinstance(line_items_data, list) or len(line_items_data) == 0:
-        return jsonify(message="Missing required fields: b2b_user_id and at least one line_item.", success=False), 400
-
-    audit_logger = current_app.audit_log_service
-    current_admin_id = get_jwt_identity()
-
-    try:
-        invoice_service = InvoiceService() # Assumes InvoiceService is adapted for SQLAlchemy
-        invoice_id, invoice_number = invoice_service.create_manual_invoice(
-            b2b_user_id=b2b_user_id, 
-            user_currency=currency, 
-            line_items_data=line_items_data, 
-            notes=notes,
-            issued_by_admin_id=current_admin_id # Optional: record who created it
-        )
-        
-        pdf_full_url = None
-        if invoice_id:
-            invoice = Invoice.query.get(invoice_id)
-            if invoice and invoice.pdf_path:
-                 # Assuming pdf_path stored in Invoice model is relative to ASSET_STORAGE_PATH/invoices
-                 # and serve_asset can resolve 'invoices/filename.pdf'
-                 pdf_relative_to_asset_serve = os.path.join('invoices', os.path.basename(invoice.pdf_path))
-                 pdf_full_url = url_for('admin_api_bp.serve_asset', asset_relative_path=pdf_relative_to_asset_serve, _external=True)
-
-        audit_logger.log_action(user_id=current_admin_id, action='admin_create_manual_invoice_success', target_type='invoice', target_id=invoice_id, details=f"Manual invoice {invoice_number} created for user {b2b_user_id}.", status='success', ip_address=request.remote_addr)
-        return jsonify(success=True, message="Manual invoice created successfully.", invoice_id=invoice_id, invoice_number=invoice_number, pdf_url=pdf_full_url), 201
-    except ValueError as ve: 
-        audit_logger.log_action(user_id=current_admin_id, action='admin_create_manual_invoice_fail_validation', details=str(ve), status='failure', ip_address=request.remote_addr)
-        return jsonify(message=str(ve), success=False), 400 
-    except Exception as e:
-        current_app.logger.error(f"Admin API error creating manual invoice: {e}", exc_info=True)
-        audit_logger.log_action(user_id=current_admin_id, action='admin_create_manual_invoice_fail_exception', details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message=f"An internal error occurred: {str(e)}", success=False), 500
