@@ -3,15 +3,11 @@ import os
 import click
 from flask import current_app
 from flask.cli import with_appcontext
-from werkzeug.security import generate_password_hash
+from sqlalchemy import func # Import func for SQL functions like upper
 
 # Import the db instance and models from your application structure
-# This assumes db is initialized in backend/__init__.py and models are in backend/models.py
-from . import db # SQLAlchemy instance
-from .models import User, Category, Product # Import other models as needed
-
-# The old get_db_connection, close_db_connection, query_db, init_db_schema
-# are no longer needed when using Flask-SQLAlchemy as it manages connections and sessions.
+from . import db 
+from .models import User, Category, Product, StockMovement # Import other models as needed
 
 def populate_initial_data_sqlalchemy():
     """Populates the database with initial data using SQLAlchemy models."""
@@ -25,15 +21,15 @@ def populate_initial_data_sqlalchemy():
         admin_password = current_app.config.get('INITIAL_ADMIN_PASSWORD')
 
         if admin_email and admin_password:
-            if not User.query.filter_by(email=admin_email, role='admin').first():
+            if not User.query.filter_by(email=admin_email, role='admin').first(): # Assuming UserRoleEnum.ADMIN if using enums
                 admin = User(
                     email=admin_email,
                     first_name="Admin",
                     last_name="Trüvra",
-                    role='admin',
+                    role='admin', # Or UserRoleEnum.ADMIN
                     is_active=True,
                     is_verified=True,
-                    professional_status='approved'
+                    professional_status='approved' # Or ProfessionalStatusEnum.APPROVED
                 )
                 admin.set_password(admin_password)
                 db.session.add(admin)
@@ -91,56 +87,6 @@ def record_stock_movement(
     Records a stock movement using SQLAlchemy session.
     The calling function is responsible for db_session.commit().
     """
-    if not db_session:
-        current_app.logger.error("record_stock_movement called without a SQLAlchemy db session.")
-        raise ValueError("A SQLAlchemy db session is required for record_stock_movement.")
-
-    movement = StockMovement(
-        product_id=product_id,
-        variant_id=variant_id,
-        serialized_item_id=serialized_item_id,
-        movement_type=movement_type,
-        quantity_change=quantity_change,
-        weight_change_grams=weight_change_grams,
-        reason=reason,
-        related_order_id=related_order_id,
-        related_user_id=related_user_id,
-        notes=notes
-        # movement_date is defaulted in the model
-    )
-    db_session.add(movement)
-    current_app.logger.debug(f"Stock movement object created for recording: {movement_type} for product ID {product_id}")
-    return movement
-
-def get_product_id_from_code(product_code, db_session=None):
-    """Fetches product ID using product_code with SQLAlchemy."""
-    if not product_code: return None
-    
-    session_to_use = db_session or db.session
-    product = session_to_use.query(Product.id).filter(func.upper(Product.product_code) == product_code.upper()).first()
-    return product.id if product else None
-
-def get_category_id_from_code(category_code, db_session=None):
-    """Fetches category ID using category_code with SQLAlchemy."""
-    if not category_code: return None
-    
-    session_to_use = db_session or db.session
-    category = session_to_use.query(Category.id).filter(func.upper(Category.category_code) == category_code.upper()).first()
-    return category.id if category else None
-    
-
-# --- Utility functions that were in database.py, now adapted or to be replaced ---
-
-def record_stock_movement(
-    db_session, product_id, movement_type, quantity_change=None, weight_change_grams=None,
-    variant_id=None, serialized_item_id=None, reason=None,
-    related_order_id=None, related_user_id=None, notes=None
-):
-    """
-    Records a stock movement using SQLAlchemy session.
-    Note: The db_session should be passed in, typically from the route handler.
-    The calling function is responsible for db.session.commit().
-    """
     from .models import StockMovement # Local import to avoid circular dependency at module level
 
     if not db_session:
@@ -151,43 +97,33 @@ def record_stock_movement(
         product_id=product_id,
         variant_id=variant_id,
         serialized_item_id=serialized_item_id,
-        movement_type=movement_type,
+        movement_type=movement_type, # Assumes movement_type is an Enum member if models are updated
         quantity_change=quantity_change,
         weight_change_grams=weight_change_grams,
         reason=reason,
         related_order_id=related_order_id,
         related_user_id=related_user_id,
         notes=notes
-        # movement_date is defaulted in the model
     )
     db_session.add(movement)
     current_app.logger.debug(f"Stock movement object created for recording: {movement_type} for product ID {product_id}")
-    # The calling function should commit the session.
-    return movement # Returning the object might be useful
+    return movement
 
 def get_product_id_from_code(product_code, db_session=None):
-    """Fetches product ID using product_code with SQLAlchemy."""
-    from .models import Product # Local import
+    """Fetches product ID using product_code with SQLAlchemy (case-insensitive)."""
+    from .models import Product 
     if not product_code: return None
     
-    # If db_session is not provided, this implies it's called outside a request context
-    # or where db.session is not readily available. This is less ideal.
-    # For calls within request handlers, db.session should be used directly.
-    if db_session:
-        product = db_session.query(Product.id).filter_by(product_code=product_code.upper()).first()
-    else: # Fallback, assumes app context is available for db.session
-        product = Product.query.with_entities(Product.id).filter_by(product_code=product_code.upper()).first()
-        
+    session_to_use = db_session or db.session
+    product = session_to_use.query(Product.id).filter(func.upper(Product.product_code) == product_code.upper()).first()
     return product.id if product else None
 
 def get_category_id_from_code(category_code, db_session=None):
-    """Fetches category ID using category_code with SQLAlchemy."""
-    from .models import Category # Local import
+    """Fetches category ID using category_code with SQLAlchemy (case-insensitive)."""
+    from .models import Category 
     if not category_code: return None
 
-    if db_session:
-        category = db_session.query(Category.id).filter_by(category_code=category_code.upper()).first()
-    else:
-        category = Category.query.with_entities(Category.id).filter_by(category_code=category_code.upper()).first()
-        
+    session_to_use = db_session or db.session
+    # Apply case-insensitive comparison
+    category = session_to_use.query(Category.id).filter(func.upper(Category.category_code) == category_code.upper()).first()
     return category.id if category else None
