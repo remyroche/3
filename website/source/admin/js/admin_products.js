@@ -8,6 +8,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const productCategorySelect = document.getElementById('productCategory');
     const formTitle = document.getElementById('formTitle');
     const productCodeInput = document.getElementById('productCode');
+    const saveProductButton = document.getElementById('saveProductButton');// website/source/admin/js/admin_products.js
+// Handles the "Manage Products" page in the admin panel.
+
+document.addEventListener('DOMContentLoaded', function() {
+    // --- DOM Element References ---
+    const productForm = document.getElementById('productForm');
+    const productsTableBody = document.getElementById('productsTableBody');
+    const productCategorySelect = document.getElementById('productCategory');
+    const formTitle = document.getElementById('formTitle');
+    const productCodeInput = document.getElementById('productCode');
     const saveProductButton = document.getElementById('saveProductButton');
     const cancelEditButton = document.getElementById('cancelEditButton');
     const productSearchInput = document.getElementById('productSearchInput');
@@ -15,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     // --- State Variables ---
-    let editingProductId = null; // Use product ID for editing
+    let editingProductId = null; 
     let allProductsCache = []; 
 
     // --- Initialization ---
@@ -28,14 +38,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadCategoriesForSelect() {
         try {
-            const apiResponse = await adminApi.getCategories(); // Expects { categories: [...] }
-            const categories = apiResponse.categories || []; // Defensive coding
+            const apiResponse = await adminApi.getCategories(); 
+            const categories = apiResponse.categories || []; 
             productCategorySelect.innerHTML = '<option value="">-- Select Category --</option>'; 
             categories.forEach(category => {
                 if (category.is_active) { 
                     const option = document.createElement('option');
                     option.value = category.id; 
-                    option.textContent = `${category.name} (${category.category_code})`;
+                    option.textContent = `${category.name} (${category.category_code || 'N/A'})`; // XSS: textContent
                     productCategorySelect.appendChild(option);
                 }
             });
@@ -48,30 +58,43 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderProductsTable(productsToRender) {
         productsTableBody.innerHTML = ''; 
         if (!productsToRender || productsToRender.length === 0) {
-            productsTableBody.innerHTML = '<tr><td colspan="9">No products found.</td></tr>';
+            const emptyRow = productsTableBody.insertRow();
+            const cell = emptyRow.insertCell();
+            cell.colSpan = 9; // Adjusted colspan
+            cell.textContent = "No products found."; // XSS: static text
             return;
         }
         productsToRender.forEach(product => {
             const row = productsTableBody.insertRow();
-            row.insertCell().textContent = product.product_code;
-            row.insertCell().textContent = product.name;
-            row.insertCell().textContent = product.category_name ? `${product.category_name} (${product.category_code || 'N/A'})` : 'Uncategorized';
-            row.insertCell().textContent = product.price !== null ? `€${parseFloat(product.price).toFixed(2)}` : 'N/A (Variable)';
-            row.insertCell().textContent = product.quantity !== undefined ? product.quantity : 'N/A'; // Aggregate stock
-            row.insertCell().textContent = product.type || 'simple';
-            row.insertCell().innerHTML = product.is_active ? '<span class="text-green-600 font-semibold">Yes</span>' : '<span class="text-red-600">No</span>';
-            row.insertCell().innerHTML = product.is_featured ? '<span class="text-blue-600">Yes</span>' : 'No';
+            row.insertCell().textContent = product.product_code; // XSS
+            row.insertCell().textContent = product.name; // XSS
+            row.insertCell().textContent = product.category_name ? `${product.category_name} (${product.category_code || 'N/A'})` : 'Uncategorized'; // XSS
+            row.insertCell().textContent = product.price !== null ? `€${parseFloat(product.price).toFixed(2)}` : 'N/A (Variable)'; // XSS
+            row.insertCell().textContent = product.quantity !== undefined ? product.quantity : 'N/A'; // XSS
+            row.insertCell().textContent = product.type || 'simple'; // XSS
+            
+            const activeCell = row.insertCell();
+            const activeSpan = document.createElement('span');
+            activeSpan.textContent = product.is_active ? 'Yes' : 'No'; // XSS: static text
+            activeSpan.className = product.is_active ? 'text-green-600 font-semibold' : 'text-red-600';
+            activeCell.appendChild(activeSpan);
+
+            const featuredCell = row.insertCell();
+            const featuredSpan = document.createElement('span');
+            featuredSpan.textContent = product.is_featured ? 'Yes' : 'No'; // XSS: static text
+            featuredSpan.className = product.is_featured ? 'text-blue-600' : '';
+            featuredCell.appendChild(featuredSpan);
             
             const actionsCell = row.insertCell();
             const editButton = document.createElement('button');
-            editButton.textContent = 'Edit';
-            editButton.classList.add('btn', 'btn-admin-secondary', 'small-button'); // Use new CSS classes
+            editButton.textContent = 'Edit'; // XSS: static text
+            editButton.classList.add('btn', 'btn-admin-secondary', 'small-button'); 
             editButton.onclick = () => populateFormForEdit(product);
             actionsCell.appendChild(editButton);
 
             const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Delete';
-            deleteButton.classList.add('btn', 'btn-admin-danger', 'small-button'); // Use new CSS classes
+            deleteButton.textContent = 'Delete'; // XSS: static text
+            deleteButton.classList.add('btn', 'btn-admin-danger', 'small-button'); 
             deleteButton.onclick = () => confirmDeleteProduct(product.id, product.name, product.product_code);
             actionsCell.appendChild(deleteButton);
         });
@@ -79,14 +102,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function loadProductsTable() {
         try {
-            productsTableBody.innerHTML = '<tr><td colspan="9">Loading products...</td></tr>'; // Updated colspan
-            const response = await adminApi.getProducts(); // Expects { products: [...] }
+            const loadingRow = productsTableBody.insertRow();
+            const cell = loadingRow.insertCell();
+            cell.colSpan = 9; // Adjusted colspan
+            cell.textContent = "Loading products..."; // XSS: static text
+            productsTableBody.innerHTML = ''; // Clear after creating, then replace
+            productsTableBody.appendChild(loadingRow);
+
+            const response = await adminApi.getProducts(); 
             allProductsCache = response.products || []; 
             renderProductsTable(allProductsCache); 
         } catch (error) {
             console.error('Failed to load products:', error);
             showAdminToast('Error loading products list. Please try refreshing.', 'error');
-            productsTableBody.innerHTML = '<tr><td colspan="9">Error loading products.</td></tr>'; // Updated colspan
+            productsTableBody.innerHTML = ''; // Clear loading
+            const errorRow = productsTableBody.insertRow();
+            const cell = errorRow.insertCell();
+            cell.colSpan = 9; // Adjusted colspan
+            cell.textContent = "Error loading products."; // XSS: static text
         }
     }
     
@@ -106,16 +139,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function populateFormForEdit(product) {
-        formTitle.textContent = `Edit Product: ${product.name} (${product.product_code})`;
-        saveProductButton.textContent = 'Update Product';
+        formTitle.textContent = `Edit Product: ${product.name} (${product.product_code})`; // XSS: product data
+        saveProductButton.textContent = 'Update Product'; // XSS: static
         cancelEditButton.style.display = 'inline-block'; 
         
-        editingProductId = product.id; // Store product ID for update
+        editingProductId = product.id; 
         
         productCodeInput.value = product.product_code;
-        // productCodeInput.readOnly = true; // Product code generally should not be changed once set, or handled carefully.
-                                          // For this refactor, we'll assume it's editable if needed.
-
         document.getElementById('productName').value = product.name;
         document.getElementById('productDescription').value = product.description || '';
         document.getElementById('productPrice').value = product.base_price !== null ? parseFloat(product.base_price).toFixed(2) : '';
@@ -137,8 +167,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function resetForm() {
-        formTitle.textContent = 'Add New Product';
-        saveProductButton.textContent = 'Save Product';
+        formTitle.textContent = 'Add New Product'; // XSS: static
+        saveProductButton.textContent = 'Save Product'; // XSS: static
         productForm.reset(); 
         productCodeInput.readOnly = false;
         editingProductId = null; 
@@ -155,9 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
     productForm.addEventListener('submit', async function(event) {
         event.preventDefault(); 
         const formData = new FormData(productForm);
-        // No 'sku_prefix' to send, product_code serves this role now.
-
-        // Client-side validation (can be enhanced)
+        
         if (!formData.get('product_code').trim()) {
             showAdminToast('Product Code (SKU) is required.', 'error'); return;
         }
@@ -174,52 +202,54 @@ document.addEventListener('DOMContentLoaded', function() {
             showAdminToast('A valid Stock Quantity is required for simple products.', 'error'); return;
         }
 
-
         saveProductButton.disabled = true;
-        saveProductButton.textContent = editingProductId ? 'Updating...' : 'Saving...';
+        saveProductButton.textContent = editingProductId ? 'Updating...' : 'Saving...'; // XSS: static
 
         try {
             let response;
             if (editingProductId) {
-                response = await adminApi.updateProduct(editingProductId, formData); // Pass FormData directly
+                response = await adminApi.updateProduct(editingProductId, formData); 
             } else {
-                response = await adminApi.addProduct(formData); // Pass FormData directly
+                response = await adminApi.addProduct(formData); 
             }
             
             if (response.success) {
                 showAdminToast(response.message || `Product ${editingProductId ? 'updated' : 'added'} successfully!`, 'success');
                 resetForm(); 
                 await loadProductsTable(); 
-            } else {
-                showAdminToast(response.message || 'Failed to save product.', 'error');
-            }
+            } // Error toast handled by adminApi
         } catch (error) {
             console.error('Failed to save product:', error);
-            const errorMessage = error.data?.message || error.message || 'An unknown error occurred.';
-            showAdminToast(errorMessage, 'error');
+            // Error toast handled by adminApi
         } finally {
             saveProductButton.disabled = false;
-            saveProductButton.textContent = editingProductId ? 'Update Product' : 'Save Product';
+            saveProductButton.textContent = editingProductId ? 'Update Product' : 'Save Product'; // XSS: static
         }
     });
 
     function confirmDeleteProduct(productId, productName, productCode) {
+        // showAdminConfirm uses textContent for title and creates p for message,
+        // but message can accept HTML. Ensure it's used safely.
+        const messageParagraph = document.createElement('p');
+        messageParagraph.textContent = `Are you sure you want to delete the product: `; // XSS: static
+        const strongElement = document.createElement('strong');
+        strongElement.textContent = `${productName} (${productCode})`; // XSS: product data
+        messageParagraph.appendChild(strongElement);
+        messageParagraph.append("? This action cannot be undone."); // XSS: static
+
         showAdminConfirm(
             'Confirm Delete Product', 
-            `Are you sure you want to delete the product: <strong>${productName} (${productCode})</strong>? This action cannot be undone.`, 
+            messageParagraph.innerHTML, // Using innerHTML here because we constructed it safely
             async () => {
                 try {
                     const response = await adminApi.deleteProduct(productId);
                      if (response.success) {
                         showAdminToast(response.message || `Product "${productName}" deleted successfully!`, 'success');
                         await loadProductsTable(); 
-                    } else {
-                        showAdminToast(response.message || 'Failed to delete product.', 'error');
-                    }
+                    } // Error toast handled by adminApi
                 } catch (error) {
                     console.error('Failed to delete product:', error);
-                    const errorMessage = error.data?.message || 'Failed to delete product. Please try again.';
-                    showAdminToast(errorMessage, 'error');
+                    // Error toast handled by adminApi
                 }
             },
             'Delete Product', 
