@@ -1,64 +1,199 @@
-<!DOCTYPE html>
-<html lang="fr"> <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ professionnels.titre }} - Maison Trüvra</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <link href="css/style.css" rel="stylesheet">
-</head>
-<body id="page-professionnels" class="antialiased bg-brand-cream">
+// website/source/js/professionnels.js
 
-    <div id="header-placeholder"></div>
+document.addEventListener('DOMContentLoaded', () => {
+    // Ensure this script only runs on the 'page-professionnels'
+    if (document.body.id !== 'page-professionnels') {
+        console.log("Not on professionnels page, skipping professionnels.js specific logic.");
+        return;
+    }
+    console.log("Professionnels.js: Initializing for page-professionnels.");
 
-    <main class="container mx-auto p-6 py-16">
-        <h1 class="section-title">{{ professionnels.titre }}</h1>
-        <p class="text-center text-lg max-w-3xl mx-auto text-brand-earth-brown mb-12">
-            {{ professionnels.description }}
-        </p>
+    // Get DOM elements
+    const loggedOutView = document.getElementById('logged-out-view');
+    const loggedInView = document.getElementById('logged-in-view');
+    const userNamePlaceholder = document.getElementById('user-name-placeholder');
+    const magicLinkForm = document.getElementById('magic-link-form');
+    const proLogoutBtn = document.getElementById('pro-logout-btn');
+    const emailInput = document.getElementById('email-pro');
+    
+    // New button for viewing invoices
+    const proViewInvoicesBtn = document.getElementById('pro-view-invoices-btn');
 
-        <div id="logged-out-view" class="hidden">
-            <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg">
-                <h2 class="text-2xl font-bold text-center text-brand-near-black mb-6">{{ professionnels.connexionOuCreationTitre }}</h2>
-                <form id="magic-link-form">
-                    <label for="email-pro" class="block text-brand-earth-brown font-semibold mb-2">{{ professionnels.votreEmailLabel }}</label>
-                    <input type="email" id="email-pro" name="email" class="form-input w-full mb-4" placeholder="{{ professionnels.emailPlaceholder }}" required>
-                    <button type="submit" class="btn-primary w-full">{{ professionnels.recevoirLienConnexion }}</button>
-                </form>
-                <div id="magic-link-info" class="mt-6 text-sm text-gray-600 space-y-3">
-                    <p>{{ professionnels.magicLinkInfoTitre }}</p>
-                    <ul class="list-disc list-inside space-y-2">
-                        <li>{{ professionnels.magicLinkSecurise }}</li>
-                        <li>{{ professionnels.magicLinkSpam }}</li>
-                        <li>{{ professionnels.magicLinkExpiration }}</li>
-                        <li><span id="resend-container" class="hidden">{{ professionnels.magicLinkNonRecu }} <button type="button" id="resend-link-btn" class="text-brand-earth-brown underline hover:text-brand-near-black" disabled>{{ professionnels.magicLinkRenvoyer }}</button> (<span id="resend-countdown">30</span>{{ professionnels.magicLinkCompteARebours }})</span></li>
-                    </ul>
-                </div>
-            </div>
-             <p class="text-center mt-4">{{ professionnels.pasDeCompte }}</p>
-        </div>
+    // Initialize placeholders if elements exist
+    if(emailInput && typeof t === 'function') { // Check if t is defined
+        emailInput.placeholder = t('professionnels.emailPlaceholder');
+    } else if (emailInput) {
+        // Fallback or log error if t is not available
+        console.warn("t() function for translation not available for email placeholder.");
+    }
 
-        <div id="logged-in-view" class="hidden">
-            <div class="text-center">
-                <h2 class="text-3xl font-serif text-brand-near-black mb-4">{{ professionnels.bienvenue }}, <span id="user-name-placeholder"></span>!</h2>
-                <p class="text-lg text-brand-earth-brown mb-8">{{ professionnels.connecteMessage }}</p>
-                <div class="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6">
-                    <button id="pro-view-invoices-btn" class="btn-primary w-full sm:w-auto">{{ professionnels.mesFacturesBtn }}</button>
-                    <a href="compte.html" class="btn-secondary w-full sm:w-auto">{{ professionnels.monCompteBtn }}</a>
-                    <button id="pro-logout-btn" class="btn-secondary bg-brand-truffle-burgundy w-full sm:w-auto">{{ professionnels.deconnexionBtn }}</button>
-                </div>
-            </div>
-        </div>
-    </main>
+    // Handle magic token verification on page load if token is in URL
+    if (typeof handleMagicTokenVerification === 'function') {
+        handleMagicTokenVerification(); 
+    } else {
+        console.warn("handleMagicTokenVerification function not found.");
+    }
+    
+    // Initial view update based on auth state
+    if (typeof updateProfessionalView === 'function') {
+        updateProfessionalView(); 
+    } else {
+        console.warn("updateProfessionalView function not found.");
+    }
 
-    <div id="footer-placeholder"></div>
-    <div id="global-message-toast" class="modal-message" style="display:none;"></div>
+    // Event listener for magic link form submission
+    if (magicLinkForm) {
+        magicLinkForm.addEventListener('submit', handleMagicLinkRequest);
+    }
 
-    <script src="js/config.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/professionnels.js"></script>
-    <script src="js/main.js"></script>
-</body>
-</html>
+    // Event listener for professional logout button
+    if (proLogoutBtn) {
+        proLogoutBtn.addEventListener('click', () => {
+            if (typeof logoutUser === 'function') {
+                logoutUser(); // Uses global logout from auth.js
+                // updateProfessionalView will be called by 'authStateChanged' event listener in main.js
+            } else {
+                console.warn("logoutUser function not found.");
+            }
+        });
+    }
+
+    // Event listener for "View Invoices" button
+    if (proViewInvoicesBtn) {
+        proViewInvoicesBtn.addEventListener('click', () => {
+            // Redirects to the B2B invoices page
+            window.location.href = 'invoices-pro.html';
+        });
+    }
+
+    // Function to update the view based on login status and role
+    function updateProfessionalView() {
+        const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+        const isLoggedIn = typeof isUserLoggedIn === 'function' ? isUserLoggedIn() : false;
+
+        if (isLoggedIn && user && user.role === 'b2b_professional') {
+            if(userNamePlaceholder) {
+                userNamePlaceholder.textContent = user.prenom || user.company_name || (typeof t === 'function' ? t('professionnels.bienvenue_pro_fallback') : "Professional");
+            }
+            if(loggedInView) loggedInView.style.display = 'block';
+            if(loggedOutView) loggedOutView.style.display = 'none';
+        } else {
+            if(loggedInView) loggedInView.style.display = 'none';
+            if(loggedOutView) loggedOutView.style.display = 'block';
+        }
+    }
+    // Expose updateProfessionalView to be callable by authStateChanged event if needed from main.js
+    // or ensure authStateChanged in main.js directly calls this specific page's update logic.
+    window.updateProfessionalPageSpecificView = updateProfessionalView;
+
+
+    // Function to handle the magic link request form submission
+    async function handleMagicLinkRequest(e) {
+        e.preventDefault();
+        if (!emailInput) {
+            console.error("Email input not found for magic link form.");
+            return;
+        }
+        const email = emailInput.value;
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton.textContent; 
+        submitButton.disabled = true;
+        submitButton.textContent = typeof t === 'function' ? t('professionnels.messageEnvoiEnCours') : "Sending...";
+
+        try {
+            const response = await makeApiRequest('/auth/request-magic-link', 'POST', { email });
+            if (typeof showGlobalMessage === 'function') {
+                showGlobalMessage(response.message || (typeof t === 'function' ? t('professionnels.messageLienEnvoye') : "Link sent."), 'success');
+            }
+            if (typeof handleResendCountdown === 'function') {
+                handleResendCountdown();
+            }
+        } catch (error) {
+            const errorMessage = error.data?.message || (typeof t === 'function' ? t('professionnels.erreurProduite') : "An error occurred.");
+            if (typeof showGlobalMessage === 'function') {
+                showGlobalMessage(errorMessage, 'error');
+            }
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = originalButtonText; 
+        }
+    }
+
+    // Function to handle magic token verification from URL
+    async function handleMagicTokenVerification() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('magic_token');
+
+        if (token) {
+            window.history.replaceState({}, document.title, window.location.pathname); // Clean URL
+            if (typeof showGlobalMessage === 'function') {
+                showGlobalMessage(typeof t === 'function' ? t('professionnels.verificationLienMagique') : "Verifying link...", 'info');
+            }
+            try {
+                const response = await makeApiRequest('/auth/verify-magic-link', 'POST', { token });
+                if (response.success && response.user && response.token && typeof setCurrentUser === 'function') {
+                    setCurrentUser(response.user, response.token); // From auth.js
+                    if (typeof showGlobalMessage === 'function') {
+                        showGlobalMessage(response.message || (typeof t === 'function' ? t('professionnels.connexionReussie') : "Login successful!"), 'success');
+                    }
+                    // updateProfessionalView(); // This will be handled by the 'authStateChanged' event
+                } else {
+                    throw new Error(response.message || (typeof t === 'function' ? t('professionnels.lienInvalideOuExpire') : "Invalid or expired link."));
+                }
+            } catch (error) {
+                const errorMessage = error.data?.message || error.message || (typeof t === 'function' ? t('professionnels.lienInvalideOuExpire') : "Invalid or expired link.");
+                if (typeof showGlobalMessage === 'function') {
+                    showGlobalMessage(errorMessage, 'error');
+                }
+            }
+        }
+    }
+
+    // Function to handle the resend magic link countdown and button
+    function handleResendCountdown() {
+        const resendContainer = document.getElementById('resend-container');
+        const resendBtn = document.getElementById('resend-link-btn');
+        const countdownSpan = document.getElementById('resend-countdown');
+        let countdown = 30;
+
+        if (!resendContainer || !resendBtn || !countdownSpan) {
+            console.warn("Resend countdown elements not found.");
+            return;
+        }
+
+        resendContainer.style.display = 'inline'; // Make it visible
+        resendBtn.disabled = true;
+        
+        // Clear any existing interval for this specific countdown to prevent multiple timers
+        if (window.magicLinkResendInterval) {
+            clearInterval(window.magicLinkResendInterval);
+        }
+
+        window.magicLinkResendInterval = setInterval(() => { 
+            countdown--;
+            countdownSpan.textContent = countdown;
+            if (countdown <= 0) {
+                clearInterval(window.magicLinkResendInterval);
+                resendBtn.disabled = false;
+                resendBtn.onclick = () => { // Re-attach click listener for safety
+                    if (!emailInput) return;
+                    const email = emailInput.value;
+                    if (email && magicLinkForm) {
+                        magicLinkForm.requestSubmit(); // Resubmit the form
+                    } else if (typeof showGlobalMessage === 'function') {
+                        showGlobalMessage(typeof t === 'function' ? t('professionnels.emailRequis') : "Email required to resend.", 'error');
+                    }
+                };
+            }
+        }, 1000);
+    }
+    
+    // Listen for authentication state changes to update the view
+    // This assumes 'authStateChanged' is a custom event dispatched from auth.js
+    document.addEventListener('authStateChanged', () => {
+        console.log("Professionnels.js: authStateChanged event received.");
+        if (typeof updateProfessionalView === 'function') {
+            updateProfessionalView();
+        }
+    });
+});
