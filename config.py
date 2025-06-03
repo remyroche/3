@@ -66,7 +66,9 @@ class Config:
         "logo_path": os.environ.get('INVOICE_COMPANY_LOGO_PATH', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static_assets', 'logos', 'maison_truvra_invoice_logo.png'))
     }
     
-    API_VERSION = "v1.5-sqlalchemy-totp-enrollment" 
+    API_VERSION = "v1.5-sqlalchemy-totp-enrollment"
+    APP_BASE_URL = os.environ.get('APP_BASE_URL', 'http://localhost:8000') # For frontend
+    BACKEND_APP_BASE_URL = os.environ.get('BACKEND_APP_BASE_URL', 'http://localhost:5001') # For backend specific URLs like callbacks
 
     RATELIMIT_STORAGE_URI = os.environ.get('RATELIMIT_STORAGE_URI', "memory://")
     RATELIMIT_STRATEGY = "fixed-window"
@@ -116,7 +118,10 @@ class Config:
     SIMPLELOGIN_AUTHORIZE_URL = os.environ.get('SIMPLELOGIN_AUTHORIZE_URL', 'https://app.simplelogin.io/oauth2/authorize')
     SIMPLELOGIN_TOKEN_URL = os.environ.get('SIMPLELOGIN_TOKEN_URL', 'https://app.simplelogin.io/oauth2/token')
     SIMPLELOGIN_USERINFO_URL = os.environ.get('SIMPLELOGIN_USERINFO_URL', 'https://app.simplelogin.io/oauth2/userinfo')
-    SIMPLELOGIN_REDIRECT_URI_ADMIN = os.environ.get('SIMPLELOGIN_REDIRECT_URI_ADMIN', 'http://localhost:5001/api/admin/login/simplelogin/callback')
+    SIMPLELOGIN_REDIRECT_URI_ADMIN = os.environ.get(
+        'SIMPLELOGIN_REDIRECT_URI_ADMIN',
+        f"{BACKEND_APP_BASE_URL}/api/admin/login/simplelogin/callback" # Default uses backend base
+    )
     SIMPLELOGIN_SCOPES = "openid email profile" 
 
 
@@ -135,7 +140,10 @@ class DevelopmentConfig(Config):
     TALISMAN_FORCE_HTTPS = False
     APP_BASE_URL = os.environ.get('DEV_APP_BASE_URL', 'http://localhost:8000') 
     Config.CONTENT_SECURITY_POLICY['connect-src'].extend(['http://localhost:5001', 'http://127.0.0.1:5001'])
-
+    SIMPLELOGIN_REDIRECT_URI_ADMIN = os.environ.get(
+        'DEV_SIMPLELOGIN_REDIRECT_URI_ADMIN',
+        f"{Config.BACKEND_APP_BASE_URL}/api/admin/login/simplelogin/callback"
+    )
 
 class TestingConfig(Config):
     TESTING = True
@@ -182,11 +190,13 @@ class ProductionConfig(Config):
     MYSQL_HOST_PROD = os.environ.get('MYSQL_HOST_PROD')
     MYSQL_DB_PROD = os.environ.get('MYSQL_DB_PROD')
     if not all([MYSQL_USER_PROD, MYSQL_PASSWORD_PROD, MYSQL_HOST_PROD, MYSQL_DB_PROD]):
-        print("WARNING: Production MySQL connection details are not fully set. Database will not connect.")
-        SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'prod_fallback_orm.sqlite3')
+        raise ValueError("Production MySQL connection details (MYSQL_USER_PROD, MYSQL_PASSWORD_PROD, MYSQL_HOST_PROD, MYSQL_DB_PROD) must be set in environment variables.")
     else:
         SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{MYSQL_USER_PROD}:{MYSQL_PASSWORD_PROD}@{MYSQL_HOST_PROD}/{MYSQL_DB_PROD}"
 
+    SIMPLELOGIN_REDIRECT_URI_ADMIN = os.environ.get('PROD_SIMPLELOGIN_REDIRECT_URI_ADMIN')
+    if not SIMPLELOGIN_REDIRECT_URI_ADMIN:
+        
     RATELIMIT_STORAGE_URI = os.environ.get('PROD_RATELIMIT_STORAGE_URI')
     if not RATELIMIT_STORAGE_URI or RATELIMIT_STORAGE_URI == "memory://":
         print("WARNING: RATELIMIT_STORAGE_URI is not set or is 'memory://' for production. Consider Redis.")
