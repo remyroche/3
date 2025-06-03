@@ -1,29 +1,22 @@
 // website/js/api.js
 // Handles API communication for the frontend application
 
-/**
- * Makes an API request to the backend.
- * @param {string} endpoint - The API endpoint (e.g., '/products', '/auth/login').
- * @param {string} [method='GET'] - The HTTP method.
- * @param {object|null} [body=null] - The request body for POST/PUT requests.
- * @param {boolean} [requiresAuth=false] - Whether the request requires an authentication token.
- * @returns {Promise<object>} - A promise that resolves with the JSON response from the API.
- * @throws {Error} - Throws an error if the API request fails or authentication is required but missing.
- */
-async function makeApiRequest(endpoint, method = 'GET', body = null, requiresAuth = false) {
-    // Ensure API_BASE_URL is available (should be from js/config.js)
+async function makeApiRequest(endpoint, method = 'GET', body = null, requiresAuth = false, timeout = 15000) { // Added timeout parameter
     if (typeof API_BASE_URL === 'undefined') {
         console.error("API_BASE_URL is not defined. Ensure config.js is loaded before api.js.");
         throw new Error("API configuration error.");
     }
 
+    const controller = new AbortController(); // For timeout
+    const signal = controller.signal;
+    let timeoutId;
+
     const headers = { 'Content-Type': 'application/json' };
     if (requiresAuth) {
         const token = typeof getAuthToken === 'function' ? getAuthToken() : sessionStorage.getItem('authToken'); 
         if (!token) {
-            // Do not throw error here directly, let backend handle unauthorized if endpoint is protected.
-            // showGlobalMessage might be called by the caller if a 401 is received.
             console.warn(`API request to ${endpoint} requires auth, but no token found.`);
+            // Note: The backend should ultimately deny access if auth is required and token is missing/invalid.
         } else {
             headers['Authorization'] = `Bearer ${token}`;
         }
@@ -32,44 +25,56 @@ async function makeApiRequest(endpoint, method = 'GET', body = null, requiresAut
     const config = {
         method: method,
         headers: headers,
+        signal: signal // Add signal to fetch config
     };
 
     if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
         config.body = JSON.stringify(body);
     }
 
-    const fullUrl = `${API_BASE_URL}${endpoint}`; // Prepend API_BASE_URL
-    console.log(`Making API request: ${method} ${fullUrl}`); // For debugging
+    const fullUrl = `${API_BASE_URL}${endpoint}`;
+    console.log(`Making API request: ${method} ${fullUrl}`); 
+
+    timeoutId = setTimeout(() => {
+        controller.abort();
+        console.error(`API request to ${fullUrl} timed out after ${timeout}ms.`);
+    }, timeout);
 
     try {
         const response = await fetch(fullUrl, config); 
+        clearTimeout(timeoutId); // Clear timeout if fetch completes
         
         if (!response.ok) {
             let errorResult = { message: `API Error: ${response.status} ${response.statusText}` };
             try {
-                errorResult = await response.json(); // Try to get structured error from backend
+                errorResult = await response.json(); 
             } catch (e) {
-                // If backend error is not JSON, use the status text
                 console.warn("API error response was not JSON.", e);
                 try {
                     errorResult.details = await response.text();
                 } catch (textErr) { /* ignore */ }
             }
-            // Construct a new error object to include status and backend message
             const error = new Error(errorResult.message || `HTTP error! Status: ${response.status}`);
             error.status = response.status;
-            error.data = errorResult; // Attach full error data from backend
+            error.data = errorResult; 
             throw error;
         }
 
-        if (response.status === 204) { // No Content
-            return { success: true, message: "Operation successful (no content)." }; // Provide a success object
+        if (response.status === 204) { 
+            return { success: true, message: "Operation successful (no content)." };
         }
-        return await response.json(); // For 200, 201 etc.
+        return await response.json(); 
     } catch (error) {
+        clearTimeout(timeoutId); // Clear timeout on error as well
+        if (error.name === 'AbortError') {
+            // This specific error is thrown by controller.abort() on timeout
+            const timeoutError = new Error(`Request to ${fullUrl} timed out.`);
+            timeoutError.status = 408; // Request Timeout
+            timeoutError.data = { message: `Request timed out after ${timeout/1000} seconds.`};
+            console.error(`API Error for ${method} ${fullUrl}:`, timeoutError.data.message, error);
+            throw timeoutError;
+        }
         console.error(`API Error for ${method} ${fullUrl}:`, error.data || error.message, error);
-        // Do not showGlobalMessage here, let the caller handle UI feedback.
-        // This allows more specific error messages based on context.
-        throw error; // Re-throw the error to be handled by the calling function
+        throw error; 
     }
 }
