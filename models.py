@@ -3,23 +3,24 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone
 import enum 
 import pyotp 
-import re # For password complexity
+import re 
 from flask import current_app 
 
 db = SQLAlchemy()
 
 # --- Enum Definitions ---
+# (Keep all Enum definitions as they were in models_py_fully_updated)
 class UserRoleEnum(enum.Enum):
     B2C_CUSTOMER = "b2c_customer"
     B2B_PROFESSIONAL = "b2b_professional"
     ADMIN = "admin"
     STAFF = "staff"
 
-class ProfessionalStatusEnum(enum.Enum): # Used for User.professional_status and ProfessionalDocument.status
+class ProfessionalStatusEnum(enum.Enum):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
-    PENDING_REVIEW = "pending_review" # For ProfessionalDocument
+    PENDING_REVIEW = "pending_review"
 
 class ProductTypeEnum(enum.Enum):
     SIMPLE = "simple"
@@ -83,62 +84,48 @@ class AssetTypeEnum(enum.Enum):
     QR_CODE = "qr_code"
     PASSPORT_HTML = "passport_html"
     LABEL_PDF = "label_pdf"
-    PRODUCT_IMAGE = "product_image" # Example, if you want to categorize assets further
+    PRODUCT_IMAGE = "product_image"
     CATEGORY_IMAGE = "category_image"
 
+
 # --- Model Definitions ---
+# (User, Category, Product, ProductImage, ProductWeightOption, 
+#  SerializedInventoryItem, StockMovement, Order, OrderItem models as in models_py_fully_updated,
+#  using the Enums defined above)
 
-class User(db.Model):
+class User(db.Model): # Example, ensure all models use Enums
     __tablename__ = 'users'
-
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(256)) 
     first_name = db.Column(db.String(80))
     last_name = db.Column(db.String(80))
-    role = db.Column(db.Enum(UserRoleEnum, name="user_role_enum"), 
-                     nullable=False, 
-                     default=UserRoleEnum.B2C_CUSTOMER, 
-                     index=True)
+    role = db.Column(db.Enum(UserRoleEnum, name="user_role_enum"), nullable=False, default=UserRoleEnum.B2C_CUSTOMER, index=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
     is_verified = db.Column(db.Boolean, default=False, nullable=False, index=True) 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    
     company_name = db.Column(db.String(120))
     vat_number = db.Column(db.String(50))
     siret_number = db.Column(db.String(50))
-    professional_status = db.Column(db.Enum(ProfessionalStatusEnum, name="professional_status_enum"), 
-                                    index=True) 
-    
+    professional_status = db.Column(db.Enum(ProfessionalStatusEnum, name="professional_status_enum"), index=True) 
     reset_token = db.Column(db.String(100), index=True)
     reset_token_expires_at = db.Column(db.DateTime)
     verification_token = db.Column(db.String(100), index=True)
     verification_token_expires_at = db.Column(db.DateTime)
-    
     magic_link_token = db.Column(db.String(100), index=True, nullable=True)
     magic_link_expires_at = db.Column(db.DateTime, nullable=True)
-
     totp_secret = db.Column(db.String(100)) 
     is_totp_enabled = db.Column(db.Boolean, default=False, nullable=False)
-    
     simplelogin_user_id = db.Column(db.String(255), unique=True, nullable=True, index=True) 
-
     orders = db.relationship('Order', backref='customer', lazy='dynamic')
     reviews = db.relationship('Review', backref='user', lazy='dynamic')
     cart = db.relationship('Cart', backref='user', uselist=False, lazy='joined') 
     professional_documents = db.relationship('ProfessionalDocument', backref='user', lazy='dynamic')
     b2b_invoices = db.relationship('Invoice', foreign_keys='Invoice.b2b_user_id', backref='b2b_user', lazy='dynamic')
     audit_logs_initiated = db.relationship('AuditLog', foreign_keys='AuditLog.user_id', backref='acting_user', lazy='dynamic')
-
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        if not self.password_hash: 
-            return False
-        return check_password_hash(self.password_hash, password)
-
+    def set_password(self, password): self.password_hash = generate_password_hash(password)
+    def check_password(self, password): return check_password_hash(self.password_hash, password) if self.password_hash else False
     @staticmethod
     def validate_password(password):
         if not password or len(password) < 8: return "auth.error.password_too_short"
@@ -146,28 +133,14 @@ class User(db.Model):
         if not re.search(r"[a-z]", password): return "auth.error.password_no_lowercase"
         if not re.search(r"[0-9]", password): return "auth.error.password_no_digit"
         return None
-
-    def generate_totp_secret(self):
-        self.totp_secret = pyotp.random_base32()
-        return self.totp_secret
-
+    def generate_totp_secret(self): self.totp_secret = pyotp.random_base32(); return self.totp_secret
     def get_totp_uri(self, issuer_name=None):
         if not self.totp_secret: self.generate_totp_secret() 
-        effective_issuer_name = issuer_name or current_app.config.get('TOTP_ISSUER_NAME', 'Maison Truvra')
-        if not self.totp_secret: raise ValueError("TOTP secret could not be generated.")
-        return pyotp.totp.TOTP(self.totp_secret).provisioning_uri(name=self.email, issuer_name=effective_issuer_name)
-
-    def verify_totp(self, code_attempt, for_time=None, window=1):
-        if not self.totp_secret: return False 
-        return pyotp.TOTP(self.totp_secret).verify(code_attempt, for_time=for_time, window=window)
-
-    def to_dict(self): 
-        return {"id": self.id, "email": self.email, "first_name": self.first_name,
-                "last_name": self.last_name, "role": self.role.value if self.role else None, 
-                "is_active": self.is_active, "is_verified": self.is_verified, 
-                "company_name": self.company_name,
-                "professional_status": self.professional_status.value if self.professional_status else None, 
-                "is_totp_enabled": self.is_totp_enabled, "is_admin": self.role == UserRoleEnum.ADMIN}
+        issuer = issuer_name or current_app.config.get('TOTP_ISSUER_NAME', 'Maison Truvra')
+        if not self.totp_secret: raise ValueError("TOTP secret missing.")
+        return pyotp.totp.TOTP(self.totp_secret).provisioning_uri(name=self.email, issuer_name=issuer)
+    def verify_totp(self, code, for_time=None, window=1): return pyotp.TOTP(self.totp_secret).verify(code, for_time=for_time, window=window) if self.totp_secret else False
+    def to_dict(self): return {"id": self.id, "email": self.email, "first_name": self.first_name, "last_name": self.last_name, "role": self.role.value if self.role else None, "is_active": self.is_active, "is_verified": self.is_verified, "company_name": self.company_name, "professional_status": self.professional_status.value if self.professional_status else None, "is_totp_enabled": self.is_totp_enabled, "is_admin": self.role == UserRoleEnum.ADMIN}
     def __repr__(self): return f'<User {self.email}>'
 
 class Category(db.Model):
@@ -182,16 +155,10 @@ class Category(db.Model):
     is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    
     products = db.relationship('Product', backref='category', lazy='dynamic')
     children = db.relationship('Category', backref=db.backref('parent', remote_side=[id]), lazy='dynamic')
     localizations = db.relationship('CategoryLocalization', backref='category', lazy='dynamic', cascade="all, delete-orphan")
-    
-    def to_dict(self):
-        return {"id": self.id, "name": self.name, "description": self.description, 
-                "image_url": self.image_url, "category_code": self.category_code,
-                "parent_id": self.parent_id, "slug": self.slug, "is_active": self.is_active,
-                "product_count": self.products.filter_by(is_active=True).count()}
+    def to_dict(self): return {"id": self.id, "name": self.name, "description": self.description, "image_url": self.image_url, "category_code": self.category_code, "parent_id": self.parent_id, "slug": self.slug, "is_active": self.is_active, "product_count": self.products.filter_by(is_active=True).count()}
     def __repr__(self): return f'<Category {self.name}>'
 
 class Product(db.Model):
@@ -216,7 +183,6 @@ class Product(db.Model):
     slug = db.Column(db.String(170), unique=True, nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-
     images = db.relationship('ProductImage', backref='product', lazy='dynamic', cascade="all, delete-orphan")
     weight_options = db.relationship('ProductWeightOption', backref='product', lazy='dynamic', cascade="all, delete-orphan")
     serialized_items = db.relationship('SerializedInventoryItem', backref='product', lazy='dynamic')
@@ -226,16 +192,7 @@ class Product(db.Model):
     cart_items = db.relationship('CartItem', backref='product', lazy='dynamic')
     localizations = db.relationship('ProductLocalization', backref='product', lazy='dynamic', cascade="all, delete-orphan")
     generated_assets = db.relationship('GeneratedAsset', foreign_keys='GeneratedAsset.related_product_id', backref='product_asset_owner', lazy='dynamic')
-
-    def to_dict(self): 
-        return {"id": self.id, "name": self.name, "product_code": self.product_code,
-                "slug": self.slug, "type": self.type.value if self.type else None, 
-                "base_price": self.base_price, "is_active": self.is_active, 
-                "is_featured": self.is_featured, "category_id": self.category_id,
-                "category_name": self.category.name if self.category else None,
-                "main_image_url": self.main_image_url, 
-                "aggregate_stock_quantity": self.aggregate_stock_quantity,
-                "aggregate_stock_weight_grams": self.aggregate_stock_weight_grams}
+    def to_dict(self): return {"id": self.id, "name": self.name, "product_code": self.product_code, "slug": self.slug, "type": self.type.value if self.type else None, "base_price": self.base_price, "is_active": self.is_active, "is_featured": self.is_featured, "category_id": self.category_id, "category_name": self.category.name if self.category else None, "main_image_url": self.main_image_url, "aggregate_stock_quantity": self.aggregate_stock_quantity, "aggregate_stock_weight_grams": self.aggregate_stock_weight_grams}
     def __repr__(self): return f'<Product {self.name}>'
 
 class ProductImage(db.Model):
@@ -258,14 +215,11 @@ class ProductWeightOption(db.Model):
     is_active = db.Column(db.Boolean, default=True, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    
     serialized_items = db.relationship('SerializedInventoryItem', backref='variant', lazy='dynamic')
     stock_movements = db.relationship('StockMovement', backref='variant', lazy='dynamic')
     order_items = db.relationship('OrderItem', backref='variant', lazy='dynamic')
     cart_items = db.relationship('CartItem', backref='variant', lazy='dynamic')
-    
-    __table_args__ = (db.UniqueConstraint('product_id', 'weight_grams', name='uq_product_weight'),
-                      db.UniqueConstraint('product_id', 'sku_suffix', name='uq_product_sku_suffix'))
+    __table_args__ = (db.UniqueConstraint('product_id', 'weight_grams', name='uq_product_weight'), db.UniqueConstraint('product_id', 'sku_suffix', name='uq_product_sku_suffix'))
 
 class SerializedInventoryItem(db.Model):
     __tablename__ = 'serialized_inventory_items'
@@ -290,18 +244,9 @@ class SerializedInventoryItem(db.Model):
     order_item_id = db.Column(db.Integer, db.ForeignKey('order_items.id'), unique=True, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    
     stock_movements = db.relationship('StockMovement', backref='serialized_item', lazy='dynamic')
     generated_assets = db.relationship('GeneratedAsset', foreign_keys='GeneratedAsset.related_item_uid', backref='inventory_item_asset_owner', lazy='dynamic')
-
-    def to_dict(self):
-        return {"id": self.id, "item_uid": self.item_uid, "product_id": self.product_id,
-                "variant_id": self.variant_id, "batch_number": self.batch_number,
-                "production_date": self.production_date.isoformat() if self.production_date else None,
-                "expiry_date": self.expiry_date.isoformat() if self.expiry_date else None,
-                "status": self.status.value if self.status else None, "notes": self.notes,
-                "product_name": self.product.name if self.product else None, 
-                "variant_sku_suffix": self.variant.sku_suffix if self.variant else None}
+    def to_dict(self): return {"id": self.id, "item_uid": self.item_uid, "product_id": self.product_id, "variant_id": self.variant_id, "batch_number": self.batch_number, "production_date": self.production_date.isoformat() if self.production_date else None, "expiry_date": self.expiry_date.isoformat() if self.expiry_date else None, "status": self.status.value if self.status else None, "notes": self.notes, "product_name": self.product.name if self.product else None,  "variant_sku_suffix": self.variant.sku_suffix if self.variant else None}
 
 class StockMovement(db.Model):
     __tablename__ = 'stock_movements'
@@ -317,13 +262,7 @@ class StockMovement(db.Model):
     related_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True) 
     movement_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     notes = db.Column(db.Text)
-
-    def to_dict(self): 
-        return {"id": self.id, "product_id": self.product_id, "variant_id": self.variant_id,
-                "serialized_item_id": self.serialized_item_id, 
-                "movement_type": self.movement_type.value if self.movement_type else None,
-                "quantity_change": self.quantity_change, "weight_change_grams": self.weight_change_grams,
-                "reason": self.reason, "movement_date": self.movement_date.isoformat(), "notes": self.notes}
+    def to_dict(self): return {"id": self.id, "product_id": self.product_id, "variant_id": self.variant_id, "serialized_item_id": self.serialized_item_id, "movement_type": self.movement_type.value if self.movement_type else None, "quantity_change": self.quantity_change, "weight_change_grams": self.weight_change_grams, "reason": self.reason, "movement_date": self.movement_date.isoformat(), "notes": self.notes}
 
 class Order(db.Model):
     __tablename__ = 'orders'
@@ -333,27 +272,13 @@ class Order(db.Model):
     status = db.Column(db.Enum(OrderStatusEnum, name="order_status_enum"), nullable=False, default=OrderStatusEnum.PENDING_PAYMENT, index=True)
     total_amount = db.Column(db.Float, nullable=False)
     currency = db.Column(db.String(10), default='EUR')
-    shipping_address_line1 = db.Column(db.String(255))
-    shipping_address_line2 = db.Column(db.String(255))
-    shipping_city = db.Column(db.String(100))
-    shipping_postal_code = db.Column(db.String(20))
-    shipping_country = db.Column(db.String(100))
-    billing_address_line1 = db.Column(db.String(255))
-    billing_address_line2 = db.Column(db.String(255))
-    billing_city = db.Column(db.String(100))
-    billing_postal_code = db.Column(db.String(20))
-    billing_country = db.Column(db.String(100))
-    payment_method = db.Column(db.String(50))
-    payment_transaction_id = db.Column(db.String(100), index=True)
-    shipping_method = db.Column(db.String(100))
-    shipping_cost = db.Column(db.Float, default=0.0)
-    tracking_number = db.Column(db.String(100))
-    notes_customer = db.Column(db.Text)
-    notes_internal = db.Column(db.Text)
+    shipping_address_line1 = db.Column(db.String(255)); shipping_address_line2 = db.Column(db.String(255)); shipping_city = db.Column(db.String(100)); shipping_postal_code = db.Column(db.String(20)); shipping_country = db.Column(db.String(100))
+    billing_address_line1 = db.Column(db.String(255)); billing_address_line2 = db.Column(db.String(255)); billing_city = db.Column(db.String(100)); billing_postal_code = db.Column(db.String(20)); billing_country = db.Column(db.String(100))
+    payment_method = db.Column(db.String(50)); payment_transaction_id = db.Column(db.String(100), index=True)
+    shipping_method = db.Column(db.String(100)); shipping_cost = db.Column(db.Float, default=0.0); tracking_number = db.Column(db.String(100))
+    notes_customer = db.Column(db.Text); notes_internal = db.Column(db.Text)
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'), unique=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc)); updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     items = db.relationship('OrderItem', backref='order', lazy='dynamic', cascade="all, delete-orphan")
     stock_movements = db.relationship('StockMovement', backref='related_order', lazy='dynamic')
     invoice = db.relationship('Invoice', backref=db.backref('order_link', uselist=False)) 
@@ -365,13 +290,9 @@ class OrderItem(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
     variant_id = db.Column(db.Integer, db.ForeignKey('product_weight_options.id'), index=True)
     serialized_item_id = db.Column(db.Integer, db.ForeignKey('serialized_inventory_items.id'), unique=True, index=True)
-    quantity = db.Column(db.Integer, nullable=False)
-    unit_price = db.Column(db.Float, nullable=False) 
-    total_price = db.Column(db.Float, nullable=False)
-    product_name = db.Column(db.String(150)) 
-    variant_description = db.Column(db.String(100)) 
+    quantity = db.Column(db.Integer, nullable=False); unit_price = db.Column(db.Float, nullable=False); total_price = db.Column(db.Float, nullable=False)
+    product_name = db.Column(db.String(150)); variant_description = db.Column(db.String(100)) 
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    
     sold_serialized_item = db.relationship('SerializedInventoryItem', backref='order_item_link', foreign_keys=[serialized_item_id], uselist=False)
 
 class Review(db.Model):
@@ -383,8 +304,10 @@ class Review(db.Model):
     comment = db.Column(db.Text)
     review_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     is_approved = db.Column(db.Boolean, default=False, index=True)
-    
-    __table_args__ = (db.CheckConstraint('rating >= 1 AND rating <= 5', name='ck_review_rating'),)
+    __table_args__ = (
+        db.CheckConstraint('rating >= 1 AND rating <= 5', name='ck_review_rating'),
+        db.UniqueConstraint('product_id', 'user_id', name='uq_user_product_review') # Added unique constraint
+    )
 
 class Cart(db.Model):
     __tablename__ = 'carts'
@@ -464,7 +387,7 @@ class NewsletterSubscription(db.Model):
     is_active = db.Column(db.Boolean, default=True, index=True)
     source = db.Column(db.String(100)) 
     consent = db.Column(db.String(10), nullable=False, default='Y') 
-    language_code = db.Column(db.String(5)) # To store 'fr' or 'en'
+    language_code = db.Column(db.String(5)) 
 
 class Setting(db.Model):
     __tablename__ = 'settings'
@@ -478,18 +401,12 @@ class ProductLocalization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
     lang_code = db.Column(db.String(5), nullable=False) 
-    name_fr = db.Column(db.String(150)) 
-    name_en = db.Column(db.String(150))
-    description_fr = db.Column(db.Text)
-    description_en = db.Column(db.Text)
-    short_description_fr = db.Column(db.Text)
-    short_description_en = db.Column(db.Text)
-    ideal_uses_fr = db.Column(db.Text)
-    ideal_uses_en = db.Column(db.Text)
-    pairing_suggestions_fr = db.Column(db.Text)
-    pairing_suggestions_en = db.Column(db.Text)
-    sensory_description_fr = db.Column(db.Text)
-    sensory_description_en = db.Column(db.Text)
+    name_fr = db.Column(db.String(150)); name_en = db.Column(db.String(150))
+    description_fr = db.Column(db.Text); description_en = db.Column(db.Text)
+    short_description_fr = db.Column(db.Text); short_description_en = db.Column(db.Text)
+    ideal_uses_fr = db.Column(db.Text); ideal_uses_en = db.Column(db.Text)
+    pairing_suggestions_fr = db.Column(db.Text); pairing_suggestions_en = db.Column(db.Text)
+    sensory_description_fr = db.Column(db.Text); sensory_description_en = db.Column(db.Text)
     __table_args__ = (db.UniqueConstraint('product_id', 'lang_code', name='uq_product_lang'),)
 
 class CategoryLocalization(db.Model):
@@ -497,26 +414,16 @@ class CategoryLocalization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     lang_code = db.Column(db.String(5), nullable=False)
-    name_fr = db.Column(db.String(100))
-    name_en = db.Column(db.String(100))
-    description_fr = db.Column(db.Text)
-    description_en = db.Column(db.Text)
-    species_fr = db.Column(db.Text)
-    species_en = db.Column(db.Text)
-    main_ingredients_fr = db.Column(db.Text)
-    main_ingredients_en = db.Column(db.Text)
-    ingredients_notes_fr = db.Column(db.Text)
-    ingredients_notes_en = db.Column(db.Text)
-    fresh_vs_preserved_fr = db.Column(db.Text)
-    fresh_vs_preserved_en = db.Column(db.Text)
-    size_details_fr = db.Column(db.Text)
-    size_details_en = db.Column(db.Text)
-    pairings_fr = db.Column(db.Text)
-    pairings_en = db.Column(db.Text)
-    weight_info_fr = db.Column(db.Text)
-    weight_info_en = db.Column(db.Text)
-    category_notes_fr = db.Column(db.Text)
-    category_notes_en = db.Column(db.Text)
+    name_fr = db.Column(db.String(100)); name_en = db.Column(db.String(100))
+    description_fr = db.Column(db.Text); description_en = db.Column(db.Text)
+    species_fr = db.Column(db.Text); species_en = db.Column(db.Text)
+    main_ingredients_fr = db.Column(db.Text); main_ingredients_en = db.Column(db.Text)
+    ingredients_notes_fr = db.Column(db.Text); ingredients_notes_en = db.Column(db.Text)
+    fresh_vs_preserved_fr = db.Column(db.Text); fresh_vs_preserved_en = db.Column(db.Text)
+    size_details_fr = db.Column(db.Text); size_details_en = db.Column(db.Text)
+    pairings_fr = db.Column(db.Text); pairings_en = db.Column(db.Text)
+    weight_info_fr = db.Column(db.Text); weight_info_en = db.Column(db.Text)
+    category_notes_fr = db.Column(db.Text); category_notes_en = db.Column(db.Text)
     __table_args__ = (db.UniqueConstraint('category_id', 'lang_code', name='uq_category_lang'),)
 
 class GeneratedAsset(db.Model):
@@ -529,7 +436,7 @@ class GeneratedAsset(db.Model):
     generated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 class TokenBlocklist(db.Model):
-    __tablename__ = 'token_blocklist' # Added table name
+    __tablename__ = 'token_blocklist'
     id = db.Column(db.Integer, primary_key=True)
     jti = db.Column(db.String(36), nullable=False, index=True, unique=True)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
@@ -537,3 +444,4 @@ class TokenBlocklist(db.Model):
 
     def __repr__(self):
         return f"<TokenBlocklist {self.jti}>"
+
