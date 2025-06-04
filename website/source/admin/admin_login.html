@@ -1,129 +1,150 @@
-<!-- website/source/admin/admin_login.html -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion Administrateur - Maison Trüvra</title>
-    <link rel="stylesheet" href="css/admin_style.css"> <!-- Ensure this path is correct -->
-    <link href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css)" rel="stylesheet">
+    <title>Connexion Admin - Maison Trüvra</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS (if used) -->
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+
+    <!-- Your EXISTING admin_style.css (if any parts are still needed) -->
+    <link rel="stylesheet" href="js/css/admin_style.css"> 
+    
+    <!-- NEW Global Admin Styles for Maison Trüvra Branding -->
+    <link rel="stylesheet" href="js/css/admin_global_styles.css"> 
+
     <style>
-        /* Additional styles for TOTP and SimpleLogin button if not in admin_style.css */
-        .totp-section { margin-top: 1.5rem; }
-        .simplelogin-btn {
-            background-color: #4A90E2; /* Example SimpleLogin-like blue */
-            color: white;
-            transition: background-color 0.3s;
-        }
-        .simplelogin-btn:hover {
-            background-color: #357ABD;
-        }
-        .divider-text {
+        /* Specific styles for login page - can be merged into admin_global_styles.css if preferred */
+        .login-container-wrapper {
             display: flex;
+            flex-direction: column; /* To center content and footer */
+            justify-content: center; /* Centers login card vertically */
             align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            padding: calc(var(--spacing-unit) * 2);
+            background-color: var(--mt-cream); /* Ensure body background is applied */
+        }
+        .login-card {
+            width: 100%;
+            max-width: 420px; /* Slightly adjusted max width */
+            background-color: #fff;
+            padding: calc(var(--spacing-unit) * 5) calc(var(--spacing-unit) * 4); /* 40px 32px - Swapped for more vertical padding */
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--mt-warm-taupe);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.1); /* Slightly enhanced shadow */
+        }
+        .login-logo-container { /* Added container for better logo control */
             text-align: center;
-            color: #6b7280; /* Tailwind gray-500 */
-            font-size: 0.875rem; /* text-sm */
-            margin: 1.5rem 0; /* my-6 */
+            margin-bottom: calc(var(--spacing-unit) * 2); /* 16px */
         }
-        .divider-text::before,
-        .divider-text::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid #e5e7eb; /* Tailwind gray-200 */
+        .login-logo {
+            max-width: 180px; /* Adjusted size */
+            height: auto;
         }
-        .divider-text:not(:empty)::before {
-            margin-right: .5em;
+        .login-title {
+            font-family: var(--font-serif);
+            font-size: 1.625rem; /* 26px - Slightly adjusted */
+            color: var(--mt-near-black);
+            margin-bottom: calc(var(--spacing-unit) * 3); /* 24px */
+            text-align: center;
+            font-weight: 700;
         }
-        .divider-text:not(:empty)::after {
-            margin-left: .5em;
+        .login-card .form-group {
+            margin-bottom: calc(var(--spacing-unit) * 2.5); /* 20px */
+        }
+        .login-card .form-group label {
+            font-size: 0.875rem; /* 14px */
+            font-weight: 500; /* Medium weight for labels */
+        }
+        .login-card .btn-primary {
+            width: 100%; /* Full width login button */
+            padding-top: calc(var(--spacing-unit) * 1.5); /* 12px */
+            padding-bottom: calc(var(--spacing-unit) * 1.5);
+            font-size: 1rem; /* 16px */
+            letter-spacing: 0.8px;
+        }
+        .login-links {
+            margin-top: calc(var(--spacing-unit) * 2.5); /* 20px */
+            text-align: center;
+            font-size: 0.875rem; /* 14px */
+        }
+        .login-links a {
+            color: var(--mt-earth-brown);
+            text-decoration: none;
+        }
+        .login-links a:hover {
+            color: var(--mt-gold);
+            text-decoration: underline;
+        }
+        .login-footer {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--mt-earth-brown);
+            margin-top: calc(var(--spacing-unit) * 4); /* 32px */
         }
     </style>
 </head>
-<body id="page-admin-login" class="bg-gray-100 flex items-center justify-center h-screen">
-    <div class="admin-login-container bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-        <div class="logo-container text-center mb-8">
-            <i class="fas fa-user-shield fa-3x text-gray-700"></i>
-            <h1 class="text-3xl font-bold text-gray-800 mt-2">Maison Trüvra</h1>
-            <p class="text-gray-600">Portail Administrateur</p>
-        </div>
-
-        <form id="admin-login-form" class="space-y-6">
-            <div id="password-section">
-                <div>
-                    <label for="admin-email" class="block text-sm font-medium text-gray-700">Email</label>
-                    <div class="mt-1 relative rounded-md shadow-sm">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-envelope text-gray-400"></i>
-                        </div>
-                        <input type="email" id="admin-email" name="email" required
-                               class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 form-input-admin">
-                    </div>
-                </div>
-
-                <div>
-                    <label for="admin-password" class="block text-sm font-medium text-gray-700">Mot de passe</label>
-                    <div class="mt-1 relative rounded-md shadow-sm">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-lock text-gray-400"></i>
-                        </div>
-                        <input type="password" id="admin-password" name="password" required
-                               class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 form-input-admin">
-                    </div>
-                </div>
+<body class="admin-body"> <!-- admin-body class might not be strictly necessary here if login-container-wrapper styles body fully -->
+    <div class="login-container-wrapper">
+        <div class="login-card">
+            <div class="login-logo-container">
+                <!-- Adjust path to your logo. This assumes 'admin' is a subdir and 'static_assets' is a sibling to that subdir's parent. -->
+                <!-- Common structure: project_root/static_assets/logos/... and project_root/app/admin/... -->
+                <!-- So, from admin/admin_login.html, it might be '../../static_assets/logos/maison_truvra_invoice_logo.png' -->
+                <!-- Or if served from /static route: '/static/logos/maison_truvra_invoice_logo.png' -->
+                <img src="../static_assets/logos/maison_truvra_invoice_logo.png" alt="Maison Trüvra Logo" class="login-logo">
             </div>
+            <h1 class="login-title">Accès Administrateur</h1>
             
-            <!-- TOTP Section (hidden by default) -->
-            <div id="totp-section" class="hidden totp-section space-y-4">
-                <p class="text-sm text-center text-gray-700">Un code de vérification a été envoyé à votre application d'authentification.</p>
-                <div>
-                    <label for="admin-totp-code" class="block text-sm font-medium text-gray-700">Code TOTP (6 chiffres)</label>
-                    <input type="text" id="admin-totp-code" name="totp_code" inputmode="numeric" pattern="[0-9]*" maxlength="6"
-                           class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 text-center form-input-admin"
-                           autocomplete="one-time-code">
+            <div id="error-message-container" class="alert alert-danger mb-3" style="display: none;">
+                <!-- Error messages will be shown here -->
+            </div>
+            <div id="success-message-container" class="alert alert-success mb-3" style="display: none;">
+                <!-- Success messages will be shown here -->
+            </div>
+
+            <form id="admin-login-form">
+                <div class="form-group">
+                    <label for="email">Adresse E-mail</label>
+                    <input type="email" id="email" name="email" required placeholder="votreadresse@example.com">
                 </div>
-                 <button type="button" id="submit-totp-button"
-                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                    Vérifier Code TOTP
-                </button>
+                <div class="form-group">
+                    <label for="password">Mot de Passe</label>
+                    <input type="password" id="password" name="password" required placeholder="Votre mot de passe">
+                </div>
+                <!-- TOTP Field - initially hidden or shown based on backend logic -->
+                <div class="form-group" id="totp-group" style="display: none;">
+                    <label for="totp_code">Code TOTP (si activé)</label>
+                    <input type="text" id="totp_code" name="totp_code" inputmode="numeric" pattern="[0-9]{6}" placeholder="Code à 6 chiffres" maxlength="6">
+                </div>
+                <div class="form-group mt-4"> <!-- Added margin-top -->
+                    <button type="submit" class="btn btn-primary">Se Connecter</button>
+                </div>
+            </form>
+            <div class="login-links">
+                <a href="#">Mot de passe oublié ?</a>
+                <!-- <span class="mx-2 text-gray-400">|</span> -->
+                <!-- <a href="/">Retour au site</a> -->
             </div>
-            
-            <div id="login-error-message" class="hidden text-red-500 text-sm text-center min-h-[1.25rem]"></div>
-
-            <div>
-                <button type="submit" id="submit-password-button"
-                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 login-button">
-                    Se connecter
-                </button>
-            </div>
-        </form>
-
-        <div class="divider-text">OU</div>
-
-        <div>
-            <button type="button" id="simplelogin-button"
-                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white simplelogin-btn focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                <i class="fas fa-sign-in-alt mr-2"></i> Se connecter avec SimpleLogin
-            </button>
         </div>
-
-        <p class="mt-6 text-center text-sm text-gray-500">
-            <a href="../index.html" class="font-medium text-indigo-600 hover:text-indigo-500">
-                Retour au site principal
-            </a>
-        </p>
+        <footer class="login-footer">
+             &copy; <span id="current-year-login"></span> Maison Trüvra. Tous droits réservés.
+        </footer>
     </div>
-   
-    <div id="admin-toast-container" class="fixed bottom-0 right-0 p-4 space-y-2 z-[1051]"></div>
 
-    <!-- Ensure admin_config.js is loaded first -->
-    <script src="js/admin_config.js"></script> 
-    <script src="js/admin_ui.js"></script>
-    <script src="js/admin_api.js"></script> 
-    <script src="js/admin_auth.js"></script> 
-    <script src="js/admin_main.js"></script> 
+    <!-- Admin specific JS for login -->
+    <script src="js/admin_api.js"></script> <!-- If API calls are made from login page itself -->
+    <script src="js/admin_auth.js"></script>
+    <script>
+        document.getElementById('current-year-login').textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>
-
 
 
