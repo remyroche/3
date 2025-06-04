@@ -1,112 +1,115 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Maison Trüvra</title>
-    <link rel="stylesheet" href="css/admin_style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <title>Tableau de Bord - Admin - Maison Trüvra</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS (if you are using it for base or utilities) -->
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+
+    <!-- Your EXISTING admin_style.css (if any parts are still needed) -->
+    <link rel="stylesheet" href="js/css/admin_style.css"> 
+    
+    <!-- NEW Global Admin Styles for Maison Trüvra Branding -->
+    <link rel="stylesheet" href="js/css/admin_global_styles.css"> 
+    
+    <!-- Page-specific styles for dashboard (if any) -->
+    <!-- <link rel="stylesheet" href="css/admin_dashboard_specific.css"> -->
 </head>
-<body id="page-admin-dashboard"> 
-    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
-                    <i class="fas fa-arrow-left mr-2"></i>
-                    Retour au Tableau de Bord
-                </a>
-                <div id="admin-header-title-area">
-                     <h1 class="text-xl font-semibold text-gray-700">Maison Trüvra - Admin</h1>
+<body class="admin-body">
+    <div class="admin-main-container">
+        <header class="admin-page-header">
+            <h1 class="admin-page-title">Tableau de Bord</h1>
+            <!-- Optional: Breadcrumbs or user profile link here -->
+        </header>
+
+        <main>
+            <!-- Example: Stats Cards using .content-card -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div class="content-card text-center">
+                    <h3 class="content-card-title mb-2">Utilisateurs Actifs</h3>
+                    <p class="font-sans text-3xl font-bold color-burgundy" id="stats-active-users">125</p>
+                    <a href="admin_manage_users.html" class="btn btn-outline-gold btn-sm mt-3">Gérer</a>
+                </div>
+                <div class="content-card text-center">
+                    <h3 class="content-card-title mb-2">Commandes Récentes</h3>
+                    <p class="font-sans text-3xl font-bold color-burgundy" id="stats-recent-orders">32</p>
+                    <a href="admin_manage_orders.html" class="btn btn-outline-gold btn-sm mt-3">Voir</a>
+                </div>
+                <div class="content-card text-center">
+                    <h3 class="content-card-title mb-2">Produits en Stock</h3>
+                    <p class="font-sans text-3xl font-bold color-burgundy" id="stats-products-stock">480</p>
+                     <a href="admin_manage_products.html" class="btn btn-outline-gold btn-sm mt-3">Inventaire</a>
+                </div>
+                <div class="content-card text-center">
+                    <h3 class="content-card-title mb-2">Revenu (Mois)</h3>
+                    <p class="font-sans text-3xl font-bold color-burgundy" id="stats-monthly-revenue">€7,500</p>
+                    <a href="admin_invoices.html" class="btn btn-outline-gold btn-sm mt-3">Factures</a>
                 </div>
             </div>
-            <div class="flex items-center space-x-4">
-                <span id="admin-user-greeting" class="text-gray-700 text-sm mr-2"></span>
-                <button id="admin-logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-sm flex items-center">
-                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
-                </button>
-            </div>
-        </div>
-    </header>
 
-    <nav class="bg-gray-800 text-white shadow-md">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-start h-12 space-x-1 overflow-x-auto">
-                <a href="admin_dashboard.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 active">Tableau de Bord</a>
-                <a href="admin_manage_products.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Produits</a>
-                <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Inventaire</a>
-                <a href="admin_view_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voir Inventaire</a>
-                <a href="admin_manage_orders.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Commandes</a>
-                <a href="admin_manage_users.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Utilisateurs</a>
-                <a href="admin_manage_categories.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Catégories</a>
-                <a href="admin_invoices.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Factures</a>
-                <a href="admin_manage_reviews.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Avis</a>
-                <a href="../index.html" target="_blank" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voir Site Public</a>
-            </div>
-        </div>
-    </nav>
-    <main class="admin-content-area container mx-auto p-6 space-y-6">
-        <div class="dashboard-header"> 
-            <h2 class="text-2xl font-semibold text-gray-800">Welcome, <span id="admin-user-greeting-main">Admin</span>!</h2>
-            <p class="text-gray-600">Here's a quick overview of your store.</p>
-        </div>
-
-        <section class="dashboard-summary">
-            <div class="summary-card" id="totalProductsCard">
-                <h3>Total Products</h3>
-                <p>Loading...</p>
-                <a href="admin_manage_products.html">Manage Products &raquo;</a>
-            </div>
-            <div class="summary-card" id="totalCategoriesCard">
-                <h3>Total Categories</h3>
-                <p>Loading...</p>
-                <a href="admin_manage_categories.html">Manage Categories &raquo;</a>
-            </div>
-            <div class="summary-card" id="pendingOrdersCard">
-                <h3>Pending Orders</h3>
-                <p>Loading...</p>
-                <a href="admin_manage_orders.html?status=processing">View Pending Orders &raquo;</a>
-            </div>
-            <div class="summary-card" id="totalUsersCard">
-                <h3>Registered Users</h3>
-                <p>Loading...</p>
-                <a href="admin_manage_users.html">Manage Users &raquo;</a>
-            </div>
+            <section class="admin-content-area">
+                <h2 class="section-heading">Aperçu Rapide</h2>
+                <p class="mb-4">Bienvenue sur le panneau d'administration de Maison Trüvra. Utilisez les liens de navigation pour gérer les différents aspects de la boutique.</p>
+                
+                <div class="button-group">
+                    <a href="admin_manage_products.html" class="btn btn-primary">Gérer les Produits</a>
+                    <a href="admin_manage_orders.html" class="btn btn-secondary">Gérer les Commandes</a>
+                    <a href="admin_create_invoice.html" class="btn btn-outline-gold">Créer une Facture</a>
+                </div>
             </section>
 
-        <section class="quick-links admin-section-container"> 
-            <h3 class="admin-section-title">Quick Links</h3> 
-            <ul>
-                <li><a href="admin_manage_products.html#productFormContainer">Add New Product</a></li>
-                <li><a href="admin_manage_categories.html#categoryFormContainer">Add New Category</a></li>
-                <li><a href="admin_manage_orders.html">View All Orders</a></li>
-                <li><a href="admin_manage_inventory.html">Manage Inventory/Variants</a></li>
-            </ul>
-        </section>
-        
-    </main>
+            <div class="grid md:grid-cols-2 gap-6 mt-6">
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h3 class="content-card-title">Commandes Récentes</h3>
+                    </div>
+                    <div class="content-card-body">
+                        <ul id="recent-orders-list">
+                            <li class="py-2 border-b border-gray-200">Commande #1234 - Jean Dupont - <span class="font-semibold color-gold">En attente</span></li>
+                            <li class="py-2 border-b border-gray-200">Commande #1233 - Alice Martin - <span class="font-semibold color-deep-sage-green">Expédiée</span></li>
+                            <li class="py-2">Commande #1232 - Bob L'éponge - <span class="font-semibold color-slate-blue-grey">Livrée</span></li>
+                            <!-- JS would populate this list -->
+                        </ul>
+                    </div>
+                </div>
 
-    <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
-        <p>&copy; <span id="currentYearDashboard"></span> Maison Trüvra - Admin Panel</p>
-    </footer>
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h3 class="content-card-title">Notifications</h3>
+                    </div>
+                    <div class="content-card-body">
+                        <div class="alert alert-info">Nouveau message de support reçu.</div>
+                        <div class="alert alert-warning">Stock faible pour "Truffe Noire Extra".</div>
+                        <!-- JS would populate this list -->
+                    </div>
+                </div>
+            </div>
+        </main>
 
-    <div id="admin-toast-container"></div>
+        <footer class="text-center text-small mt-4 py-4 border-t border-mt-warm-taupe">
+            <p>&copy; <span id="current-year"></span> Maison Trüvra. Tous droits réservés.</p>
+        </footer>
+    </div>
 
-    <script src="js/admin_config.js"></script>
-    <script src="js/admin_ui.js"></script> 
-    <script src="js/admin_api.js"></script>
-    <script src="js/admin_auth.js"></script>
-    <script src="js/admin_main.js"></script> 
+    <!-- Admin specific JS for dashboard interactions -->
     <script src="js/admin_dashboard.js"></script>
     <script>
-        const currentYearSpanDashboard = document.getElementById('currentYearDashboard');
-        if (currentYearSpanDashboard) {
-            currentYearSpanDashboard.textContent = new Date().getFullYear();
-        }
-        const adminUserForGreeting = typeof getAdminUser === 'function' ? getAdminUser() : null;
-        const greetingMainElement = document.getElementById('admin-user-greeting-main');
-        if (greetingMainElement && adminUserForGreeting) {
-            greetingMainElement.textContent = `${adminUserForGreeting.prenom || 'Admin'}`;
-        }
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        // Example: Fetch and update stats
+        // fetch('/api/admin/dashboard-stats')
+        //   .then(response => response.json())
+        //   .then(data => {
+        //     document.getElementById('stats-active-users').textContent = data.activeUsers;
+        //     document.getElementById('stats-recent-orders').textContent = data.recentOrders;
+        //     // etc.
+        //   });
     </script>
 </body>
 </html>
