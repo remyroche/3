@@ -1,22 +1,4 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Manage Categories</title>
-    <link rel="stylesheet" href="js/css/admin_style.css">
-     <style>
-        main { padding: 20px; max-width: 900px; margin: auto; }
-        h2, h3 { color: #333; }
-        #categoryFormContainer, #categoriesTableContainer { margin-bottom: 30px; padding: 15px; background-color: #f9f9f9; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        form div { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="url"], textarea {
-            width: calc(100% - 22px); padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
-        }
-        input[type="checkbox"] { margin-right: 5px; vertical-align: middle; }
-        textarea { min-height: 80px; }
-        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -41,8 +23,8 @@
         <main>
             <section class="admin-content-area">
                 <!-- Add Category Form (could be in a modal or a separate section) -->
-                <div id="add-category-form-section" class="content-card mb-4" style="display: none;"> <!-- Initially hidden -->
-                    <h2 class="section-heading">Ajouter/Modifier une Catégorie</h2>
+                <div id="add-category-form-section" class="content-card mb-4" style="display: none;"> <!-- Initially hidden, JS will manage visibility -->
+                    <h2 class="section-heading">Ajouter/Modifier une Catégorie</h2> <!-- Title can be changed by JS -->
                     <form id="category-form">
                         <input type="hidden" id="category-id" name="category_id">
                         <div class="form-group">
@@ -57,7 +39,7 @@
                             <label for="category-parent">Catégorie Parente (Optionnel)</label>
                             <select id="category-parent" name="parent_id">
                                 <option value="">Aucune (Catégorie Principale)</option>
-                                <!-- JS to populate with existing categories -->
+                                <!-- JS (admin_categories.js) to populate with existing categories -->
                             </select>
                         </div>
                         <div class="button-group">
@@ -78,34 +60,10 @@
                     </thead>
                     <tbody>
                         <!-- Example Row (JS would populate this) -->
+                        <!-- Rows will be dynamically inserted by js/admin_categories.js -->
                         <tr>
-                            <td class="font-weight-medium">Truffes Fraîches</td>
-                            <td>Sélection de truffes noires et blanches de saison.</td>
-                            <td>12</td>
-                            <td class="actions text-right">
-                                <a href="#" class="edit-category">Modifier</a>
-                                <button type="button" class="btn-link danger delete-category">Supprimer</button>
-                            </td>
+                            <td colspan="4" class="text-center p-4">Chargement des catégories...</td>
                         </tr>
-                        <tr>
-                            <td class="font-weight-medium">Huiles & Condiments</td>
-                            <td>Huiles d'olive infusées à la truffe, vinaigres balsamiques.</td>
-                            <td>8</td>
-                            <td class="actions text-right">
-                                <a href="#" class="edit-category">Modifier</a>
-                                <button type="button" class="btn-link danger delete-category">Supprimer</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-medium">&nbsp;&nbsp;&nbsp;↳ Truffes Noires (Sous-catégorie)</td>
-                            <td>Tuber Melanosporum</td>
-                            <td>5</td>
-                            <td class="actions text-right">
-                                <a href="#" class="edit-category">Modifier</a>
-                                <button type="button" class="btn-link danger delete-category">Supprimer</button>
-                            </td>
-                        </tr>
-                        <!-- More rows here -->
                     </tbody>
                 </table>
             </section>
@@ -117,24 +75,17 @@
     </div>
 
     <!-- Admin specific JS for category management -->
+    <!-- Ensure admin_api.js (or similar for fetchAPIData) is loaded before admin_categories.js if it's a dependency -->
+    <script src="js/admin_api.js"></script> 
     <script src="js/admin_categories.js"></script>
     <script>
+        // Set current year in footer
         document.getElementById('current-year').textContent = new Date().getFullYear();
-        const addCategoryBtn = document.getElementById('add-new-category-btn');
-        const categoryFormSection = document.getElementById('add-category-form-section');
-        const cancelCategoryFormBtn = document.getElementById('cancel-category-form-btn');
-
-        addCategoryBtn.addEventListener('click', () => {
-            categoryFormSection.style.display = 'block';
-            document.getElementById('category-form').reset(); // Reset form for new entry
-            document.getElementById('category-id').value = ''; // Clear any existing ID
-        });
-        if(cancelCategoryFormBtn) {
-            cancelCategoryFormBtn.addEventListener('click', () => {
-                categoryFormSection.style.display = 'none';
-            });
-        }
-        // Further JS in admin_categories.js to handle form submission, populating table, edit, delete etc.
+        
+        // The main logic for showing/hiding the form, fetching data, 
+        // and handling form submissions is now in js/admin_categories.js
+        // This inline script is kept minimal.
     </script>
 </body>
 </html>
+
