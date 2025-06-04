@@ -1,506 +1,465 @@
-/* General Body and Resets */
-body {
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-    background-color: #F5F5F4; /* bg-stone-100 */
-    color: #44403C; /* text-stone-700 */
-    display: flex;
-    flex-direction: column; 
-    min-height: 100vh; 
-    overflow-x: hidden; 
+/* admin_global_styles.css */
+/* Maison Trüvra Admin Branding */
+
+/* -------------------------------------------------------------------------- */
+/* CSS Variables                               */
+/* -------------------------------------------------------------------------- */
+:root {
+    --mt-cream: #F5EEDE;
+    --mt-near-black: #11120D;
+    --mt-gold: #D4AF37;
+    --mt-warm-taupe: #A28C6A;
+    --mt-earth-brown: #7D6A4F;
+    --mt-slate-blue-grey: #6E7582; /* For potential secondary accents or info elements */
+    --mt-deep-sage-green: #4B5A59; /* For potential success or alternative accents */
+    --mt-truffle-burgundy: #8A3E3E;
+
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-serif: 'Lora', Georgia, Cambria, "Times New Roman", Times, serif;
+
+    --border-radius-sm: 4px;
+    --border-radius-md: 6px;
+    --spacing-unit: 8px; /* Base unit for margins/paddings, e.g., 1rem = 16px if base font is 16px */
 }
 
-* {
+/* -------------------------------------------------------------------------- */
+/* Global Resets & Body                         */
+/* -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body.admin-body { /* Add .admin-body class to your admin pages' body tag */
+    font-family: var(--font-sans);
+    color: var(--mt-near-black);
+    background-color: var(--mt-cream);
+    line-height: 1.6;
+    padding: calc(var(--spacing-unit) * 3); /* 24px */
+    font-size: 16px; /* Base font size */
+}
+
+/* -------------------------------------------------------------------------- */
+/* Main Layout Containers                         */
+/* -------------------------------------------------------------------------- */
+.admin-main-container { /* Overall wrapper for admin content if needed, e.g., after a sidebar */
+    width: 100%;
+    max-width: 1200px; /* Or your preferred max width */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.admin-page-header {
+    margin-bottom: calc(var(--spacing-unit) * 4); /* 32px */
+    padding-bottom: calc(var(--spacing-unit) * 2); /* 16px */
+    border-bottom: 1px solid var(--mt-warm-taupe);
+}
+
+.admin-page-title {
+    font-family: var(--font-serif);
+    font-size: 2rem; /* 32px */
+    font-weight: 700;
+    color: var(--mt-near-black);
+    margin-bottom: calc(var(--spacing-unit) * 1); /* 8px */
+}
+
+.admin-content-area { /* For main content sections within a page */
+    background-color: #fff; /* White background for content blocks */
+    padding: calc(var(--spacing-unit) * 3) calc(var(--spacing-unit) * 4); /* 24px 32px */
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--mt-warm-taupe);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+    margin-bottom: calc(var(--spacing-unit) * 3); /* 24px */
+}
+
+.content-card { /* Reusable card component for boxing content */
+    background-color: #fff;
+    padding: calc(var(--spacing-unit) * 2.5); /* 20px */
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--mt-warm-taupe);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: calc(var(--spacing-unit) * 2.5); /* 20px */
+}
+.content-card-header {
+    margin-bottom: calc(var(--spacing-unit) * 2);
+    padding-bottom: calc(var(--spacing-unit) * 1.5);
+    border-bottom: 1px solid #eee; /* Lighter border inside card */
+}
+.content-card-title {
+    font-family: var(--font-serif);
+    font-size: 1.25rem; /* 20px */
+    font-weight: 600;
+    color: var(--mt-near-black);
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* Typography                                 */
+/* -------------------------------------------------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--mt-near-black);
+    font-weight: 600; /* Default bold for headings */
+    line-height: 1.3;
+}
+
+h1.page-main-title, .admin-page-title { /* For the main title of an admin page */
+    font-family: var(--font-serif);
+    font-size: 1.75rem; /* 28px */
+    color: var(--mt-near-black);
+    margin-bottom: calc(var(--spacing-unit) * 2); /* 16px */
+}
+
+h2.section-heading, .section-title { /* For major sections within a page */
+    font-family: var(--font-serif);
+    font-size: 1.375rem; /* 22px */
+    color: var(--mt-near-black);
+    margin-top: calc(var(--spacing-unit) * 3); /* 24px */
+    margin-bottom: calc(var(--spacing-unit) * 2); /* 16px */
+    padding-bottom: calc(var(--spacing-unit) * 0.5); /* 4px */
+    border-bottom: 1px solid var(--mt-warm-taupe);
+    font-weight: 500;
+}
+
+h3.subsection-heading {
+    font-family: var(--font-sans);
+    font-size: 1.125rem; /* 18px */
+    color: var(--mt-near-black);
+    margin-top: calc(var(--spacing-unit) * 2.5); /* 20px */
+    margin-bottom: calc(var(--spacing-unit) * 1.5); /* 12px */
+    font-weight: 600;
+}
+
+p {
+    margin-bottom: calc(var(--spacing-unit) * 1.5); /* 12px */
+    color: var(--mt-near-black);
 }
 
 a {
-    color: #D97706; /* amber-600 - Brand Accent */
+    color: var(--mt-truffle-burgundy);
     text-decoration: none;
+    transition: color 0.2s ease;
 }
-
 a:hover {
+    color: var(--mt-gold);
     text-decoration: underline;
 }
 
-/* --- Common Admin Page Structure (Tailwind-based header/nav) --- */
-
-header.bg-white { 
-    /* Primarily styled by Tailwind: bg-white shadow-md p-4 sticky top-0 z-50 */
-}
-header.bg-white #admin-header-title-area h1 { 
-    /* Tailwind: text-xl font-semibold text-gray-700 */
-}
-header.bg-white #admin-user-greeting { 
-    /* Tailwind: text-gray-700 text-sm mr-2 */
-}
-header.bg-white #admin-logout-button { 
-    /* Tailwind: bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-sm flex items-center */
-}
-header.bg-white #admin-logout-button i { 
-    /* Tailwind: mr-2 */
-}
-
-nav.bg-gray-800 { 
-    /* Tailwind: bg-gray-800 text-white shadow-md */
-}
-nav.bg-gray-800 .admin-nav-link {
-    color: #E5E7EB; 
-    transition: background-color 0.2s ease, color 0.2s ease;
-    /* Tailwind: px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 */
-    white-space: nowrap; /* Prevent nav links from wrapping */
-}
-nav.bg-gray-800 .admin-nav-link:hover {
-    background-color: #4B5563; /* gray-700 */
-    color: #FFFFFF;
-}
-nav.bg-gray-800 .admin-nav-link.active {
-    background-color: #1F2937; /* gray-800 or slightly darker than nav bg */
-    color: #FFFFFF;
-    font-weight: 500;
-}
-/* Ensure horizontal scrolling for nav if it overflows */
-nav.bg-gray-800 .container > div { /* The flex container for nav links */
-    overflow-x: auto;
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-}
-nav.bg-gray-800 .container > div::-webkit-scrollbar { /* Chrome, Safari, Opera */
-    display: none;
-}
-
-
-main.admin-content-area { 
-    flex-grow: 1; 
-    /* Tailwind: container mx-auto p-6 space-y-6 */
-}
-main.admin-content-area h1.text-3xl { /* Main page title, like "Gestion des Utilisateurs" */
-    /* Tailwind: text-3xl font-semibold text-gray-800 mb-6 */
-}
-main.admin-content-area h2.text-2xl { /* Section titles within main content */
-    /* Tailwind: text-2xl font-semibold text-gray-800 (often with mb-6) */
-}
-
-
-.admin-footer {
-    margin-top: auto; 
-    /* Tailwind: text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600 */
-}
-
-
-/* --- Styles from Older Admin Pages (admin_panel, admin_manage_products_inventory, admin_dashboard) --- */
-/* These are for content areas if they don't use the Tailwind structure fully. */
-/* The legacy header/footer styles are removed as the HTML structure was updated. */
-
-main.admin-content-area-legacy { /* Applied to main tag of older pages */
-    padding: 20px;
-    max-width: 1200px; /* Or use Tailwind's container mx-auto */
-    margin-left: auto; 
-    margin-right: auto; 
-    flex-grow: 1;
-}
-main.admin-content-area-legacy h2.admin-page-title,
-.admin-content-area-legacy h2 { 
-    color: #333;
-    font-size: 1.5rem; 
-    font-weight: 600; 
-    margin-bottom: 1.5rem; 
-}
-
-
-/* Styles for dashboard cards (from admin_dashboard.html) */
-.dashboard-header {
-    margin-bottom: 30px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
-}
-.dashboard-header h2 { 
-    color: #333; /* Overrides general h2 if needed */
-}
-.dashboard-summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    margin-bottom: 30px;
-}
-.summary-card {
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    flex: 1;
-    min-width: 200px;
-}
-.summary-card h3 {
-    margin-top: 0;
-    color: #007bff; 
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-}
-.summary-card p {
-    font-size: 1.5em;
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: #333;
-}
-.summary-card a {
-    text-decoration: none;
-    color: #0056b3; 
-    font-size: 0.9em;
-}
-.summary-card a:hover {
-    text-decoration: underline;
-}
-
-.quick-links ul { /* Styles for quick links on dashboard */
-    list-style: none;
-    padding: 0;
-}
-.quick-links li a {
+label {
     display: block;
-    padding: 10px;
-    background-color: #e9ecef;
-    margin-bottom: 5px;
-    border-radius: 4px;
-    text-decoration: none;
-    color: #333;
-}
-.quick-links li a:hover {
-    background-color: #dee2e6;
+    font-weight: 600;
+    margin-bottom: calc(var(--spacing-unit) * 0.75); /* 6px */
+    color: var(--mt-near-black);
+    font-size: 0.9rem; /* 14.4px */
 }
 
-
-/* --- Common Admin Form & Table Styles (Consolidated & Refined) --- */
-
-/* Form Container Styling */
-.admin-form-container, 
-.admin-section-container { /* Generic container for sections */
-    background-color: #ffffff; /* Changed from #f9f9f9 to white for consistency with Tailwind sections */
-    padding: 1.5rem; 
-    border-radius: 0.5rem; 
-    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1); 
-    margin-bottom: 1.5rem; 
-}
-.admin-form-container .admin-form-title, 
-.admin-section-container .admin-section-title {
-    font-size: 1.25rem; 
-    font-weight: 600; 
-    color: #1F2937; 
-    margin-bottom: 1rem; 
-    padding-bottom: 0.5rem; /* Add a bottom border like other section titles */
-    border-bottom: 1px solid #E5E7EB; /* gray-200 */
+small, .text-small {
+    font-size: 0.875em; /* Smaller text for hints, meta info */
+    color: var(--mt-earth-brown);
 }
 
-/* General Admin Form Styling */
-.admin-form {
-    /* space-y-4 can be applied in HTML if using Tailwind */
-}
-.admin-form div:not(.form-checkbox-group):not(.form-actions):not(.grid) { /* Avoid adding margin to grid containers */
-    margin-bottom: 1rem;
-}
-.admin-form .form-label {
-    display: block;
-    font-size: 0.875rem; 
-    font-weight: 500; 
-    color: #374151; 
-    margin-bottom: 0.25rem; 
-}
-.admin-form .form-label-inline { 
-    display: inline;
-    margin-left: 0.5rem; 
-    font-weight: normal; 
+/* -------------------------------------------------------------------------- */
+/* Form Elements                               */
+/* -------------------------------------------------------------------------- */
+.form-group {
+    margin-bottom: calc(var(--spacing-unit) * 2.5); /* 20px */
 }
 
-.admin-form .form-input-admin,
-.admin-form input[type="text"],
-.admin-form input[type="email"],
-.admin-form input[type="password"],
-.admin-form input[type="number"],
-.admin-form input[type="date"],
-.admin-form input[type="url"],
-.admin-form input[type="file"], /* Added file input */
-.admin-form select,
-.admin-form textarea {
-    display: block;
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="search"],
+textarea,
+select {
     width: 100%;
-    padding: 0.625rem 0.75rem; 
-    font-size: 0.875rem; 
-    border: 1px solid #D1D5DB; 
-    border-radius: 0.375rem; 
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); 
+    padding: calc(var(--spacing-unit) * 1.25) calc(var(--spacing-unit) * 1.5); /* 10px 12px */
+    font-family: var(--font-sans);
+    font-size: 1rem; /* 16px */
+    color: var(--mt-near-black);
+    background-color: #fff;
+    border: 1px solid var(--mt-warm-taupe);
+    border-radius: var(--border-radius-sm);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    background-color: #fff; /* Ensure inputs are white */
 }
-.admin-form input[type="file"].form-input-admin {
-    padding: 0.375rem 0.75rem; /* Specific padding for file inputs if needed */
-}
-
-.admin-form .form-input-admin:focus,
-.admin-form input[type="text"]:focus,
-.admin-form input[type="email"]:focus,
-.admin-form input[type="password"]:focus,
-.admin-form input[type="number"]:focus,
-.admin-form input[type="date"]:focus,
-.admin-form input[type="url"]:focus,
-.admin-form input[type="file"]:focus,
-.admin-form select:focus,
-.admin-form textarea:focus {
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="search"]:focus,
+textarea:focus,
+select:focus {
     outline: none;
-    border-color: #4F46E5; 
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3); 
+    border-color: var(--mt-gold);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3); /* Gold focus ring */
 }
-.admin-form textarea.form-input-admin {
-    min-height: 80px;
+textarea {
+    min-height: 100px;
+    resize: vertical;
 }
-.admin-form .form-input-admin.bg-gray-100 { /* For readonly inputs */
-    background-color: #F3F4F6; /* Tailwind gray-100 */
-    cursor: not-allowed;
+select {
+    appearance: none; /* For custom arrow later if desired */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2311120D'%3E%3Cpath d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E"); /* Basic SVG arrow */
+    background-repeat: no-repeat;
+    background-position: right calc(var(--spacing-unit) * 1.5) center;
+    background-size: 1.2em;
+    padding-right: calc(var(--spacing-unit) * 4); /* Make space for arrow */
 }
 
-
-.admin-form .form-checkbox-group { 
+.readonly-field-display { /* For displaying non-editable info that looks like a field */
+    background-color: #f8f6f2; /* Lighter cream */
+    padding: calc(var(--spacing-unit) * 1.25) calc(var(--spacing-unit) * 1.5);
+    border: 1px solid var(--mt-warm-taupe);
+    border-radius: var(--border-radius-sm);
+    min-height: calc(1.5em + (var(--spacing-unit) * 2.5) + 2px); /* Match input height (approx) */
     display: flex;
     align-items: center;
-    margin-bottom: 1rem;
-}
-.admin-form .form-checkbox-admin {
-    height: 1rem; width: 1rem; border-radius: 0.25rem; 
-    border-color: #D1D5DB; color: #4F46E5; 
-    vertical-align: middle; 
-}
-.admin-form .form-checkbox-admin:focus {
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3); 
-}
-
-.admin-form .form-text { 
-    font-size: 0.75rem; color: #6B7280; 
-    display: block; margin-top: 0.25rem; 
-}
-.admin-form .required { color: #EF4444; margin-left: 2px; }
-.admin-form .form-actions { 
-    margin-top: 1.5rem; display: flex; gap: 0.5rem; 
+    color: var(--mt-earth-brown);
+    font-size: 1rem;
+    line-height: 1.6;
 }
 
 
-/* Tables */
-.admin-table-container { 
-    background-color: #ffffff; padding: 1.5rem; border-radius: 0.5rem;
-    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1);
-    margin-bottom: 1.5rem;
-}
-.admin-table-container .admin-table-title, 
-.admin-table-container h3 {
-    font-size: 1.25rem; font-weight: 600; color: #1F2937; 
-    margin-bottom: 1rem; padding-bottom: 0.5rem; 
-    border-bottom: 1px solid #E5E7EB; 
-}
-.admin-table {
-    width: 100%; border-collapse: collapse; margin-top: 1rem; 
-}
-.admin-table thead { background-color: #F9FAFB; }
-.admin-table th {
-    padding: 0.75rem 1rem; text-align: left; font-size: 0.75rem; 
-    font-weight: 500; color: #6B7280; text-transform: uppercase;
-    letter-spacing: 0.05em; border-bottom: 1px solid #E5E7EB; 
-}
-.admin-table tbody { background-color: #ffffff; }
-.admin-table tbody tr:nth-child(even) { background-color: #F9FAFB; }
-.admin-table td {
-    padding: 0.75rem 1rem; font-size: 0.875rem; color: #374151; 
-    /* white-space: nowrap; Consider removing nowrap for better responsiveness on some columns */
-    border-bottom: 1px solid #E5E7EB; 
-}
-.admin-table tbody tr:last-child td { border-bottom: none; }
-
-.admin-table .action-buttons .btn { /* Ensure buttons in table cells are styled correctly */
-    margin-right: 0.25rem; /* Reduced margin for table buttons */
-}
-.admin-table .action-buttons .btn:last-child { margin-right: 0; }
-
-
-/* Buttons */
+/* -------------------------------------------------------------------------- */
+/* Buttons                                  */
+/* -------------------------------------------------------------------------- */
 .btn {
-    display: inline-flex; align-items: center; justify-content: center;
-    padding: 0.625rem 1.25rem; font-size: 0.875rem; font-weight: 500; 
-    border-radius: 0.375rem; border: 1px solid transparent;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); 
+    display: inline-block;
+    padding: calc(var(--spacing-unit) * 1.25) calc(var(--spacing-unit) * 3); /* 10px 24px */
+    font-family: var(--font-sans);
+    font-size: 0.95rem; /* 15.2px */
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    border-radius: var(--border-radius-sm);
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    letter-spacing: 0.5px;
+    line-height: 1.5; /* Ensure consistent button height */
 }
-.btn:focus { outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.4); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn i { margin-right: 0.5rem; }
-
-.btn-admin-primary { background-color: #4F46E5; color: #ffffff; }
-.btn-admin-primary:hover { background-color: #4338CA; }
-.btn-admin-secondary { background-color: #6B7280; color: #ffffff; }
-.btn-admin-secondary:hover { background-color: #4B5563; }
-.btn-admin-danger, .btn.delete { background-color: #EF4444; color: #ffffff; }
-.btn-admin-danger:hover, .btn.delete:hover { background-color: #DC2626; }
-.btn.small-button { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
-
-
-/* Login Page Specific Styles */
-body#page-admin-login { /* Styles for the login page body */
-    /* Tailwind classes bg-gray-100 flex items-center justify-center h-screen handle this */
+.btn:active {
+    transform: translateY(1px);
 }
-.admin-login-container { /* Styles for the login form box */
-    /* Tailwind classes bg-white p-8 rounded-lg shadow-xl w-full max-w-md handle this */
-}
-.admin-login-container .logo-container { /* Styles for logo/title area on login page */
-    /* Tailwind classes text-center mb-8 handle this */
-}
-.admin-login-container .logo-container i { /* FontAwesome icon on login */
-    /* Tailwind classes fa-3x text-gray-700 handle this */
-}
-.admin-login-container .logo-container h1 {
-    /* Tailwind classes text-3xl font-bold text-gray-800 mt-2 handle this */
-}
-.admin-login-container .logo-container p {
-    /* Tailwind classes text-gray-600 handle this */
-}
-.admin-login-container form#admin-login-form { /* Target specific form ID */
-    /* Tailwind class space-y-6 handles spacing */
-}
-.admin-login-container .input-group { position: relative; }
-.admin-login-container .input-group .icon {
-    position: absolute; left: 0.75rem; top: 50%;
-    transform: translateY(-50%); pointer-events: none;
-    color: #9CA3AF; /* gray-400 */
-}
-.admin-login-container .input-group input.form-input-admin { padding-left: 2.5rem; }
-.admin-login-container #login-error-message {
-    min-height: 1.25rem; 
-    /* Tailwind classes hidden text-red-500 text-sm text-center handle visibility and color */
-}
-.admin-login-container .login-button { /* Class for the login submit button */
-    /* Tailwind classes w-full flex justify-center py-2 px-4 ... bg-indigo-600 hover:bg-indigo-700 ... handle this */
-}
-.admin-login-container .back-to-site-link {
-    /* Tailwind classes mt-6 text-center text-sm text-gray-500 handle this */
-}
-.admin-login-container .back-to-site-link a {
-    /* Tailwind classes font-medium text-indigo-600 hover:text-indigo-500 handle this */
+.btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.4); /* Gold focus ring */
 }
 
-
-/* Modals */
-/* Modal styles are largely unchanged from admin_style_css_v3, they are already quite generic */
-.admin-modal-overlay {
-    display: none; position: fixed; z-index: 1050; 
-    inset: 0; overflow-y: auto; background-color: rgba(0, 0, 0, 0.6); 
-    align-items: center; justify-content: center; padding: 1rem; 
+.btn-primary {
+    background-color: var(--mt-truffle-burgundy);
+    color: var(--mt-cream);
+    border: 1px solid var(--mt-truffle-burgundy);
 }
-.admin-modal-overlay.active { display: flex; }
-.admin-modal-content {
-    background-color: #ffffff; border-radius: 0.5rem; text-align: left;
-    overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); 
-    transform: scale(0.95); transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-    opacity: 0; margin: 1rem auto; width: 100%; max-width: 32rem; 
-    display: flex; flex-direction: column;
-}
-.admin-modal-overlay.active .admin-modal-content { transform: scale(1); opacity: 1; }
-.admin-modal-content.sm-max-w-md { max-width: 28rem; }
-.admin-modal-content.sm-max-w-lg { max-width: 32rem; }
-.admin-modal-content.sm-max-w-xl { max-width: 36rem; }
-.admin-modal-content.sm-max-w-2xl { max-width: 42rem; }
-.admin-modal-content.sm-max-w-3xl { max-width: 48rem; }
-.admin-modal-header {
-    padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; 
-    display: flex; justify-content: space-between; align-items: center;
-}
-.admin-modal-header h3 {
-    font-size: 1.125rem; line-height: 1.5rem; font-weight: 500; 
-    color: #1F2937; margin: 0;
-}
-.admin-modal-close {
-    color: #6B7280; font-size: 1.5rem; font-weight: bold;
-    cursor: pointer; padding: 0.25rem; line-height: 1;
-    background: none; border: none;
-}
-.admin-modal-close:hover, .admin-modal-close:focus { color: #1F2937; text-decoration: none; }
-.admin-modal-body {
-    padding: 1.5rem; font-size: 0.875rem; color: #374151; 
-    line-height: 1.6; flex-grow: 1; overflow-y: auto; 
-}
-.admin-modal-body p { margin-top: 0; margin-bottom: 1rem; }
-.admin-modal-body strong { color: #1F2937; }
-.admin-modal-actions {
-    background-color: #F9FAFB; padding: 0.75rem 1.5rem; 
-    display: flex; flex-direction: row-reverse; 
-    border-top: 1px solid #e5e7eb; 
-    border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem;
-}
-.admin-modal-actions .btn { margin-left: 0.75rem; }
-.admin-modal-actions .btn:first-child { margin-left: 0; }
-
-/* Toast / Global Messages */
-#admin-toast-container { 
-    position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 1051; 
-    display: flex; flex-direction: column-reverse; gap: 0.5rem; 
-}
-.admin-toast { 
-    padding: 1rem; border-radius: 0.5rem; 
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); 
-    color: #ffffff; min-width: 250px; max-width: 400px;
-    opacity: 0; transform: translateY(20px);
-    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-}
-.admin-toast.show { opacity: 1; transform: translateY(0); }
-.admin-toast.success { background-color: #10B981; } 
-.admin-toast.error   { background-color: #EF4444; } 
-.admin-toast.info    { background-color: #3B82F6; } 
-.admin-toast.warning { background-color: #F59E0B; } 
-
-/* Styles for product form weight options */
-.weight-option-row {
-    background-color: #f9fafb; border: 1px solid #e5e7eb;
-    padding: 0.75rem; border-radius: 0.375rem; margin-bottom: 0.5rem;
-}
-.weight-option-row label { font-size: 0.75rem; }
-.weight-option-row input.form-input-admin { padding: 0.5rem; font-size: 0.875rem; }
-.weight-option-row button.btn-admin-danger { align-self: flex-end; }
-
-/* Product assets preview section */
-#product-assets-preview-section {
-    margin-top: 1.5rem; padding: 1rem; border: 1px dashed #ccc;
-    border-radius: 0.375rem; background-color: #f9fafb;
-}
-#product-assets-preview-section h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; }
-#product-assets-links p { margin-bottom: 0.5rem; font-size: 0.875rem; }
-#product-assets-links a { word-break: break-all; }
-#product-assets-links img {
-    border: 1px solid #ddd; border-radius: 0.25rem; margin-top: 0.25rem;
-    max-width: 100px; height: auto;
+.btn-primary:hover {
+    background-color: #733333; /* Darker burgundy */
+    border-color: #733333;
+    color: #fff;
 }
 
-/* Error message styling for form fields */
-.error-message { color: #EF4444; font-size: 0.75rem; margin-top: 0.25rem; }
-input.border-red-500, select.border-red-500, textarea.border-red-500,
-.form-input-admin.error-field { border-color: #EF4444 !important; }
-input.border-red-500:focus, select.border-red-500:focus, textarea.border-red-500:focus,
-.form-input-admin.error-field:focus {
-    border-color: #EF4444 !important;
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
+.btn-secondary {
+    background-color: var(--mt-warm-taupe);
+    color: var(--mt-near-black);
+    border: 1px solid var(--mt-warm-taupe);
+}
+.btn-secondary:hover {
+    background-color: #8f795c; /* Darker taupe */
+    border-color: #8f795c;
 }
 
-/* Ensure specific Tailwind utilities override these if used directly in HTML */
-.hidden { display: none !important; }
-.sr-only { /* Screen reader only, from Tailwind */
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border-width: 0;
+.btn-outline-gold {
+    background-color: transparent;
+    color: var(--mt-gold);
+    border: 1px solid var(--mt-gold);
 }
-.container { /* Basic container, Tailwind's is more responsive */
+.btn-outline-gold:hover {
+    background-color: var(--mt-gold);
+    color: var(--mt-near-black);
+}
+
+.btn-danger {
+    background-color: #c94040; /* Softer red for delete/danger */
+    color: white;
+    border: 1px solid #c94040;
+}
+.btn-danger:hover {
+    background-color: #b53737;
+    border-color: #b53737;
+}
+
+.btn-sm { /* Smaller button variant */
+    padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 1.5); /* 6px 12px */
+    font-size: 0.8rem;
+}
+
+.button-group {
+    display: flex;
+    gap: calc(var(--spacing-unit) * 1); /* 8px */
+    margin-top: calc(var(--spacing-unit) * 2);
+}
+.button-group.text-right {
+    justify-content: flex-end;
+}
+.button-group.text-center {
+    justify-content: center;
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* Tables                                   */
+/* -------------------------------------------------------------------------- */
+.admin-table {
     width: 100%;
-    /* padding-right: 1rem; /* px-4 */
-    /* padding-left: 1rem;  /* px-4 */
-    /* margin-right: auto; */
-    /* margin-left: auto; */
+    border-collapse: collapse;
+    margin-top: calc(var(--spacing-unit) * 2); /* 16px */
+    margin-bottom: calc(var(--spacing-unit) * 2);
+    font-size: 0.9rem; /* 14.4px */
 }
+.admin-table th,
+.admin-table td {
+    border: 1px solid var(--mt-warm-taupe);
+    padding: calc(var(--spacing-unit) * 1.25) calc(var(--spacing-unit) * 1.5); /* 10px 12px */
+    text-align: left;
+    vertical-align: middle; /* Changed from top for general tables */
+}
+.admin-table th {
+    background-color: #fdfaf6; /* Very light cream */
+    font-family: var(--font-sans);
+    font-weight: 600;
+    color: var(--mt-near-black);
+}
+.admin-table tr:nth-child(even) td { /* Subtle striping for readability */
+    background-color: #fdfcf9;
+}
+.admin-table tr:hover td {
+    background-color: #fbf5eb; /* Cream hover for rows */
+}
+.admin-table td .actions a,
+.admin-table td .actions button.btn-link { /* For action links/buttons in tables */
+    margin-right: calc(var(--spacing-unit) * 1); /* 8px */
+    color: var(--mt-truffle-burgundy);
+    font-size: 0.9em;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+.admin-table td .actions a:hover,
+.admin-table td .actions button.btn-link:hover {
+    color: var(--mt-gold);
+    text-decoration: underline;
+}
+.admin-table td .actions button.btn-link.danger {
+    color: #c94040;
+}
+.admin-table td .actions button.btn-link.danger:hover {
+    color: #a53030;
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* Alerts / Notifications                    */
+/* -------------------------------------------------------------------------- */
+.alert {
+    padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2); /* 12px 16px */
+    margin-bottom: calc(var(--spacing-unit) * 2); /* 16px */
+    border: 1px solid transparent;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.9rem;
+}
+.alert-info {
+    color: var(--mt-slate-blue-grey);
+    background-color: #eef2f7;
+    border-color: var(--mt-slate-blue-grey);
+}
+.alert-success {
+    color: var(--mt-deep-sage-green);
+    background-color: #eaf3f0;
+    border-color: var(--mt-deep-sage-green);
+}
+.alert-warning {
+    color: #856404; /* Standard warning yellow text */
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+}
+.alert-danger {
+    color: #721c24; /* Standard danger red text */
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Utility Classes                              */
+/* -------------------------------------------------------------------------- */
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+.font-serif { font-family: var(--font-serif); }
+.font-sans { font-family: var(--font-sans); }
+
+.font-weight-normal { font-weight: 400; }
+.font-weight-medium { font-weight: 500; }
+.font-weight-semibold { font-weight: 600; }
+.font-weight-bold { font-weight: 700; }
+
+.color-gold { color: var(--mt-gold); }
+.color-burgundy { color: var(--mt-truffle-burgundy); }
+.color-near-black { color: var(--mt-near-black); }
+.color-earth-brown { color: var(--mt-earth-brown); }
+
+.mt-1 { margin-top: calc(var(--spacing-unit) * 1); } /* 8px */
+.mt-2 { margin-top: calc(var(--spacing-unit) * 2); } /* 16px */
+.mt-3 { margin-top: calc(var(--spacing-unit) * 3); } /* 24px */
+.mt-4 { margin-top: calc(var(--spacing-unit) * 4); } /* 32px */
+
+.mb-1 { margin-bottom: calc(var(--spacing-unit) * 1); }
+.mb-2 { margin-bottom: calc(var(--spacing-unit) * 2); }
+.mb-3 { margin-bottom: calc(var(--spacing-unit) * 3); }
+.mb-4 { margin-bottom: calc(var(--spacing-unit) * 4); }
+
+.mr-1 { margin-right: calc(var(--spacing-unit) * 1); }
+.mr-2 { margin-right: calc(var(--spacing-unit) * 2); }
+
+.p-1 { padding: calc(var(--spacing-unit) * 1); }
+.p-2 { padding: calc(var(--spacing-unit) * 2); }
+.p-3 { padding: calc(var(--spacing-unit) * 3); }
+
+.d-block { display: block; }
+.d-inline-block { display: inline-block; }
+.d-flex { display: flex; }
+.justify-content-between { justify-content: space-between; }
+.align-items-center { align-items: center; }
+
+/* Add more utility classes as needed */
+
+/* -------------------------------------------------------------------------- */
+/* Specific Overrides for Invoice Page (Example)              */
+/* -------------------------------------------------------------------------- */
+/* Styles from the invoice page can be kept here or in its own CSS if very specific */
+/* This global CSS provides the base. The invoice page might have unique layout needs. */
+
+.invoice-container { /* Styles for the specific invoice sheet from previous example */
+    /* max-width: 800px;  Defined in admin_create_invoice.html, can be here too */
+    /* padding: 40px; Defined in admin_create_invoice.html */
+    /* border: 1px solid var(--mt-warm-taupe); Defined in admin_create_invoice.html */
+    /* box-shadow: 0 4px 15px rgba(0,0,0,0.08); Defined in admin_create_invoice.html */
+}
+.invoice-header { /* Styles for the invoice header section */
+    /* padding-bottom: 20px; Defined in admin_create_invoice.html */
+    /* margin-bottom: 30px; Defined in admin_create_invoice.html */
+    /* border-bottom: 2px solid var(--mt-gold); Defined in admin_create_invoice.html */
+}
+.invoice-title { /* For "FACTURE" specific to invoice page */
+    /* font-family: var(--font-serif); Defined in admin_create_invoice.html */
+    /* font-size: 2.8em; Defined in admin_create_invoice.html */
+    /* color: var(--mt-truffle-burgundy); Defined in admin_create_invoice.html */
+}
+/* ... and so on for other invoice-specific styles if you want to centralize them. */
+/* However, it's often cleaner to keep highly page-specific layout CSS within that page's <style> tag
+   or a dedicated CSS file for that page if it's complex, while this global file handles common elements. */
+
