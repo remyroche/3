@@ -16,115 +16,125 @@
         }
         input[type="checkbox"] { margin-right: 5px; vertical-align: middle; }
         textarea { min-height: 80px; }
-        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
-        button:hover { background-color: #0056b3; }
-        button.delete { background-color: #dc3545; }
-        button.delete:hover { background-color: #c82333; }
-        button.small-button { padding: 5px 10px; font-size: 0.9em; }
-        #cancelCategoryEditButton { background-color: #6c757d; }
-        #cancelCategoryEditButton:hover { background-color: #545b62; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background-color: #f0f0f0; }
-        tbody tr:nth-child(even) { background-color: #f9f9f9; }
-        small { font-size: 0.85em; color: #666; display: block; margin-top: 3px;}
-        .required { color: red; }
-        header { background-color: #343a40; padding: 15px 20px; color: white; margin-bottom: 20px; }
-        header h1 { margin: 0; font-size: 1.8em; display: inline-block; }
-        header nav { float: right; margin-top: 5px;}
-        header nav a { color: #f8f9fa; text-decoration: none; margin-left: 15px; padding: 5px 10px; border-radius: 4px; }
-        header nav a:hover, header nav a.active { background-color: #495057; }
-        footer { text-align: center; padding: 20px; margin-top: 30px; background-color: #f8f9f9; border-top: 1px solid #eee; font-size: 0.9em; color: #6c757d;}
-    </style>
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Catégories - Admin - Maison Trüvra</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Maison Trüvra Global Admin Styles (now in admin_style.css) -->
+    <link rel="stylesheet" href="js/css/admin_style.css"> 
 </head>
-<body>
-    <header>
-        <h1>Admin Panel</h1>
-         <nav>
-            <a href="admin_dashboard.html">Dashboard</a>
-            <a href="admin_manage_inventory.html">Manage Products</a>
-            <a href="admin_manage_categories.html" class="active">Manage Categories</a>
-            <a href="admin_manage_orders.html">Manage Orders</a>
-            <a href="admin_manage_users.html">Manage Users</a>
-            <a href="#" id="adminLogoutLinkCategories">Logout</a>
-        </nav>
-    </header>
+<body class="admin-body">
+    <div class="admin-main-container">
+        <header class="admin-page-header d-flex justify-content-between align-items-center">
+            <h1 class="admin-page-title mb-0">Gestion des Catégories</h1>
+            <button type="button" class="btn btn-primary" id="add-new-category-btn">Ajouter une Catégorie</button>
+        </header>
 
-    <main>
-        <h2>Manage Categories</h2>
+        <main>
+            <section class="admin-content-area">
+                <!-- Add Category Form (could be in a modal or a separate section) -->
+                <div id="add-category-form-section" class="content-card mb-4" style="display: none;"> <!-- Initially hidden -->
+                    <h2 class="section-heading">Ajouter/Modifier une Catégorie</h2>
+                    <form id="category-form">
+                        <input type="hidden" id="category-id" name="category_id">
+                        <div class="form-group">
+                            <label for="category-name">Nom de la Catégorie</label>
+                            <input type="text" id="category-name" name="name" required placeholder="Ex: Truffes Fraîches">
+                        </div>
+                        <div class="form-group">
+                            <label for="category-description">Description (Optionnel)</label>
+                            <textarea id="category-description" name="description" rows="3" placeholder="Courte description de la catégorie"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="category-parent">Catégorie Parente (Optionnel)</label>
+                            <select id="category-parent" name="parent_id">
+                                <option value="">Aucune (Catégorie Principale)</option>
+                                <!-- JS to populate with existing categories -->
+                            </select>
+                        </div>
+                        <div class="button-group">
+                            <button type="submit" class="btn btn-primary">Enregistrer Catégorie</button>
+                            <button type="button" class="btn btn-secondary" id="cancel-category-form-btn">Annuler</button>
+                        </div>
+                    </form>
+                </div>
 
-        <div id="categoryFormContainer">
-            <h3><span id="categoryFormTitle">Add New Category</span></h3>
-            <form id="categoryForm">
-                <div>
-                    <label for="categoryCode">Category Code: <span class="required">*</span></label>
-                    <input type="text" id="categoryCode" name="category_code" required>
-                    <small>Unique code for the category (e.g., MIEL, HUILE, SAVON).</small>
-                </div>
-                <div>
-                    <label for="categoryName">Category Name: <span class="required">*</span></label>
-                    <input type="text" id="categoryName" name="name" required>
-                </div>
-                <div>
-                    <label for="categoryDescription">Description:</label>
-                    <textarea id="categoryDescription" name="description"></textarea>
-                </div>
-                <div>
-                    <label for="categoryImageUrl">Image URL:</label>
-                    <input type="url" id="categoryImageUrl" name="image_url" placeholder="https://example.com/category_image.jpg">
-                </div>
-                <div>
-                    <input type="checkbox" id="categoryIsActive" name="is_active" checked style="width: auto;">
-                    <label for="categoryIsActive" style="display: inline;">Is Active (visible on site)</label>
-                </div>
-                <button type="submit" id="saveCategoryButton">Save Category</button>
-                <button type="button" id="cancelCategoryEditButton" style="display:none;">Cancel Edit</button>
-            </form>
-        </div>
+                <table class="admin-table" id="categories-table">
+                    <thead>
+                        <tr>
+                            <th>Nom de la Catégorie</th>
+                            <th>Description</th>
+                            <th>Produits Associés</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Example Row (JS would populate this) -->
+                        <tr>
+                            <td class="font-weight-medium">Truffes Fraîches</td>
+                            <td>Sélection de truffes noires et blanches de saison.</td>
+                            <td>12</td>
+                            <td class="actions text-right">
+                                <a href="#" class="edit-category">Modifier</a>
+                                <button type="button" class="btn-link danger delete-category">Supprimer</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-medium">Huiles & Condiments</td>
+                            <td>Huiles d'olive infusées à la truffe, vinaigres balsamiques.</td>
+                            <td>8</td>
+                            <td class="actions text-right">
+                                <a href="#" class="edit-category">Modifier</a>
+                                <button type="button" class="btn-link danger delete-category">Supprimer</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-medium">&nbsp;&nbsp;&nbsp;↳ Truffes Noires (Sous-catégorie)</td>
+                            <td>Tuber Melanosporum</td>
+                            <td>5</td>
+                            <td class="actions text-right">
+                                <a href="#" class="edit-category">Modifier</a>
+                                <button type="button" class="btn-link danger delete-category">Supprimer</button>
+                            </td>
+                        </tr>
+                        <!-- More rows here -->
+                    </tbody>
+                </table>
+            </section>
+        </main>
 
-        <div id="categoriesTableContainer">
-            <h3>Existing Categories</h3>
-            <table id="categoriesTable">
-                <thead>
-                    <tr>
-                        <th>Code</th>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>Active</th>
-                        <th>Products</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="categoriesTableBody">
-                    <tr><td colspan="6">Loading categories...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </main>
+        <footer class="text-center text-small mt-4 py-4 border-t border-mt-warm-taupe">
+            <p>&copy; <span id="current-year"></span> Maison Trüvra. Tous droits réservés.</p>
+        </footer>
+    </div>
 
-    <footer>
-         <p>&copy; <span id="currentYearCategories"></span> Your Company - Admin Panel</p>
-    </footer>
-
-    <script src="js/admin_api.js"></script>
-    <script src="js/admin_ui.js"></script>
+    <!-- Admin specific JS for category management -->
     <script src="js/admin_categories.js"></script>
     <script>
-        document.getElementById('currentYearCategories').textContent = new Date().getFullYear();
-        const logoutLinkCategories = document.getElementById('adminLogoutLinkCategories');
-        if(logoutLinkCategories) {
-            logoutLinkCategories.addEventListener('click', function(e) {
-                e.preventDefault();
-                localStorage.removeItem('admin_jwt_token');
-                if (typeof showAdminMessage === 'function') {
-                    showAdminMessage('You have been logged out.', 'info', 'Logout');
-                    setTimeout(() => window.location.href = 'admin_login.html', 1500);
-                } else {
-                    alert('Logged out.'); // Fallback
-                    window.location.href = 'admin_login.html';
-                }
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        const addCategoryBtn = document.getElementById('add-new-category-btn');
+        const categoryFormSection = document.getElementById('add-category-form-section');
+        const cancelCategoryFormBtn = document.getElementById('cancel-category-form-btn');
+
+        addCategoryBtn.addEventListener('click', () => {
+            categoryFormSection.style.display = 'block';
+            document.getElementById('category-form').reset(); // Reset form for new entry
+            document.getElementById('category-id').value = ''; // Clear any existing ID
+        });
+        if(cancelCategoryFormBtn) {
+            cancelCategoryFormBtn.addEventListener('click', () => {
+                categoryFormSection.style.display = 'none';
             });
         }
+        // Further JS in admin_categories.js to handle form submission, populating table, edit, delete etc.
     </script>
 </body>
 </html>
