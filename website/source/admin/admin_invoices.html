@@ -3,117 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gérer les Factures - Maison Trüvra Admin</title>
-    <link rel="stylesheet" href="css/admin_style.css"> 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-</head>
-<body id="page-admin-invoices">
-    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
-                    <i class="fas fa-arrow-left mr-2"></i>
-                    Retour au Tableau de Bord
-                </a>
-                <div id="admin-header-title-area">
-                     <h1 class="text-xl font-semibold text-gray-700">Maison Trüvra - Admin</h1>
-                </div>
-            </div>
-            <div class="flex items-center space-x-4">
-                <span id="admin-user-greeting" class="text-gray-700 text-sm mr-2"></span>
-                <button id="admin-logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-sm flex items-center">
-                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
-                </button>
-            </div>
-        </div>
-    </header>
+    <title>Gestion des Factures - Admin - Maison Trüvra</title>
 
-    <nav class="bg-gray-800 text-white shadow-md">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-start h-12 space-x-1 overflow-x-auto">
-                <a href="admin_dashboard.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Tableau de Bord</a>
-                <a href="admin_manage_products.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Produits</a>
-                <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Inventaire</a>
-                <a href="admin_view_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voir Inventaire</a>
-                <a href="admin_manage_orders.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Commandes</a>
-                <a href="admin_manage_users.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Utilisateurs</a>
-                <a href="admin_manage_categories.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Catégories</a>
-                <a href="admin_invoices.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 active">Factures</a>
-                <a href="admin_manage_reviews.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Avis</a>
-            </div>
-        </div>
-    </nav>
-    <main class="admin-content-area container mx-auto p-6 space-y-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-semibold text-gray-800">Gestion des Factures</h1>
-            <a href="admin_create_invoice.html" class="btn btn-admin-primary">
-                <i class="fas fa-plus-circle mr-2"></i>Créer Facture Manuelle
-            </a>
-        </div>
-        <section class="admin-form-container">
-            <h2 class="admin-form-title">Filtrer les Factures</h2>
-             <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="filter-manage-invoice-user" class="form-label">Filtrer par Client (ID ou Email):</label>
-                    <input type="text" id="filter-manage-invoice-user" placeholder="ID ou email client..." class="form-input-admin mt-1">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Maison Trüvra Global Admin Styles (now in admin_style.css) -->
+    <link rel="stylesheet" href="js/css/admin_style.css"> 
+    
+</head>
+<body class="admin-body">
+    <div class="admin-main-container">
+        <header class="admin-page-header d-flex justify-content-between align-items-center">
+            <h1 class="admin-page-title mb-0">Gestion des Factures</h1>
+            <a href="admin_create_invoice.html" class="btn btn-primary" id="create-new-invoice-btn">Créer une Facture</a>
+        </header>
+
+        <main>
+            <section class="admin-content-area">
+                <div class="grid md:grid-cols-3 gap-4 mb-4">
+                    <div class="form-group">
+                        <label for="invoice-search">Rechercher une facture :</label>
+                        <input type="search" id="invoice-search" name="search" placeholder="N° de facture, client...">
+                    </div>
+                    <div class="form-group">
+                        <label for="invoice-status-filter">Filtrer par statut :</label>
+                        <select id="invoice-status-filter" name="status_filter">
+                            <option value="">Tous les statuts</option>
+                            <option value="draft">Brouillon</option>
+                            <option value="sent">Envoyée</option>
+                            <option value="paid">Payée</option>
+                            <option value="overdue">En retard</option>
+                            <option value="cancelled">Annulée</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="invoice-date-filter">Filtrer par date d'émission :</label>
+                        <input type="date" id="invoice-date-filter" name="date_filter">
+                    </div>
                 </div>
-                <div>
-                    <label for="filter-manage-invoice-status" class="form-label">Filtrer par Statut:</label>
-                    <select id="filter-manage-invoice-status" class="form-input-admin mt-1">
-                        <option value="">Tous les statuts</option>
-                        <option value="draft">Brouillon</option>
-                        <option value="issued">Émise</option>
-                        <option value="sent">Envoyée</option>
-                        <option value="paid">Payée</option>
-                        <option value="partially_paid">Partiellement Payée</option>
-                        <option value="overdue">En retard</option>
-                        <option value="cancelled">Annulée</option>
-                        <option value="voided">Annulée (Void)</option>
-                    </select>
-                </div>
-            </div>
-            <button id="apply-invoice-filters-button" class="btn btn-admin-primary">Appliquer Filtres</button>
-        </section>
-        
-        <section class="admin-table-container">
-            <h2 class="admin-table-title">Toutes les Factures</h2>
-            <div class="overflow-x-auto">
-                <table class="admin-table min-w-full">
+
+                <table class="admin-table" id="invoices-table">
                     <thead>
                         <tr>
                             <th>N° Facture</th>
-                            <th>Client (ID/Email)</th>
-                            <th>Date Émission</th>
-                            <th>Montant</th>
+                            <th>Client</th>
+                            <th>Date d'Émission</th>
+                            <th>Date d'Échéance</th>
+                            <th>Total TTC</th>
                             <th>Statut</th>
-                            <th>Actions</th>
+                            <th class="text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="manage-invoices-table-body">
-                        <tr><td colspan="6" class="text-center p-4">Chargement des factures...</td></tr>
+                    <tbody>
+                        <!-- Example Row (JS would populate this) -->
+                        <tr>
+                            <td class="font-weight-medium">DUPONT-20240601-001</td>
+                            <td>Jean Dupont SARL</td>
+                            <td>2024-06-01</td>
+                            <td>2024-07-01</td>
+                            <td>185.50 €</td>
+                            <td><span class="text-small p-1 rounded font-weight-medium" style="background-color: var(--mt-deep-sage-green); color: white; display: inline-block; padding: 4px 8px;">Payée</span></td>
+                            <td class="actions text-right">
+                                <a href="#" class="view-invoice">Voir</a>
+                                <a href="#" class="download-invoice-pdf">PDF</a>
+                                <a href="#" class="edit-invoice">Modifier</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="font-weight-medium">MARTIN-20240528-003</td>
+                            <td>Alice Martin & Co</td>
+                            <td>2024-05-28</td>
+                            <td>2024-06-28</td>
+                            <td>75.00 €</td>
+                            <td><span class="text-small p-1 rounded font-weight-medium" style="background-color: var(--mt-gold); color: var(--mt-near-black); display: inline-block; padding: 4px 8px;">Envoyée</span></td>
+                            <td class="actions text-right">
+                                <a href="#" class="view-invoice">Voir</a>
+                                <a href="#" class="download-invoice-pdf">PDF</a>
+                                <a href="#" class="edit-invoice">Modifier</a>
+                            </td>
+                        </tr>
+                         <tr>
+                            <td class="font-weight-medium">LEFEVRE-20240515-001</td>
+                            <td>Robert Lefevre SAS</td>
+                            <td>2024-05-15</td>
+                            <td>2024-06-15</td>
+                            <td>350.00 €</td>
+                            <td><span class="text-small p-1 rounded font-weight-medium" style="background-color: #c94040; color: white; display: inline-block; padding: 4px 8px;">En Retard</span></td>
+                            <td class="actions text-right">
+                                <a href="#" class="view-invoice">Voir</a>
+                                <a href="#" class="download-invoice-pdf">PDF</a>
+                                <a href="#" class="send-reminder">Rappel</a>
+                            </td>
+                        </tr>
+                        <!-- More rows here, populated by JS -->
                     </tbody>
                 </table>
-            </div>
-        </section>
-    </main>
-    
-    <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
-        <p>&copy; <span id="currentYearInvoices"></span> Maison Trüvra - Admin Panel</p>
-    </footer>
+                
+                <nav aria-label="Pagination" class="mt-4 d-flex justify-content-center">
+                    <ul class="d-flex" style="list-style: none; padding: 0; gap: var(--spacing-unit);">
+                        <li><a href="#" class="btn btn-outline-gold btn-sm">&laquo; Précédent</a></li>
+                        <li><a href="#" class="btn btn-secondary btn-sm">1</a></li>
+                        <li><a href="#" class="btn btn-outline-gold btn-sm">2</a></li>
+                        <li><a href="#" class="btn btn-outline-gold btn-sm">Suivant &raquo;</a></li>
+                    </ul>
+                </nav>
+            </section>
+        </main>
 
-    <div id="admin-toast-container"></div>
+        <footer class="text-center text-small mt-4 py-4 border-t border-mt-warm-taupe">
+            <p>&copy; <span id="current-year"></span> Maison Trüvra. Tous droits réservés.</p>
+        </footer>
+    </div>
 
-    <script src="js/admin_config.js"></script> 
-    <script src="js/admin_ui.js"></script>     
-    <script src="js/admin_api.js"></script>
-    <script src="js/admin_auth.js"></script>
-    <script src="js/admin_main.js"></script>
+    <!-- Admin specific JS for invoice management -->
     <script src="js/admin_invoices.js"></script>
     <script>
-        const currentYearSpanInvoices = document.getElementById('currentYearInvoices');
-        if (currentYearSpanInvoices) {
-            currentYearSpanInvoices.textContent = new Date().getFullYear();
-        }
+        document.getElementById('current-year').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
