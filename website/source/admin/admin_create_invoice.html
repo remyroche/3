@@ -6,6 +6,47 @@
     <title>Créer Facture Manuelle - Maison Trüvra Admin</title>
     <link rel="stylesheet" href="css/admin_style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        .client-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        .invoice-header-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e9ecef;
+            margin-bottom: 1.5rem;
+        }
+        .line-item {
+            border: 1px solid #e9ecef;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background: #f8f9fa;
+        }
+        .line-item-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 0.75rem;
+            align-items: end;
+        }
+        .remove-line-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        .remove-line-btn:hover {
+            background: #c82333;
+        }
+    </style>
 </head>
 <body id="page-admin-create-invoice">
     <header class="bg-white shadow-md p-4 sticky top-0 z-50">
@@ -49,28 +90,178 @@
 
         <div class="admin-form-container">
             <form id="create-invoice-form" class="admin-form space-y-6">
+                
+                <!-- Invoice Header Information -->
+                <div class="invoice-header-info">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700">Informations de la Facture</h2>
+                    <div class="client-info-grid">
+                        <div>
+                            <label for="invoice-number" class="form-label">Numéro de Facture:</label>
+                            <input 
+                                type="text" 
+                                id="invoice-number" 
+                                name="invoice_number" 
+                                class="form-input-admin" 
+                                readonly
+                                placeholder="Sera généré automatiquement"
+                            >
+                        </div>
+                        <div>
+                            <label for="invoice-date" class="form-label">Date d'émission:</label>
+                            <input 
+                                type="date" 
+                                id="invoice-date" 
+                                name="invoice_date" 
+                                class="form-input-admin" 
+                                required
+                            >
+                        </div>
+                        <div>
+                            <label for="manual-number" class="form-label">Numéro Manuel:</label>
+                            <input 
+                                type="number" 
+                                id="manual-number" 
+                                name="manual_number" 
+                                class="form-input-admin" 
+                                min="1"
+                                placeholder="ex: 001"
+                                required
+                            >
+                        </div>
+                        <div>
+                            <label for="discount-rate" class="form-label">Taux de Remise (%):</label>
+                            <input 
+                                type="number" 
+                                id="discount-rate" 
+                                name="discount_rate" 
+                                class="form-input-admin" 
+                                min="0" 
+                                max="100" 
+                                step="0.01"
+                                placeholder="0.00"
+                                value="0"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Client Information -->
                 <div>
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700">Informations Client</h2>
+                    <div class="client-info-grid">
+                        <div>
+                            <label for="client-first-name" class="form-label">Prénom du Client:</label>
+                            <input 
+                                type="text" 
+                                id="client-first-name" 
+                                name="client_first_name" 
+                                class="form-input-admin" 
+                                required
+                            >
+                        </div>
+                        <div>
+                            <label for="client-last-name" class="form-label">Nom du Client:</label>
+                            <input 
+                                type="text" 
+                                id="client-last-name" 
+                                name="client_last_name" 
+                                class="form-input-admin" 
+                                required
+                            >
+                        </div>
+                        <div class="full-width">
+                            <label for="client-company" class="form-label">Nom d'Entreprise:</label>
+                            <input 
+                                type="text" 
+                                id="client-company" 
+                                name="client_company" 
+                                class="form-input-admin" 
+                                required
+                            >
+                        </div>
+                        <div class="full-width">
+                            <label for="client-siret" class="form-label">SIRET:</label>
+                            <input 
+                                type="text" 
+                                id="client-siret" 
+                                name="client_siret" 
+                                class="form-input-admin" 
+                                pattern="[0-9]{14}"
+                                placeholder="14 chiffres"
+                                required
+                            >
+                        </div>
+                        <div class="full-width">
+                            <label for="billing-address" class="form-label">Adresse de Facturation:</label>
+                            <textarea 
+                                id="billing-address" 
+                                name="billing_address" 
+                                class="form-input-admin h-20" 
+                                required
+                                placeholder="Adresse complète de facturation"
+                            ></textarea>
+                        </div>
+                        <div class="full-width">
+                            <label for="delivery-address" class="form-label">Adresse de Livraison:</label>
+                            <textarea 
+                                id="delivery-address" 
+                                name="delivery_address" 
+                                class="form-input-admin h-20" 
+                                required
+                                placeholder="Adresse complète de livraison"
+                            ></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional User Selection (Hidden for manual entry, but keeping for future integration) -->
+                <div style="display: none;">
                     <label for="professional-user-select" class="form-label">Sélectionner un Utilisateur Professionnel:</label>
-                    <select id="professional-user-select" name="b2b_user_id" class="form-input-admin" required>
-                        <option value="">Chargement des professionnels...</option>
+                    <select id="professional-user-select" name="b2b_user_id" class="form-input-admin">
+                        <option value="">Saisie manuelle</option>
                     </select>
                 </div>
 
+                <!-- Line Items -->
                 <div>
                     <h2 class="text-xl font-semibold mb-3 text-gray-700">Lignes de Facture</h2>
                     <div id="line-items-container" class="space-y-3">
-                        </div>
+                        <!-- Line items will be added here dynamically -->
+                    </div>
                     <button type="button" id="add-line-item-btn" class="btn btn-admin-secondary mt-4">
                         <i class="fas fa-plus mr-2"></i>Ajouter Ligne
                     </button>
                 </div>
                 
+                <!-- Notes -->
                 <div>
                     <label for="invoice-notes" class="form-label">Notes (Optionnel):</label>
-                    <textarea id="invoice-notes" name="notes" class="form-input-admin h-24"></textarea>
+                    <textarea id="invoice-notes" name="notes" class="form-input-admin h-24" placeholder="Notes additionnelles pour la facture"></textarea>
                 </div>
 
+                <!-- Totals Display -->
+                <div class="invoice-header-info">
+                    <h3 class="text-lg font-semibold mb-3 text-gray-700">Récapitulatif</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="text-right font-medium">Total HT:</div>
+                        <div id="total-ht" class="font-bold">0,00 €</div>
+                        
+                        <div class="text-right font-medium">TVA 5.5%:</div>
+                        <div id="total-tva" class="font-bold">0,00 €</div>
+                        
+                        <div class="text-right font-medium">Remise:</div>
+                        <div id="total-discount" class="font-bold">0,00 €</div>
+                        
+                        <div class="text-right font-medium text-lg">Montant net à payer:</div>
+                        <div id="total-net" class="font-bold text-lg text-green-600">0,00 €</div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
                 <div class="form-actions text-right">
+                    <button type="button" id="preview-invoice-btn" class="btn btn-admin-secondary mr-2">
+                        <i class="fas fa-eye mr-2"></i>Aperçu
+                    </button>
                     <button type="submit" class="btn btn-admin-primary">
                         <i class="fas fa-file-invoice mr-2"></i>Générer la Facture
                     </button>
@@ -78,6 +269,25 @@
             </form>
         </div>
     </main>
+
+    <!-- Invoice Preview Modal -->
+    <div id="invoice-preview-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Aperçu de la Facture</h3>
+                        <button id="close-preview-btn" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div id="invoice-preview-content" class="border rounded p-4">
+                        <!-- Preview content will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
         <p>&copy; <span id="currentYearCreateInvoice"></span> Maison Trüvra - Admin Panel</p>
@@ -91,7 +301,8 @@
     <script src="js/admin_auth.js"></script>
     <script src="js/admin_main.js"></script>
     <script src="js/admin_invoices.js"></script>
-     <script>
+    <script src="js/admin_create_invoice.js"></script>
+    <script>
         const currentYearSpanCreateInvoice = document.getElementById('currentYearCreateInvoice');
         if (currentYearSpanCreateInvoice) {
             currentYearSpanCreateInvoice.textContent = new Date().getFullYear();
