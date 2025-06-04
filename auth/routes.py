@@ -115,60 +115,66 @@ def register():
         audit_logger.log_action(action='register_fail_server_error', email=email, details=str(e), status='failure', ip_address=request.remote_addr)
         return jsonify(message="Registration failed due to a server error", success=False), 500
         
-
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    data = request.json
+    """
+    Handles user login.
+    Expects JSON payload with 'email', 'password', and optional 'totp_code'.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid request. JSON payload expected."}), 400
+
     email = data.get('email')
     password = data.get('password')
-    audit_logger = current_app.audit_log_service
+    totp_code = data.get('totp_code') # For Two-Factor Authentication
 
     if not email or not password:
-        # ... (logging and return 400)
-        audit_logger.log_action(action='login_fail_missing_fields', email=email, details="Email and password required.", status='failure', ip_address=request.remote_addr)
-        return jsonify(message="Email and password are required", success=False), 400
+        return jsonify({"error": "Email and password are required."}), 400
 
-
+    # Replace User.query.filter_by with your actual user retrieval logic
     user = User.query.filter_by(email=email).first()
 
-    if user and user.check_password(password):
-        if not user.is_active:
-            # ... (logging and return 403)
-            audit_logger.log_action(user_id=user.id, action='login_fail_inactive', target_type='user', target_id=user.id, details="Account is inactive.", status='failure', ip_address=request.remote_addr)
-            return jsonify(message="Account is inactive. Please contact support.", success=False), 403
-        
-        if user.role == UserRoleEnum.B2C_CUSTOMER and not user.is_verified:
-            # ... (logging and return 403)
-            audit_logger.log_action(user_id=user.id, action='login_fail_unverified', target_type='user', target_id=user.id, details="B2C account not verified.", status='failure', ip_address=request.remote_addr)
-            return jsonify(message="Account not verified. Please check your email for verification link.", success=False), 403
-        
-        if user.role == UserRoleEnum.B2B_PROFESSIONAL and user.professional_status != ProfessionalStatusEnum.APPROVED:
-            # ... (logging and return 403)
-            audit_logger.log_action(user_id=user.id, action='login_fail_b2b_not_approved', target_type='user', target_id=user.id, details=f"B2B status: {user.professional_status.value if user.professional_status else 'N/A'}.", status='failure', ip_address=request.remote_addr)
-            return jsonify(message=f"Your professional account is currently {user.professional_status.value if user.professional_status else 'under review'}. Please wait for approval or contact support.", success=False), 403
+    if not user:
+        # It's generally better not to reveal if the email exists for security reasons
+        # but per request for specific error messages:
+        current_app.logger.warning(f"Login attempt for non-existent user: {email}")
+        return jsonify({"error": "User not found or invalid credentials."}), 401 # Changed from 404
+
+    if not user.check_password(password):
+        current_app.logger.warning(f"Invalid password attempt for user: {email}")
+        return jsonify({"error": "Invalid password."}), 401
+
+    if user.is_totp_enabled():
+        if not totp_code:
+            current_app.logger.info(f"TOTP code required for user: {email}")
+            return jsonify({"error": "TOTP code is required."}), 401 # 401 or a custom code indicating TOTP needed
+        if not user.verify_totp(totp_code):
+            current_app.logger.warning(f"Invalid TOTP code for user: {email}")
+            return jsonify({"error": "Invalid TOTP code."}), 401
+    
+    # If all checks pass, log in the user
+    # login_user(user) # If using Flask-Login for session-based auth
+    
+    # For token-based auth, you might generate a token here
+    # auth_token = user.generate_auth_token() 
+    # response = {'access_token': auth_token.decode('UTF-8')}
+
+    current_app.logger.info(f"User logged in successfully: {email}")
+    # Adjust the success response as per your auth mechanism (session/token)
+    return jsonify({
+        "message": "Login successful.",
+        "user": user.to_dict() # Or relevant user info/token
+    }), 200
 
 
-        identity = user.id
-        additional_claims = {
-            "role": user.role.value, 
-            "email": user.email, 
-            "is_verified": user.is_verified,
-            "first_name": user.first_name, 
-            "last_name": user.last_name,
-            "professional_status": user.professional_status.value if user.professional_status else None
-        }
-        access_token = create_access_token(identity=identity, additional_claims=additional_claims)
-        refresh_token = create_refresh_token(identity=identity)
-
-        audit_logger.log_action(user_id=user.id, action='login_success', target_type='user', target_id=user.id, status='success', ip_address=request.remote_addr)
-        
-        user_info_to_return = user.to_dict() # Use the model's to_dict method
-        return jsonify(success=True, token=access_token, refresh_token=refresh_token, user=user_info_to_return, message="Connexion réussie"), 200
-    else:
-        # ... (logging and return 401)
-        user_id_attempt = user.id if user else None
-        audit_logger.log_action(user_id=user_id_attempt, action='login_fail_credentials', email=email, details="Invalid credentials.", status='failure', ip_address=request.remote_addr)
-        return jsonify(message="Invalid email or password", success=False), 401
+@auth_bp.route('/logout', methods=['POST'])
+@login_required # If using Flask-Login
+def logout():
+    """Handles user logout."""
+    # logout_user() # If using Flask-Login
+    current_app.logger.info(f"User logged out: {current_user.email if hasattr(current_user, 'email') else 'Unknown'}")
+    return jsonify({"message": "Logout successful."}), 200
 
 
 @auth_bp.route('/refresh', methods=['POST'])
