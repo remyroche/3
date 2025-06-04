@@ -62,8 +62,8 @@
             font-size: 0.875rem; /* 14px */
             font-weight: 500; /* Medium weight for labels */
         }
-        .login-card .btn-primary {
-            width: 100%; /* Full width login button */
+        .login-card .btn-primary { /* For the main email/password login button */
+            width: 100%; 
             padding-top: calc(var(--spacing-unit) * 1.5); /* 12px */
             padding-bottom: calc(var(--spacing-unit) * 1.5);
             font-size: 1rem; /* 16px */
@@ -88,16 +88,52 @@
             color: var(--mt-earth-brown);
             margin-top: calc(var(--spacing-unit) * 4); /* 32px */
         }
+        .sso-divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: var(--mt-earth-brown);
+            font-size: 0.875rem;
+            margin: calc(var(--spacing-unit) * 3) 0; /* 24px */
+        }
+        .sso-divider::before,
+        .sso-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--mt-warm-taupe);
+        }
+        .sso-divider:not(:empty)::before {
+            margin-right: .5em;
+        }
+        .sso-divider:not(:empty)::after {
+            margin-left: .5em;
+        }
+        .btn-sso { /* Specific styling for SSO buttons */
+            width: 100%;
+            padding: calc(var(--spacing-unit) * 1.25) calc(var(--spacing-unit) * 2); /* 10px 16px */
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: calc(var(--spacing-unit) * 1); /* 8px */
+            background-color: #fff; /* White background for SSO button */
+            color: var(--mt-near-black);
+            border: 1px solid var(--mt-warm-taupe);
+        }
+        .btn-sso:hover {
+            background-color: #f8f6f2; /* Light cream hover */
+            border-color: var(--mt-gold);
+        }
+        .btn-sso img { /* For SSO provider logo */
+            width: 20px;
+            height: 20px;
+        }
     </style>
 </head>
-<body class="admin-body"> <!-- admin-body class might not be strictly necessary here if login-container-wrapper styles body fully -->
+<body class="admin-body"> 
     <div class="login-container-wrapper">
         <div class="login-card">
             <div class="login-logo-container">
-                <!-- Adjust path to your logo. This assumes 'admin' is a subdir and 'static_assets' is a sibling to that subdir's parent. -->
-                <!-- Common structure: project_root/static_assets/logos/... and project_root/app/admin/... -->
-                <!-- So, from admin/admin_login.html, it might be '../../static_assets/logos/maison_truvra_invoice_logo.png' -->
-                <!-- Or if served from /static route: '/static/logos/maison_truvra_invoice_logo.png' -->
                 <img src="../static_assets/logos/maison_truvra_invoice_logo.png" alt="Maison Trüvra Logo" class="login-logo">
             </div>
             <h1 class="login-title">Accès Administrateur</h1>
@@ -118,19 +154,27 @@
                     <label for="password">Mot de Passe</label>
                     <input type="password" id="password" name="password" required placeholder="Votre mot de passe">
                 </div>
-                <!-- TOTP Field - initially hidden or shown based on backend logic -->
+                <!-- TOTP Field - initially hidden, shown by JS if 2FA is enabled for the user after email input -->
                 <div class="form-group" id="totp-group" style="display: none;">
-                    <label for="totp_code">Code TOTP (si activé)</label>
+                    <label for="totp_code">Code d'Authentification (TOTP)</label>
                     <input type="text" id="totp_code" name="totp_code" inputmode="numeric" pattern="[0-9]{6}" placeholder="Code à 6 chiffres" maxlength="6">
                 </div>
-                <div class="form-group mt-4"> <!-- Added margin-top -->
+                <div class="form-group mt-4"> 
                     <button type="submit" class="btn btn-primary">Se Connecter</button>
                 </div>
             </form>
+
+            <div class="sso-divider">OU</div>
+
+            <div class="form-group">
+                <button type="button" id="simplelogin-sso-btn" class="btn btn-sso">
+                    <img src="https://simplelogin.io/favicon-32x32.png" alt="SimpleLogin Logo"> <!-- Replace with actual path or a generic SSO icon -->
+                    Se connecter avec SimpleLogin
+                </button>
+            </div>
+            
             <div class="login-links">
                 <a href="#">Mot de passe oublié ?</a>
-                <!-- <span class="mx-2 text-gray-400">|</span> -->
-                <!-- <a href="/">Retour au site</a> -->
             </div>
         </div>
         <footer class="login-footer">
@@ -139,12 +183,24 @@
     </div>
 
     <!-- Admin specific JS for login -->
-    <script src="js/admin_api.js"></script> <!-- If API calls are made from login page itself -->
+    <script src="js/admin_api.js"></script> 
     <script src="js/admin_auth.js"></script>
     <script>
         document.getElementById('current-year-login').textContent = new Date().getFullYear();
+        
+        // Example: JavaScript to handle SimpleLogin SSO button click
+        const simpleLoginBtn = document.getElementById('simplelogin-sso-btn');
+        if (simpleLoginBtn) {
+            simpleLoginBtn.addEventListener('click', () => {
+                // Redirect to your backend endpoint that initiates SimpleLogin OAuth flow
+                // This URL should be configured in your config.py (SIMPLELOGIN_AUTHORIZE_URL and other params)
+                // and constructed by your backend.
+                window.location.href = '/api/admin/login/simplelogin'; // Example backend route
+            });
+        }
+
+        // Your admin_auth.js would handle showing/hiding the #totp-group
+        // based on user input or API responses.
     </script>
 </body>
 </html>
-
-
