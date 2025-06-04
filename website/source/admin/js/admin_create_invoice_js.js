@@ -1,472 +1,383 @@
-// admin_create_invoice.js - Handle manual invoice creation
+// admin_create_invoice_js.js
+document.addEventListener('DOMContentLoaded', () => {
+    const professionalUserSelect = document.getElementById('professional-user-select');
+    const invoiceItemsTbody = document.getElementById('invoice-items-tbody');
+    const addInvoiceItemBtn = document.getElementById('add-invoice-item-btn');
+    const invoiceItemTemplate = document.getElementById('invoice-item-template');
+    
+    const invoiceDateInput = document.getElementById('invoice-date');
+    const invoiceDueDateInput = document.getElementById('invoice-due-date');
+    const invoiceNumberDisplay = document.getElementById('invoice-number-display');
 
-class InvoiceCreator {
-    constructor() {
-        this.lineItemCounter = 0;
-        this.vatRate = 0.055; // 5.5% TVA
-        this.init();
-    }
+    // Company info display elements (from config, could be dynamic if needed)
+    const companyNameDisplay = document.getElementById('company-name');
+    const companyAddress1Display = document.getElementById('company-address1');
+    // const companyAddress2Display = document.getElementById('company-address2'); // If you have this field
+    const companyCityPostalCountryDisplay = document.getElementById('company-city-postal-country');
+    const companySiretDisplay = document.getElementById('company-siret'); // Assuming this is your company's SIRET
+    const companyVatDisplay = document.getElementById('company-vat'); // Assuming this is your company's VAT
 
-    init() {
-        this.setupEventListeners();
-        this.setTodayDate();
-        this.addInitialLineItem();
-        this.updateInvoiceNumber();
-    }
+    // Customer billing info display elements
+    const customerCompanyNameDisplay = document.getElementById('customer-company-name');
+    const customerContactNameDisplay = document.getElementById('customer-contact-name');
+    const customerBillingAddressDisplay = document.getElementById('customer-billing-address');
+    const customerSiretDisplay = document.getElementById('customer-siret-display');
+    const customerVatDisplay = document.getElementById('customer-vat-display');
 
-    setupEventListeners() {
-        // Add line item button
-        const addLineBtn = document.getElementById('add-line-item-btn');
-        if (addLineBtn) {
-            addLineBtn.addEventListener('click', () => this.addLineItem());
-        }
+    // Customer delivery info display elements
+    const deliveryCompanyNameDisplay = document.getElementById('delivery-company-name');
+    const customerDeliveryAddressDisplay = document.getElementById('customer-delivery-address');
 
-        // Form submission
-        const form = document.getElementById('create-invoice-form');
-        if (form) {
-            form.addEventListener('submit', (e) => this.handleSubmit(e));
-        }
+    // Totals display
+    const subtotalHTDisplay = document.getElementById('subtotal-ht');
+    const vatSummaryContainer = document.getElementById('vat-summary-container');
+    const totalVATDisplay = document.getElementById('total-vat');
+    const grandTotalTTCDisplay = document.getElementById('grand-total-ttc');
+    const netToPayDisplay = document.getElementById('net-to-pay');
+    const paymentDueDaysDisplay = document.getElementById('payment-due-days'); // From config
 
-        // Preview button
-        const previewBtn = document.getElementById('preview-invoice-btn');
-        if (previewBtn) {
-            previewBtn.addEventListener('click', () => this.showPreview());
-        }
+    const saveInvoiceBtn = document.getElementById('save-invoice-btn');
+    const previewInvoiceBtn = document.getElementById('preview-invoice-btn');
 
-        // Close preview modal
-        const closePreviewBtn = document.getElementById('close-preview-btn');
-        if (closePreviewBtn) {
-            closePreviewBtn.addEventListener('click', () => this.closePreview());
-        }
+    let professionalUsersData = []; // To store fetched professional users with their details
 
-        // Update invoice number when manual number changes
-        const manualNumberInput = document.getElementById('manual-number');
-        if (manualNumberInput) {
-            manualNumberInput.addEventListener('input', () => this.updateInvoiceNumber());
-        }
+    // --- Initialize Page ---
 
-        // Update totals when discount rate changes
-        const discountInput = document.getElementById('discount-rate');
-        if (discountInput) {
-            discountInput.addEventListener('input', () => this.calculateTotals());
-        }
-    }
+    // 1. Load company info (from config or a dedicated endpoint)
+    // For now, using placeholders or values from HTML. This could be fetched from backend.
+    // Example: fetchAPIData('/api/admin/company-info', {}, 'GET').then(data => {
+    //     companyNameDisplay.textContent = data.name;
+    //     companyAddress1Display.textContent = data.address_line1;
+    //     companyCityPostalCountryDisplay.textContent = data.city_postal_country;
+    //     companySiretDisplay.textContent = data.siret; // Your company's SIRET
+    //     companyVatDisplay.textContent = data.vat_number; // Your company's VAT
+    //     document.getElementById('company-iban').textContent = data.iban || 'FRXX XXXX XXXX XXXX XXXX XXX';
+    //     document.getElementById('company-swift').textContent = data.swift || 'XXXXXXX';
+    //     paymentDueDaysDisplay.textContent = data.invoice_due_days || 30;
+    // });
 
-    setTodayDate() {
-        const today = new Date().toISOString().split('T')[0];
-        const dateInput = document.getElementById('invoice-date');
-        if (dateInput) {
-            dateInput.value = today;
-        }
-    }
 
-    updateInvoiceNumber() {
-        const today = new Date();
-        const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
-        const manualNumber = document.getElementById('manual-number').value || '001';
-        const invoiceNumber = `TRUVRA-${dateStr}-${manualNumber.padStart(3, '0')}`;
-        
-        const invoiceNumberInput = document.getElementById('invoice-number');
-        if (invoiceNumberInput) {
-            invoiceNumberInput.value = invoiceNumber;
-        }
-    }
+    // 2. Set default dates
+    const today = new Date();
+    invoiceDateInput.valueAsDate = today;
+    const dueDate = new Date(today);
+    const dueDays = parseInt(paymentDueDaysDisplay.textContent || "30", 10);
+    dueDate.setDate(today.getDate() + dueDays);
+    invoiceDueDateInput.valueAsDate = dueDate;
 
-    addLineItem() {
-        this.lineItemCounter++;
-        const container = document.getElementById('line-items-container');
-        
-        const lineItemDiv = document.createElement('div');
-        lineItemDiv.className = 'line-item';
-        lineItemDiv.dataset.lineId = this.lineItemCounter;
-        
-        lineItemDiv.innerHTML = `
-            <div class="line-item-grid">
-                <div>
-                    <label class="form-label text-sm">Article</label>
-                    <input 
-                        type="text" 
-                        name="line_items[${this.lineItemCounter}][product_name]" 
-                        class="form-input-admin"
-                        required
-                        placeholder="Nom du produit"
-                    >
-                </div>
-                <div>
-                    <label class="form-label text-sm">Quantité</label>
-                    <input 
-                        type="number" 
-                        name="line_items[${this.lineItemCounter}][quantity]" 
-                        class="form-input-admin line-quantity"
-                        min="1" 
-                        step="1"
-                        required
-                        placeholder="1"
-                    >
-                </div>
-                <div>
-                    <label class="form-label text-sm">N° Identification</label>
-                    <input 
-                        type="text" 
-                        name="line_items[${this.lineItemCounter}][product_id]" 
-                        class="form-input-admin"
-                        required
-                        placeholder="ID produit"
-                    >
-                </div>
-                <div>
-                    <label class="form-label text-sm">Prix unitaire HT (€)</label>
-                    <input 
-                        type="number" 
-                        name="line_items[${this.lineItemCounter}][unit_price]" 
-                        class="form-input-admin line-price"
-                        min="0" 
-                        step="0.01"
-                        required
-                        placeholder="0.00"
-                    >
-                </div>
-                <div class="flex flex-col">
-                    <label class="form-label text-sm">Montant HT</label>
-                    <div class="flex items-center space-x-2">
-                        <span class="line-total font-semibold">0,00 €</span>
-                        <button type="button" class="remove-line-btn" onclick="invoiceCreator.removeLineItem(${this.lineItemCounter})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        container.appendChild(lineItemDiv);
-        
-        // Add event listeners for calculation
-        const quantityInput = lineItemDiv.querySelector('.line-quantity');
-        const priceInput = lineItemDiv.querySelector('.line-price');
-        
-        [quantityInput, priceInput].forEach(input => {
-            input.addEventListener('input', () => {
-                this.updateLineTotal(this.lineItemCounter);
-                this.calculateTotals();
-            });
+    invoiceDateInput.addEventListener('change', () => {
+        const newInvoiceDate = new Date(invoiceDateInput.value);
+        const newDueDate = new Date(newInvoiceDate);
+        newDueDate.setDate(newInvoiceDate.getDate() + (parseInt(paymentDueDaysDisplay.textContent, 10) || 30));
+        invoiceDueDateInput.valueAsDate = newDueDate;
+    });
+    
+
+    // 3. Fetch professional users for the select dropdown
+    // Replace with your actual API endpoint for fetching professional users
+    fetchAPIData('/api/admin/users?role=professional', {}, 'GET')
+        .then(response => {
+            if (response && response.users && Array.isArray(response.users)) {
+                professionalUsersData = response.users; // Store for later use
+                professionalUserSelect.innerHTML = '<option value="">Sélectionnez un client</option>'; // Clear existing
+                response.users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    // Display company name if available, otherwise full name
+                    option.textContent = user.company_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || `Utilisateur ID: ${user.id}`;
+                    professionalUserSelect.appendChild(option);
+                });
+            } else {
+                console.error('Failed to load professional users or invalid format:', response);
+                professionalUserSelect.innerHTML = '<option value="">Erreur de chargement</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching professional users:', error);
+            professionalUserSelect.innerHTML = '<option value="">Erreur de chargement</option>';
         });
-    }
 
-    addInitialLineItem() {
-        this.addLineItem();
-    }
+    // --- Event Listeners ---
 
-    removeLineItem(lineId) {
-        const lineItem = document.querySelector(`[data-line-id="${lineId}"]`);
-        if (lineItem) {
-            lineItem.remove();
-            this.calculateTotals();
+    professionalUserSelect.addEventListener('change', (event) => {
+        const selectedUserId = event.target.value;
+        if (selectedUserId) {
+            const selectedUser = professionalUsersData.find(user => user.id.toString() === selectedUserId);
+            if (selectedUser) {
+                populateCustomerInfo(selectedUser);
+                generateInvoiceNumber(selectedUser.company_name || 'Client');
+            } else {
+                clearCustomerInfo();
+                invoiceNumberDisplay.textContent = 'En attente de sélection client';
+            }
+        } else {
+            clearCustomerInfo();
+            invoiceNumberDisplay.textContent = 'En attente de sélection client';
         }
-        
-        // Ensure at least one line item exists
-        const remainingItems = document.querySelectorAll('.line-item');
-        if (remainingItems.length === 0) {
-            this.addLineItem();
+    });
+
+    addInvoiceItemBtn.addEventListener('click', addInvoiceItemRow);
+
+    invoiceItemsTbody.addEventListener('click', (event) => {
+        if (event.target.classList.contains('remove-item-btn')) {
+            event.target.closest('tr').remove();
+            calculateTotals();
         }
+    });
+
+    invoiceItemsTbody.addEventListener('input', (event) => {
+        if (event.target.classList.contains('item-quantity') || 
+            event.target.classList.contains('item-unit-price-ht') ||
+            event.target.classList.contains('item-vat-rate')) {
+            const row = event.target.closest('tr');
+            updateLineItemTotals(row);
+            calculateTotals();
+        }
+    });
+
+    saveInvoiceBtn.addEventListener('click', handleSaveInvoice);
+    previewInvoiceBtn.addEventListener('click', handlePreviewInvoice);
+
+
+    // --- Functions ---
+
+    function populateCustomerInfo(userData) {
+        customerCompanyNameDisplay.textContent = userData.company_name || 'N/A';
+        customerContactNameDisplay.textContent = `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'N/A';
+        
+        // Billing Address (assuming address fields like street, city, postal_code, country exist)
+        const billingAddress = [
+            userData.billing_address_line1,
+            userData.billing_address_line2,
+            `${userData.billing_city || ''} ${userData.billing_postal_code || ''}`,
+            userData.billing_country
+        ].filter(Boolean).join('<br>');
+        customerBillingAddressDisplay.innerHTML = billingAddress || 'N/A';
+
+        customerSiretDisplay.textContent = userData.siret_number || 'N/A';
+        customerVatDisplay.textContent = userData.vat_number || 'N/A';
+
+        // Delivery Address (can be same as billing or different fields)
+        deliveryCompanyNameDisplay.textContent = userData.delivery_company_name || userData.company_name || 'N/A';
+        const deliveryAddress = [
+            userData.delivery_address_line1,
+            userData.delivery_address_line2,
+            `${userData.delivery_city || ''} ${userData.delivery_postal_code || ''}`,
+            userData.delivery_country
+        ].filter(Boolean).join('<br>');
+        customerDeliveryAddressDisplay.innerHTML = deliveryAddress || 'N/A';
     }
 
-    updateLineTotal(lineId) {
-        const lineItem = document.querySelector(`[data-line-id="${lineId}"]`);
-        if (!lineItem) return;
-        
-        const quantity = parseFloat(lineItem.querySelector('.line-quantity').value) || 0;
-        const price = parseFloat(lineItem.querySelector('.line-price').value) || 0;
-        const total = quantity * price;
-        
-        const totalSpan = lineItem.querySelector('.line-total');
-        totalSpan.textContent = this.formatCurrency(total);
+    function clearCustomerInfo() {
+        customerCompanyNameDisplay.textContent = 'Nom de l\'Entreprise Cliente';
+        customerContactNameDisplay.textContent = 'Prénom Nom (Contact)';
+        customerBillingAddressDisplay.innerHTML = 'Adresse de facturation';
+        customerSiretDisplay.textContent = '';
+        customerVatDisplay.textContent = '';
+        deliveryCompanyNameDisplay.textContent = 'Nom de l\'Entreprise Cliente (Livraison)';
+        customerDeliveryAddressDisplay.innerHTML = 'Adresse de livraison';
     }
 
-    calculateTotals() {
-        const lineItems = document.querySelectorAll('.line-item');
-        let totalHT = 0;
+    function generateInvoiceNumber(customerIdentifier) {
+        const date = new Date(invoiceDateInput.value || Date.now());
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const yyyymmdd = `${year}${month}${day}`;
         
-        lineItems.forEach(item => {
-            const quantity = parseFloat(item.querySelector('.line-quantity').value) || 0;
-            const price = parseFloat(item.querySelector('.line-price').value) || 0;
-            totalHT += quantity * price;
+        // Sanitize customerIdentifier for use in filename/ID (basic example)
+        const safeCustomerName = customerIdentifier.replace(/[^a-zA-Z0-9]/g, '').substring(0, 10);
+        
+        // XXX part: For frontend, can be a timestamp or random. Backend should ensure uniqueness.
+        const xxx = Math.floor(Math.random() * 900) + 100; // Example: 3 random digits
+        
+        invoiceNumberDisplay.textContent = `${safeCustomerName.toUpperCase()}-${yyyymmdd}-${xxx}`;
+    }
+
+    function addInvoiceItemRow() {
+        const newRow = invoiceItemTemplate.content.cloneNode(true);
+        invoiceItemsTbody.appendChild(newRow);
+        // Attach event listeners or re-calculate if needed for the new row specifically
+        // For simplicity, global tbody listener handles inputs.
+    }
+
+    function updateLineItemTotals(row) {
+        const quantityInput = row.querySelector('.item-quantity');
+        const unitPriceInput = row.querySelector('.item-unit-price-ht');
+        const vatRateSelect = row.querySelector('.item-vat-rate');
+        const totalHTSpan = row.querySelector('.item-total-ht');
+        const totalTTCSpan = row.querySelector('.item-total-ttc');
+
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const unitPriceHT = parseFloat(unitPriceInput.value) || 0;
+        const vatRate = parseFloat(vatRateSelect.value) || 0;
+
+        const totalHT = quantity * unitPriceHT;
+        const totalTTC = totalHT * (1 + vatRate / 100);
+
+        totalHTSpan.textContent = totalHT.toFixed(2);
+        totalTTCSpan.textContent = totalTTC.toFixed(2);
+    }
+
+    function calculateTotals() {
+        let overallSubtotalHT = 0;
+        const vatDetails = {}; // To store VAT amounts per rate: { '20': 100, '5.5': 20 }
+
+        invoiceItemsTbody.querySelectorAll('tr').forEach(row => {
+            const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
+            const unitPriceHT = parseFloat(row.querySelector('.item-unit-price-ht').value) || 0;
+            const vatRate = parseFloat(row.querySelector('.item-vat-rate').value); // Keep as string for key
+
+            const lineTotalHT = quantity * unitPriceHT;
+            overallSubtotalHT += lineTotalHT;
+
+            if (!isNaN(vatRate)) { // Ensure vatRate is a number before using it in calculations
+                const vatAmount = lineTotalHT * (vatRate / 100);
+                const vatRateStr = vatRate.toString(); // Use string for object key
+                if (vatDetails[vatRateStr]) {
+                    vatDetails[vatRateStr] += vatAmount;
+                } else {
+                    vatDetails[vatRateStr] = vatAmount;
+                }
+            }
         });
-        
-        const discountRate = parseFloat(document.getElementById('discount-rate').value) || 0;
-        const discountAmount = totalHT * (discountRate / 100);
-        const totalAfterDiscount = totalHT - discountAmount;
-        const tvaAmount = totalAfterDiscount * this.vatRate;
-        const totalNet = totalAfterDiscount + tvaAmount;
-        
-        // Update display
-        document.getElementById('total-ht').textContent = this.formatCurrency(totalHT);
-        document.getElementById('total-tva').textContent = this.formatCurrency(tvaAmount);
-        document.getElementById('total-discount').textContent = this.formatCurrency(discountAmount);
-        document.getElementById('total-net').textContent = this.formatCurrency(totalNet);
-    }
 
-    formatCurrency(amount) {
-        return new Intl.NumberFormat('fr-FR', {
-            style: 'currency',
-            currency: 'EUR'
-        }).format(amount);
-    }
+        subtotalHTDisplay.textContent = overallSubtotalHT.toFixed(2);
 
-    generateInvoiceHTML(formData) {
-        const lineItems = this.getLineItemsData();
-        const totals = this.calculateTotalsData();
+        vatSummaryContainer.innerHTML = ''; // Clear previous VAT summary
+        let overallTotalVAT = 0;
+        for (const rate in vatDetails) {
+            if (vatDetails.hasOwnProperty(rate) && vatDetails[rate] > 0) {
+                const vatAmount = vatDetails[rate];
+                overallTotalVAT += vatAmount;
+                const div = document.createElement('div');
+                div.innerHTML = `<span>TVA (${rate}%) :</span> <span>${vatAmount.toFixed(2)} €</span>`;
+                vatSummaryContainer.appendChild(div);
+            }
+        }
         
-        return `
-            <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6;">
-                <div style="text-align: center; margin-bottom: 40px;">
-                    <h1 style="font-size: 24px; margin-bottom: 20px;">Facture B2B</h1>
-                    <div style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">LOGO</div>
-                    <div style="font-weight: bold;">
-                        Maison Trüvra,<br>
-                        Producteur récoltant
-                    </div>
-                </div>
-                
-                <div style="margin-bottom: 30px;">
-                    <div style="font-weight: bold; margin-bottom: 5px;">
-                        ${formData.client_first_name} ${formData.client_last_name.toUpperCase()} - ${formData.client_company}
-                    </div>
-                    <div style="margin-bottom: 5px;"><strong>SIRET :</strong> ${formData.client_siret}</div>
-                    <div style="margin-bottom: 5px;"><strong>Adresse de facturation :</strong> ${formData.billing_address.replace(/\n/g, ', ')}</div>
-                    <div style="margin-bottom: 5px;"><strong>Adresse de livraison :</strong> ${formData.delivery_address.replace(/\n/g, ', ')}</div>
-                    <div style="margin-top: 20px;">
-                        <div style="margin-bottom: 5px;"><strong>Facture #${formData.invoice_number}</strong></div>
-                        <div><strong>Date d'émission de la facture :</strong> ${new Date(formData.invoice_date).toLocaleDateString('fr-FR')}</div>
-                    </div>
-                </div>
-                
-                <div style="margin-bottom: 40px;">
-                    <div style="display: grid; grid-template-columns: 2fr 1fr 2fr 1fr 1fr; gap: 10px; font-weight: bold; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;">
-                        <div>Article</div>
-                        <div>Quantité</div>
-                        <div>Numéro d'identification<br>+ hyperlien vers le passeport du produit</div>
-                        <div>Prix unitaire HT</div>
-                        <div>Montant HT</div>
-                    </div>
-                    
-                    ${lineItems.map(item => `
-                        <div style="display: grid; grid-template-columns: 2fr 1fr 2fr 1fr 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid #ccc;">
-                            <div>${item.product_name}</div>
-                            <div>${item.quantity}</div>
-                            <div><a href="#" style="color: #2d5a27; text-decoration: underline;">${item.product_id}</a></div>
-                            <div>${this.formatCurrency(item.unit_price)}</div>
-                            <div>${this.formatCurrency(item.quantity * item.unit_price)}</div>
-                        </div>
-                    `).join('')}
-                    
-                    <div style="height: 200px;"></div>
-                </div>
-                
-                <div style="text-align: right; margin-bottom: 40px; font-size: 16px;">
-                    <div style="margin-bottom: 10px;"><strong>Total HT :</strong> ${this.formatCurrency(totals.totalHT)}</div>
-                    <div style="margin-bottom: 10px;"><strong>TVA 5.5% :</strong> ${this.formatCurrency(totals.tvaAmount)}</div>
-                    <div style="margin-bottom: 10px;"><strong>Remise ${formData.discount_rate}% :</strong> ${this.formatCurrency(totals.discountAmount)}</div>
-                    <div style="font-size: 20px; font-weight: bold; margin-top: 15px;">
-                        <strong>Montant net à payer en € :</strong> ${this.formatCurrency(totals.totalNet)}
-                    </div>
-                </div>
-                
-                <div style="margin-bottom: 40px;">
-                    <h3 style="font-size: 18px; margin-bottom: 20px;">Modalités de règlement :</h3>
-                    <div style="margin-bottom: 10px;"><strong>BIC :</strong></div>
-                    <div style="margin-bottom: 20px;"><strong>IBAN :</strong></div>
-                    <p style="font-size: 12px; line-height: 1.5; text-align: justify;">
-                        La présente facture est payable sous 30 jours. Passé ce délai, sans obligation d'envoi d'une relance, 
-                        conformément à l'article L441-30 II du Code de Commerce, il sera appliqué une pénalité calculée à un taux 
-                        annuel de 100%. Une indemnité forfaitaire pour frais de recouvrement de 40€ sera aussi exigible.
-                    </p>
-                </div>
-                
-                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 30px;">
-                    <p style="font-size: 12px; line-height: 1.5; text-align: justify; margin: 0;">
-                        Chez Maison Trüvra, la fraîcheur, l'authentificité et la traçabilité de nos produits est primordiale. 
-                        C'est dans cet esprit que chaque produit a son propre numéro d'identification. En cliquant sur ce numéro, 
-                        vous serez redirigé vers une page web unique associée à votre produit. Vous trouverez sur cette page la date 
-                        de récolte et de traitement associées à votre achat.
-                    </p>
-                </div>
-                
-                <div style="border-top: 1px solid #ccc; padding-top: 20px; font-size: 11px; text-align: center; line-height: 1.4;">
-                    <p style="margin-bottom: 10px;">
-                        [statut juridique de la société] Maison Trüvra - SIRET xxxxx - Capital social de xx € - 
-                        Siège social 14 rue de la Libération, 933330 Neuilly-sur-Marne - Numéro d'Identification à la TVA FRxx
-                    </p>
-                    <p style="margin: 0;">
-                        Contactez-nous à xx@.... ou sur Instagram @maisontruvra
-                    </p>
-                </div>
-            </div>
-        `;
+        totalVATDisplay.textContent = overallTotalVAT.toFixed(2);
+        const grandTotalTTC = overallSubtotalHT + overallTotalVAT;
+        grandTotalTTCDisplay.textContent = grandTotalTTC.toFixed(2);
+        netToPayDisplay.textContent = grandTotalTTC.toFixed(2); // Assuming net to pay is same as grand total
     }
+    
+    function getInvoiceData() {
+        const items = [];
+        invoiceItemsTbody.querySelectorAll('tr').forEach(row => {
+            const description = row.querySelector('.item-description').value;
+            const quantity = parseFloat(row.querySelector('.item-quantity').value);
+            const unitPriceHT = parseFloat(row.querySelector('.item-unit-price-ht').value);
+            const vatRate = parseFloat(row.querySelector('.item-vat-rate').value);
+            const totalHT = parseFloat(row.querySelector('.item-total-ht').textContent);
+            const totalTTC = parseFloat(row.querySelector('.item-total-ttc').textContent);
 
-    getLineItemsData() {
-        const lineItems = document.querySelectorAll('.line-item');
-        const data = [];
-        
-        lineItems.forEach(item => {
-            const productName = item.querySelector('input[name*="[product_name]"]').value;
-            const quantity = parseFloat(item.querySelector('input[name*="[quantity]"]').value) || 0;
-            const productId = item.querySelector('input[name*="[product_id]"]').value;
-            const unitPrice = parseFloat(item.querySelector('input[name*="[unit_price]"]').value) || 0;
-            
-            if (productName && quantity > 0 && productId && unitPrice > 0) {
-                data.push({
-                    product_name: productName,
-                    quantity: quantity,
-                    product_id: productId,
-                    unit_price: unitPrice
+            if (description && !isNaN(quantity) && !isNaN(unitPriceHT)) { // Basic validation
+                 items.push({
+                    description,
+                    quantity,
+                    unit_price_ht: unitPriceHT,
+                    vat_rate: vatRate,
+                    total_ht: totalHT,
+                    total_ttc: totalTTC
                 });
             }
         });
-        
-        return data;
-    }
 
-    calculateTotalsData() {
-        const lineItems = this.getLineItemsData();
-        let totalHT = 0;
-        
-        lineItems.forEach(item => {
-            totalHT += item.quantity * item.unit_price;
-        });
-        
-        const discountRate = parseFloat(document.getElementById('discount-rate').value) || 0;
-        const discountAmount = totalHT * (discountRate / 100);
-        const totalAfterDiscount = totalHT - discountAmount;
-        const tvaAmount = totalAfterDiscount * this.vatRate;
-        const totalNet = totalAfterDiscount + tvaAmount;
-        
-        return {
-            totalHT: totalHT,
-            discountAmount: discountAmount,
-            tvaAmount: tvaAmount,
-            totalNet: totalNet
+        const invoiceData = {
+            professional_user_id: professionalUserSelect.value,
+            invoice_number: invoiceNumberDisplay.textContent,
+            invoice_date: invoiceDateInput.value,
+            due_date: invoiceDueDateInput.value,
+            // Customer details (can be re-fetched on backend or taken from display for confirmation)
+            customer_details: {
+                company_name: customerCompanyNameDisplay.textContent,
+                contact_name: customerContactNameDisplay.textContent,
+                billing_address: customerBillingAddressDisplay.innerHTML.replace(/<br\s*[\/]?>/gi, "\n"), // Convert <br> to newlines
+                siret: customerSiretDisplay.textContent,
+                vat_number: customerVatDisplay.textContent,
+                delivery_address: customerDeliveryAddressDisplay.innerHTML.replace(/<br\s*[\/]?>/gi, "\n")
+            },
+            items: items,
+            subtotal_ht: parseFloat(subtotalHTDisplay.textContent),
+            total_vat: parseFloat(totalVATDisplay.textContent),
+            vat_details: (() => { // Reconstruct vat_details from summary
+                const details = {};
+                vatSummaryContainer.querySelectorAll('div').forEach(div => {
+                    const text = div.children[0].textContent; // "TVA (20%) :"
+                    const rateMatch = text.match(/\((.*?)\%\)/);
+                    if (rateMatch && rateMatch[1]) {
+                        const rate = rateMatch[1];
+                        const amount = parseFloat(div.children[1].textContent);
+                        details[rate] = amount;
+                    }
+                });
+                return details;
+            })(),
+            grand_total_ttc: parseFloat(grandTotalTTCDisplay.textContent),
+            net_to_pay: parseFloat(netToPayDisplay.textContent),
+            payment_terms: `Paiement à réception de facture, au plus tard sous ${paymentDueDaysDisplay.textContent} jours.`,
+            // Company details (can be added by backend or included here)
+            // company_info: { ... } 
         };
+        return invoiceData;
     }
 
-    getFormData() {
-        const form = document.getElementById('create-invoice-form');
-        const formData = new FormData(form);
-        const data = {};
-        
-        // Get basic form data
-        for (let [key, value] of formData.entries()) {
-            data[key] = value;
-        }
-        
-        // Get line items
-        data.line_items = this.getLineItemsData();
-        
-        return data;
-    }
-
-    showPreview() {
-        const formData = this.getFormData();
-        
-        // Validate required fields
-        if (!this.validateForm(formData)) {
+    async function handleSaveInvoice() {
+        const invoiceData = getInvoiceData();
+        if (!invoiceData.professional_user_id) {
+            alert("Veuillez sélectionner un client professionnel.");
             return;
         }
-        
-        const previewContent = this.generateInvoiceHTML(formData);
-        document.getElementById('invoice-preview-content').innerHTML = previewContent;
-        document.getElementById('invoice-preview-modal').classList.remove('hidden');
-    }
-
-    closePreview() {
-        document.getElementById('invoice-preview-modal').classList.add('hidden');
-    }
-
-    validateForm(formData) {
-        const requiredFields = [
-            'client_first_name', 'client_last_name', 'client_company', 
-            'client_siret', 'billing_address', 'delivery_address', 
-            'invoice_date', 'manual_number'
-        ];
-        
-        for (let field of requiredFields) {
-            if (!formData[field]) {
-                this.showToast(`Le champ ${field} est requis`, 'error');
-                return false;
-            }
-        }
-        
-        if (!formData.line_items || formData.line_items.length === 0) {
-            this.showToast('Au moins une ligne de facture est requise', 'error');
-            return false;
-        }
-        
-        return true;
-    }
-
-    async handleSubmit(e) {
-        e.preventDefault();
-        
-        const formData = this.getFormData();
-        
-        if (!this.validateForm(formData)) {
+        if (invoiceData.items.length === 0) {
+            alert("Veuillez ajouter au moins un article à la facture.");
             return;
         }
-        
+
+        console.log("Invoice data to save:", invoiceData);
+
         try {
-            // Here you would typically send the data to your backend
-            console.log('Invoice data:', formData);
-            
-            // For now, just show a success message and the preview
-            this.showToast('Facture générée avec succès!', 'success');
-            this.showPreview();
-            
-            // You can add API call here:
-            // const response = await fetch('/api/invoices', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify(formData)
-            // });
-            
+            // Replace with your actual API endpoint for saving invoices
+            const response = await fetchAPIData('/api/admin/invoices', invoiceData, 'POST');
+            if (response && (response.id || response.invoice_id || response.success)) {
+                alert('Facture enregistrée avec succès !');
+                // Optionally redirect or clear form
+                // window.location.href = `/admin/invoices/${response.id || response.invoice_id}`;
+            } else {
+                alert('Erreur lors de l\'enregistrement de la facture: ' + (response.error || 'Réponse invalide du serveur.'));
+            }
         } catch (error) {
-            console.error('Error creating invoice:', error);
-            this.showToast('Erreur lors de la création de la facture', 'error');
+            console.error('Error saving invoice:', error);
+            alert('Erreur lors de la connexion au serveur pour enregistrer la facture.');
         }
     }
-
-    showToast(message, type = 'info') {
-        // Simple toast notification - you can enhance this
-        const toast = document.createElement('div');
-        toast.className = `fixed top-4 right-4 p-4 rounded shadow-lg z-50 ${
-            type === 'success' ? 'bg-green-500' : 
-            type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-        } text-white`;
-        toast.textContent = message;
-        
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.remove();
-        }, 3000);
+    
+    async function handlePreviewInvoice() {
+        const invoiceData = getInvoiceData();
+         if (!invoiceData.professional_user_id) {
+            alert("Veuillez sélectionner un client professionnel pour l'aperçu.");
+            return;
+        }
+        console.log("Invoice data for preview:", invoiceData);
+        // This would typically send the data to a backend endpoint that generates a PDF preview
+        // For now, it just logs the data.
+        // Example:
+        // try {
+        //     const response = await fetchAPIData('/api/admin/invoices/preview', invoiceData, 'POST', 'blob'); // Expect a blob (PDF)
+        //     if (response) {
+        //         const fileURL = URL.createObjectURL(response);
+        //         window.open(fileURL, '_blank'); // Open PDF in new tab
+        //     } else {
+        //         alert('Erreur lors de la génération de l\'aperçu.');
+        //     }
+        // } catch (error) {
+        //     console.error('Error generating preview:', error);
+        //     alert('Erreur serveur lors de la génération de l\'aperçu.');
+        // }
+        alert("La fonctionnalité d'aperçu PDF n'est pas encore implémentée. Les données de la facture ont été consignées dans la console.");
     }
-}
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    window.invoiceCreator = new InvoiceCreator();
-}); page web unique associée à votre produit. Vous trouverez sur cette page la date 
-                        de récolte et de traitement associées à votre achat.
-                    </p>
-                </div>
-                
-                <div style="border-top: 1px solid #ccc; padding-top: 20px; font-size: 11px; text-align: center; line-height: 1.4;">
-                    <p style="margin-bottom: 10px;">
-                        [statut juridique de la société] Maison Trüvra - SIRET xxxxx - Capital social de xx € - 
-                        Siège social 14 rue de la Libération, 933330 Neuilly-sur-Marne - Numéro d'Identification à la TVA FRxx
-                    </p>
-                    <p style="margin: 0;">
-                        Contactez-nous à xx@.... ou sur Instagram @maisontruvra
-                    </p>
-                </div>
-            </div>
-        `;
+
+    // Initial call to add one empty item row
+    addInvoiceItemRow();
+});
