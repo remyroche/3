@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const companyCityPostalCountryDisplay = document.getElementById('company-city-postal-country');
     const companySiretDisplay = document.getElementById('company-siret'); // Assuming this is your company's SIRET
     const companyVatDisplay = document.getElementById('company-vat'); // Assuming this is your company's VAT
+    // Hypothetical element for a tagline, if you add one to your HTML:
+    // const companyTaglineDisplay = document.getElementById('company-tagline'); 
+
 
     // Customer billing info display elements
     const customerCompanyNameDisplay = document.getElementById('customer-company-name');
@@ -44,17 +47,49 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Initialize Page ---
 
     // 1. Load company info (from config or a dedicated endpoint)
-    // For now, using placeholders or values from HTML. This could be fetched from backend.
-    // Example: fetchAPIData('/api/admin/company-info', {}, 'GET').then(data => {
-    //     companyNameDisplay.textContent = data.name;
-    //     companyAddress1Display.textContent = data.address_line1;
-    //     companyCityPostalCountryDisplay.textContent = data.city_postal_country;
-    //     companySiretDisplay.textContent = data.siret; // Your company's SIRET
-    //     companyVatDisplay.textContent = data.vat_number; // Your company's VAT
-    //     document.getElementById('company-iban').textContent = data.iban || 'FRXX XXXX XXXX XXXX XXXX XXX';
-    //     document.getElementById('company-swift').textContent = data.swift || 'XXXXXXX';
-    //     paymentDueDaysDisplay.textContent = data.invoice_due_days || 30;
-    // });
+    // This section demonstrates how Maison Trüvra's specific branding details
+    // would be fetched and applied if provided by a backend API.
+    // The HTML already contains "Maison Trüvra SARL" as a placeholder.
+    // This fetch would update it with authoritative data from the backend.
+    /*
+    fetchAPIData('/api/admin/company-info', {}, 'GET')
+        .then(data => {
+            if (data) {
+                companyNameDisplay.textContent = data.name || "Maison Trüvra"; // Default to brand name
+                companyAddress1Display.textContent = data.address_line1 || "1 Rue de la Truffe";
+                companyCityPostalCountryDisplay.textContent = data.city_postal_country || "75001 Paris, France";
+                companySiretDisplay.textContent = data.siret || "Votre SIRET"; 
+                companyVatDisplay.textContent = data.vat_number || "Votre N° TVA"; 
+                
+                // Populate other company details from backend
+                document.getElementById('company-iban').textContent = data.iban || 'FRXX XXXX XXXX XXXX XXXX XXX';
+                document.getElementById('company-swift').textContent = data.swift || 'XXXXXXX';
+                paymentDueDaysDisplay.textContent = data.invoice_due_days || 30;
+
+                // Example of setting a tagline if the element and data exist
+                // if (companyTaglineDisplay && data.tagline) {
+                //    companyTaglineDisplay.textContent = data.tagline; // e.g., "L’avenir de la truffe, cultivé avec art."
+                // }
+
+                // Update any other brand-specific elements here
+            } else {
+                console.warn("Company info could not be loaded from API. Using HTML placeholders.");
+                // Fallback to ensure essential brand name is displayed if API fails or data is incomplete
+                if (!companyNameDisplay.textContent) {
+                    companyNameDisplay.textContent = "Maison Trüvra";
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching company info:', error);
+            // Fallback to ensure essential brand name is displayed on error
+            if (!companyNameDisplay.textContent) {
+                companyNameDisplay.textContent = "Maison Trüvra";
+            }
+        });
+    */
+    // If the above API call is not used, the values in the HTML will be used.
+    // Ensure HTML placeholders reflect Maison Trüvra branding.
 
 
     // 2. Set default dates
@@ -318,7 +353,11 @@ document.addEventListener('DOMContentLoaded', () => {
             net_to_pay: parseFloat(netToPayDisplay.textContent),
             payment_terms: `Paiement à réception de facture, au plus tard sous ${paymentDueDaysDisplay.textContent} jours.`,
             // Company details (can be added by backend or included here)
-            // company_info: { ... } 
+            // company_info: { 
+            //    name: companyNameDisplay.textContent, // Example
+            //    address_line1: companyAddress1Display.textContent,
+            //    // ... other details from your company for the invoice
+            // } 
         };
         return invoiceData;
     }
@@ -326,10 +365,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleSaveInvoice() {
         const invoiceData = getInvoiceData();
         if (!invoiceData.professional_user_id) {
+            // Consider a more refined UI notification than alert()
+            console.warn("Attempted to save invoice without selecting a professional client.");
             alert("Veuillez sélectionner un client professionnel.");
             return;
         }
         if (invoiceData.items.length === 0) {
+            console.warn("Attempted to save invoice with no items.");
             alert("Veuillez ajouter au moins un article à la facture.");
             return;
         }
@@ -344,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Optionally redirect or clear form
                 // window.location.href = `/admin/invoices/${response.id || response.invoice_id}`;
             } else {
-                alert('Erreur lors de l\'enregistrement de la facture: ' + (response.error || 'Réponse invalide du serveur.'));
+                alert('Erreur lors de l\'enregistrement de la facture: ' + (response.message || response.error || 'Réponse invalide du serveur.'));
             }
         } catch (error) {
             console.error('Error saving invoice:', error);
