@@ -902,6 +902,317 @@ def get_b2b_products():
         "success": True
     }), 200
 
+def get_b2b_user_from_identity():
+    """Helper to get the authenticated B2B user."""
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    if not user or user.role != UserRoleEnum.B2B_PROFESSIONAL or user.professional_status != ProfessionalStatusEnum.APPROVED:
+        return None
+    return user
+
+@b2b_bp.route('/loyalty-status', methods=['GET'])
+@jwt_required()
+def get_loyalty_status():
+    b2b_user = get_b2b_user_from_identity()
+    audit_logger = current_app.audit_log_service
+    ip_address = request.remote_addr
+
+    if not b2b_user:
+        audit_logger.log_action(user_id=get_jwt_identity(), action='get_loyalty_status_fail_auth', details="B2B Professional account approved required.", status='failure', ip_address=ip_address)
+        return jsonify(message="Access denied. Approved B2B professional account required.", success=False), 403
+
+    # 1. Calculate Annual Spend (completed orders in the last 365 days)
+    one_year_ago = datetime.now(timezone.utc) - timedelta(days=365)
+    annual_spend_result = db.session.query(func.sum(Order.total_amount))\
+        .filter(Order.user_id == b2b_user.id,
+                Order.is_b2b_order == True,
+                Order.order_date >= one_year_ago,
+                Order.status.in_([OrderStatusEnum.COMPLETED, OrderStatusEnum.DELIVERED, OrderStatusEnum.SHIPPED])) # Consider only completed/shipped orders for spend
+    annual_spend = annual_spend_result.scalar() or 0.0
+
+    # 2. Determine Current Tier
+    current_tier_name = "Bronze" # Default/fallback
+    current_tier_min_spend = 0
+    next_tier_name = None
+    next_tier_min_spend = float('inf')
+    spend_needed_for_next_tier = float('inf')
+    
+    # Iterate in reverse to find the highest achieved tier
+    for i in range(len(LOYALTY_TIERS_CONFIG) - 1, -1, -1):
+        tier_config = LOYALTY_TIERS_CONFIG[i]
+        if annual_spend >= tier_config["min_spend"]:
+            current_tier_name = tier_config["name"]
+            current_tier_min_spend = tier_config["min_spend"]
+            if i + 1 < len(LOYALTY_TIERS_CONFIG): # If not the highest tier
+                next_tier_config = LOYALTY_TIERS_CONFIG[i+1]
+                next_tier_name = next_tier_config["name"]
+                next_tier_min_spend = next_tier_config["min_spend"]
+                spend_needed_for_next_tier = max(0, next_tier_config["min_spend"] - annual_spend)
+            else: # Highest tier reached
+                next_tier_name = "Maximum"
+                spend_needed_for_next_tier = 0
+                next_tier_min_spend = annual_spend # Or current tier's min_spend for progress bar logic
+            break
+            
+    # Update user's B2B tier in the database if it has changed (optional, or do this via a nightly job)
+    # For simplicity, we'll assume the frontend displays based on this dynamic calculation.
+    # If User model has b2b_tier, you could update it:
+    # new_tier_enum = B2BPricingTierEnum[current_tier_name.upper()] # Map name to Enum
+    # if b2b_user.b2b_tier != new_tier_enum:
+    #     b2b_user.b2b_tier = new_tier_enum
+    #     db.session.commit()
+
+
+    # 3. Get Referral Code (generate if not exists)
+    if not b2b_user.referral_code:
+        b2b_user.referral_code = f"TRUVRA-{b2b_user.id}-{uuid.uuid4().hex[:6].upper()}"
+        try:
+            db.session.commit()
+        except Exception as e: # Handle potential race condition if two requests try to generate
+            db.session.rollback()
+            current_app.logger.warning(f"Could not assign referral code to user {b2b_user.id}: {e}")
+            # Re-fetch user to get code if another request just set it
+            b2b_user = User.query.get(b2b_user.id)
+
+
+    # 4. Get Referral Credit Balance (assuming a field on User model)
+    referral_credit_balance = b2b_user.referral_credit_balance or 0.0
+
+    # 5. Restaurant Branding Partner status
+    is_restaurant_branding_partner = b2b_user.is_restaurant_branding_partner or False
+
+
+    loyalty_data = {
+        "current_tier_name": current_tier_name,
+        "current_tier_min_spend": current_tier_min_spend, # For progress bar calculation
+        "annual_spend": round(annual_spend, 2),
+        "referral_code": b2b_user.referral_code,
+        "referral_credit_balance": round(referral_credit_balance, 2),
+        "next_tier_name": next_tier_name,
+        "next_tier_min_spend": next_tier_min_spend if next_tier_min_spend != float('inf') else None, # For progress bar
+        "spend_needed_for_next_tier": round(spend_needed_for_next_tier, 2) if spend_needed_for_next_tier != float('inf') else 0,
+        "is_restaurant_branding_partner": is_restaurant_branding_partner
+    }
+    audit_logger.log_action(user_id=b2b_user.id, action='get_loyalty_status_success', details=f"Tier: {current_tier_name}, Spend: {annual_spend}", status='success', ip_address=ip_address)
+    return jsonify(success=True, data=loyalty_data), 200
+
+
+@b2b_bp.route('/products', methods=['GET'])
+@jwt_required()
+def get_b2b_products():
+    b2b_user = get_b2b_user_from_identity()
+    audit_logger = current_app.audit_log_service
+    ip_address = request.remote_addr
+
+    if not b2b_user:
+        audit_logger.log_action(user_id=get_jwt_identity(), action='get_b2b_products_fail_auth', details="B2B Professional account approved required.", status='failure', ip_address=ip_address)
+        return jsonify(message="Access denied. Approved B2B professional account required.", success=False), 403
+
+    user_tier_enum = b2b_user.b2b_tier # This is B2BPricingTierEnum
+
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 12, type=int)
+    category_slug_filter = request.args.get('category_slug')
+    search_term_filter = request.args.get('search')
+    sort_by_filter = request.args.get('sort', 'name_asc')
+
+    query = Product.query.join(Category, Product.category_id == Category.id)\
+                         .filter(Product.is_active == True, Category.is_active == True)
+
+    if category_slug_filter:
+        query = query.filter(Category.slug == category_slug_filter)
+    if search_term_filter:
+        term_like = f"%{search_term_filter.lower()}%"
+        query = query.filter(Product.name.ilike(term_like))
+
+    if sort_by_filter == 'price_asc': query = query.order_by(Product.base_price.asc())
+    elif sort_by_filter == 'price_desc': query = query.order_by(Product.base_price.desc())
+    elif sort_by_filter == 'name_desc': query = query.order_by(Product.name.desc())
+    else: query = query.order_by(Product.name.asc())
+
+    paginated_products = query.paginate(page=page, per_page=per_page, error_out=False)
+    products_data = []
+
+    for product in paginated_products.items:
+        product_dict = product.to_dict()
+        b2b_price_to_display = product.base_price 
+
+        if product.type == ProductTypeEnum.SIMPLE:
+            tier_price_entry = ProductB2BTierPrice.query.filter_by(
+                product_id=product.id, variant_id=None, b2b_tier=user_tier_enum
+            ).first()
+            if tier_price_entry:
+                b2b_price_to_display = tier_price_entry.price
+        
+        product_dict['b2b_price'] = b2b_price_to_display
+        product_dict['retail_price'] = product.base_price
+
+        if product.type == ProductTypeEnum.VARIABLE_WEIGHT:
+            options_list_b2b = []
+            active_options = product.weight_options.filter_by(is_active=True).order_by(ProductWeightOption.weight_grams).all()
+            min_b2b_variant_price = float('inf') if active_options else None
+
+            for option in active_options:
+                option_b2b_price = option.price
+                option_tier_price_entry = ProductB2BTierPrice.query.filter_by(
+                    variant_id=option.id, b2b_tier=user_tier_enum
+                ).first()
+                if option_tier_price_entry:
+                    option_b2b_price = option_tier_price_entry.price
+                
+                if option_b2b_price < min_b2b_variant_price :
+                    min_b2b_variant_price = option_b2b_price
+
+                options_list_b2b.append({
+                    "option_id": option.id, "weight_grams": option.weight_grams,
+                    "sku_suffix": option.sku_suffix, "b2b_price": option_b2b_price,
+                    "retail_price": option.price, "aggregate_stock_quantity": option.aggregate_stock_quantity
+                })
+            product_dict['weight_options_b2b'] = options_list_b2b
+            if min_b2b_variant_price is not None and min_b2b_variant_price != float('inf'):
+                product_dict['b2b_price'] = min_b2b_variant_price
+            elif not active_options:
+                 product_dict['b2b_price'] = None
+
+        products_data.append(product_dict)
+    
+    audit_logger.log_action(user_id=b2b_user.id, action='get_b2b_products_success', status='success', ip_address=ip_address)
+    return jsonify({
+        "products": products_data, "page": paginated_products.page,
+        "per_page": paginated_products.per_page, "total_products": paginated_products.total,
+        "total_pages": paginated_products.pages, "success": True
+    }), 200
+
+
+@b2b_bp.route('/quote-requests', methods=['POST'])
+@jwt_required()
+def create_quote_request():
+    b2b_user = get_b2b_user_from_identity()
+    audit_logger = current_app.audit_log_service
+    ip_address = request.remote_addr
+
+    if not b2b_user:
+        audit_logger.log_action(user_id=get_jwt_identity(), action='create_quote_fail_auth', details="B2B Professional account required.", status='failure', ip_address=ip_address)
+        return jsonify(message="B2B professional account required.", success=False), 403
+
+    data = request.json
+    items_data = data.get('items'); notes = sanitize_input(data.get('notes'))
+    contact_person = sanitize_input(data.get('contact_person', f"{b2b_user.first_name or ''} {b2b_user.last_name or ''}".strip()))
+    contact_phone = sanitize_input(data.get('contact_phone'))
+
+    if not items_data or not isinstance(items_data, list) or len(items_data) == 0:
+        audit_logger.log_action(user_id=b2b_user.id, action='create_quote_fail_validation', details="Empty item list for quote.", status='failure', ip_address=ip_address)
+        return jsonify(message="At least one item is required for a quote request.", success=False), 400
+
+    try:
+        new_quote = QuoteRequest(user_id=b2b_user.id, notes=notes, contact_person=contact_person, contact_phone=contact_phone, status=QuoteRequestStatusEnum.PENDING)
+        db.session.add(new_quote); db.session.flush()
+
+        for item_data in items_data:
+            product_id = item_data.get('product_id'); variant_id = item_data.get('variant_id')
+            quantity = item_data.get('quantity'); price_at_request = item_data.get('price_at_request')
+
+            if not product_id or not quantity or price_at_request is None:
+                 db.session.rollback()
+                 return jsonify(message=f"Invalid data for item {product_id}.", success=False), 400
+            
+            product = Product.query.get(product_id)
+            if not product: db.session.rollback(); return jsonify(message=f"Product ID {product_id} not found.", success=False), 404
+            
+            db.session.add(QuoteRequestItem(quote_request_id=new_quote.id, product_id=product_id, variant_id=variant_id, quantity=int(quantity), requested_price_ht=float(price_at_request)))
+        
+        db.session.commit()
+        audit_logger.log_action(user_id=b2b_user.id, action='create_quote_success', target_type='quote_request', target_id=new_quote.id, status='success', ip_address=ip_address)
+        return jsonify(message="Quote request submitted successfully.", quote_id=new_quote.id, success=True), 201
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error creating quote request for user {b2b_user.id}: {e}", exc_info=True)
+        return jsonify(message="Failed to submit quote request.", error=str(e), success=False), 500
+
+
+@b2b_bp.route('/purchase-orders', methods=['POST'])
+@jwt_required()
+def upload_purchase_order():
+    b2b_user = get_b2b_user_from_identity()
+    audit_logger = current_app.audit_log_service
+    ip_address = request.remote_addr
+
+    if not b2b_user:
+        audit_logger.log_action(user_id=get_jwt_identity(), action='upload_po_fail_auth', details="B2B Professional account required.", status='failure', ip_address=ip_address)
+        return jsonify(message="B2B professional account required.", success=False), 403
+
+    if 'purchase_order_file' not in request.files: return jsonify(message="No PO file provided.", success=False), 400
+    po_file = request.files['purchase_order_file']; cart_items_json = request.form.get('cart_items')
+    client_po_number = sanitize_input(request.form.get('client_po_number'))
+
+
+    if po_file.filename == '': return jsonify(message="No selected PO file.", success=False), 400
+    if not cart_items_json: return jsonify(message="Cart items data required with PO.", success=False), 400
+
+    try:
+        cart_items = json.loads(cart_items_json)
+        if not isinstance(cart_items, list) or len(cart_items) == 0: raise ValueError("Invalid cart items.")
+    except (json.JSONDecodeError, ValueError) as e:
+        return jsonify(message=f"Invalid cart items data: {str(e)}", success=False), 400
+
+    upload_folder_pos = os.path.join(current_app.config['UPLOAD_FOLDER'], 'b2b_purchase_orders')
+    os.makedirs(upload_folder_pos, exist_ok=True)
+
+    if po_file and allowed_file(po_file.filename, 'ALLOWED_DOCUMENT_EXTENSIONS'):
+        filename_base = secure_filename(f"user_{b2b_user.id}_po_{uuid.uuid4().hex[:8]}")
+        extension = get_file_extension(po_file.filename)
+        filename = f"{filename_base}.{extension}"
+        file_path_full = os.path.join(upload_folder_pos, filename)
+        file_path_relative_for_db = os.path.join('b2b_purchase_orders', filename)
+
+        try:
+            po_file.save(file_path_full)
+            calculated_total = 0; order_items_to_create = []
+            # Use user's stored addresses as default for the order
+            shipping_addr_payload = {
+                "line1": b2b_user.shipping_address_line1 or b2b_user.company_address_line1,
+                "line2": b2b_user.shipping_address_line2 or b2b_user.company_address_line2,
+                "city": b2b_user.shipping_city or b2b_user.company_city,
+                "postal_code": b2b_user.shipping_postal_code or b2b_user.company_postal_code,
+                "country": b2b_user.shipping_country or b2b_user.company_country
+            } # Simplified, add more fields as needed from User model
+
+
+            for item_data in cart_items:
+                product_id = item_data.get('product_id'); variant_id = item_data.get('variant_id')
+                quantity = int(item_data.get('quantity', 0)); price_at_request = float(item_data.get('price')) # Assume price from cart is B2B HT
+                if not product_id or quantity <= 0 or price_at_request is None:
+                    if os.path.exists(file_path_full): os.remove(file_path_full)
+                    return jsonify(message="Invalid item data in PO.", success=False), 400
+                
+                product_db = Product.query.get(product_id)
+                if not product_db: if os.path.exists(file_path_full): os.remove(file_path_full); return jsonify(message=f"Product ID {product_id} not found.", success=False), 404
+                
+                calculated_total += price_at_request * quantity
+                order_items_to_create.append({"product_id": product_id, "variant_id": variant_id, "quantity": quantity, "unit_price": price_at_request, "total_price": price_at_request * quantity, "product_name": product_db.name, "variant_description": ProductWeightOption.query.get(variant_id).sku_suffix if variant_id else None})
+
+            new_order = Order(
+                user_id=b2b_user.id, is_b2b_order=True, status=OrderStatusEnum.PENDING_PO_REVIEW,
+                total_amount=calculated_total, currency=b2b_user.currency or 'EUR',
+                purchase_order_reference=client_po_number or po_file.filename, # Use client's PO number if provided
+                po_file_path_stored=file_path_relative_for_db,
+                shipping_address_line1=shipping_addr_payload['line1'], shipping_city=shipping_addr_payload['city'], 
+                shipping_postal_code=shipping_addr_payload['postal_code'], shipping_country=shipping_addr_payload['country'],
+                # Populate billing similarly
+                billing_address_line1=b2b_user.billing_address_line1 or shipping_addr_payload['line1'], # Example
+            )
+            db.session.add(new_order); db.session.flush()
+            for oi_data in order_items_to_create: db.session.add(OrderItem(order_id=new_order.id, **oi_data))
+            db.session.commit()
+            audit_logger.log_action(user_id=b2b_user.id, action='upload_po_success', target_type='order', target_id=new_order.id, details=f"PO {po_file.filename} uploaded, client ref: {client_po_number}.", status='success', ip_address=ip_address)
+            return jsonify(message="PO submitted, order created for review.", order_id=new_order.id, success=True), 201
+        except Exception as e:
+            db.session.rollback();
+            if os.path.exists(file_path_full): try: os.remove(file_path_full) catch OSError: pass
+            current_app.logger.error(f"Error processing PO for user {b2b_user.id}: {e}", exc_info=True)
+            return jsonify(message="Failed to submit PO.", error=str(e), success=False), 500
+    else: return jsonify(message="Invalid PO file type.", success=False), 400
+      
 @b2b_bp.route('/quote-requests', methods=['POST'])
 @jwt_required()
 def create_quote_request():
