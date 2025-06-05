@@ -24,6 +24,7 @@ from ..utils import (
 auth_bp = Blueprint('auth_bp', __name__, url_prefix='/api/auth')
 
 
+
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.json
@@ -114,7 +115,137 @@ def register():
         current_app.logger.error(f"Error during registration for {email}: {e}", exc_info=True)
         audit_logger.log_action(action='register_fail_server_error', email=email, details=str(e), status='failure', ip_address=request.remote_addr)
         return jsonify(message="Registration failed due to a server error", success=False), 500
+
+def register_professional():
+    data = request.get_json()
+    audit_logger = current_app.audit_log_service # Get audit logger from app context
+    ip_address = request.remote_addr
+
+    required_fields = ['company_name', 'email', 'password', 'first_name', 'last_name', 
+                       'phone_number', 'siret_number', 'address_line1', 
+                       'city', 'postal_code', 'country']
+    
+    missing_fields = [field for field in required_fields if not data.get(field)]
+    if missing_fields:
+        audit_logger.log_action(action='register_professional_fail_validation', details=f"Missing fields: {', '.join(missing_fields)}", status='failure', ip_address=ip_address)
+        return jsonify(message=f"Missing required fields: {', '.join(missing_fields)}", success=False), 400
+
+    email = sanitize_input(data['email'].lower())
+    password = data['password'] # Sanitization of password itself is not typical, but its strength is checked
+
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        audit_logger.log_action(action='register_professional_fail_validation', details="Invalid email format.", email_attempted=email, status='failure', ip_address=ip_address)
+        return jsonify(message="Invalid email format.", success=False), 400
         
+    password_validation_error = User.validate_password(password) # Using static method from User model
+    if password_validation_error: # This returns an error key, e.g., "auth.error.password_too_short"
+        # Frontend should use this key for i18n
+        audit_logger.log_action(action='register_professional_fail_validation', details=f"Password validation failed: {password_validation_error}", email_attempted=email, status='failure', ip_address=ip_address)
+        return jsonify(message_key=password_validation_error, message=f"Password policy violated: {password_validation_error}", success=False), 400
+
+
+    if User.query.filter_by(email=email).first():
+        audit_logger.log_action(action='register_professional_fail_exists', details="Email already registered.", email_attempted=email, status='failure', ip_address=ip_address)
+        return jsonify(message="Email already registered.", success=False), 409
+
+    # --- Handle Referral Code ---
+    submitted_referral_code = sanitize_input(data.get('referral_code')) if data.get('referral_code') else None
+    valid_referrer_user = None
+    if submitted_referral_code:
+        # Optional: Validate if the referrer_code actually exists and belongs to an active B2B user
+        valid_referrer_user = User.query.filter_by(referral_code=submitted_referral_code, role=UserRoleEnum.B2B_PROFESSIONAL, is_active=True).first()
+        if not valid_referrer_user:
+            # Decide on policy: reject registration, or register without applying referral benefits, or log warning
+            # For now, let's log a warning and proceed with registration without linking the referral if invalid
+            current_app.logger.warning(f"Registration attempt with invalid or non-B2B referral code: {submitted_referral_code} by {email}")
+            audit_logger.log_action(action='register_professional_invalid_referral', details=f"Invalid referral code '{submitted_referral_code}' provided.", email_attempted=email, status='info', ip_address=ip_address)
+            submitted_referral_code = None # Do not store invalid code
+    # --- End Handle Referral Code ---
+
+    try:
+        new_user = User(
+            email=email,
+            first_name=sanitize_input(data['first_name']),
+            last_name=sanitize_input(data['last_name']),
+            company_name=sanitize_input(data['company_name']),
+            phone_number=sanitize_input(data['phone_number']), # Assuming User model has phone_number
+            siret_number=sanitize_input(data['siret_number']),
+            vat_number=sanitize_input(data.get('vat_number')), # VAT is often optional initially
+            address_line1=sanitize_input(data['address_line1']),
+            address_line2=sanitize_input(data.get('address_line2')),
+            city=sanitize_input(data['city']),
+            postal_code=sanitize_input(data['postal_code']),
+            country=sanitize_input(data['country']),
+            role=UserRoleEnum.B2B_PROFESSIONAL,
+            professional_status=ProfessionalStatusEnum.PENDING_REVIEW, # Or PENDING_DOCUMENTS if you have that flow
+            is_verified=False, # Requires email verification
+            # --- Store Referral Code if Valid ---
+            referred_by_code=submitted_referral_code if valid_referrer_user else None
+            # --- End Store Referral Code ---
+        )
+        new_user.set_password(password)
+        
+        # Generate unique referral code for the new user upon registration
+        # This logic is also in b2b/routes.py get_loyalty_status, ensure consistency or make it a User model method
+        new_user.referral_code = f"TRV-{new_user.id if new_user.id else uuid.uuid4().hex[:4]}-{uuid.uuid4().hex[:6].upper()}" 
+        # Note: new_user.id might not be available before flush/commit. 
+        # It's better to generate this after the first commit or as a User model method triggered on save.
+        # For simplicity here, if ID is not set, use a temporary UUID part.
+        # The get_loyalty_status route will generate a more robust one if still None.
+
+
+        db.session.add(new_user)
+        db.session.commit() # Commit to get new_user.id
+
+        # If referral was valid, you might trigger awarding credit here or via a separate service/task
+        if valid_referrer_user and submitted_referral_code:
+            # Example: Award 5 credits to referrer. Make this configurable.
+            # This logic should ideally be in a service.
+            referral_bonus = float(current_app.config.get('B2B_REFERRAL_BONUS_AMOUNT', 5.0))
+            if hasattr(valid_referrer_user, 'referral_credit_balance'):
+                 valid_referrer_user.referral_credit_balance = (valid_referrer_user.referral_credit_balance or 0.0) + referral_bonus
+                 db.session.add(valid_referrer_user) # Add to session if modified
+                 # Potentially also give a starting bonus to the new user
+                 # new_user.referral_credit_balance = (new_user.referral_credit_balance or 0.0) + some_new_user_bonus
+                 db.session.commit() # Commit changes for referrer (and new user if applicable)
+                 audit_logger.log_action(user_id=valid_referrer_user.id, action='referral_credit_awarded', target_type='user', target_id=new_user.id, details=f"Awarded {referral_bonus} credit for referring {new_user.email}.", status='success', ip_address=ip_address)
+
+
+        # Send verification email
+        email_service = EmailService(current_app)
+        verification_token = uuid.uuid4().hex # Or a more secure token generation
+        new_user.verification_token = verification_token
+        new_user.verification_token_expires_at = datetime.now(timezone.utc) + timedelta(hours=current_app.config.get('EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS', 24))
+        db.session.commit()
+
+        # Adjust frontend_url based on your actual frontend routing for email verification
+        frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
+        verify_url = f"{frontend_url}/verify-email?token={verification_token}"
+        
+        try:
+            email_service.send_transactional_email(
+                to_email=new_user.email,
+                template_id=current_app.config.get('EMAIL_TEMPLATE_IDS', {}).get('PROFESSIONAL_REGISTRATION_VERIFY'), # Ensure this template ID is configured
+                subject="Vérifiez votre adresse e-mail pour votre compte professionnel",
+                context={
+                    "user_name": new_user.first_name,
+                    "verification_link": verify_url,
+                    "company_name": current_app.config.get('COMPANY_NAME', 'VotreEntreprise')
+                }
+            )
+        except Exception as e:
+            current_app.logger.error(f"Failed to send verification email to {new_user.email}: {e}", exc_info=True)
+        
+        audit_logger.log_action(user_id=new_user.id, action='register_professional_success', target_type='user', target_id=new_user.id, status='success', ip_address=ip_address)
+        return jsonify(message="Professional account registered. Please check your email to verify your account.", success=True, user_id=new_user.id), 201
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error during professional registration for {email}: {e}", exc_info=True)
+        audit_logger.log_action(action='register_professional_fail_exception', details=str(e), email_attempted=email, status='failure', ip_address=ip_address)
+        return jsonify(message="Registration failed due to a server error.", success=False, error=str(e)), 500
+
+
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """
