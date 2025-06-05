@@ -711,3 +711,4 @@ if (document.body.id === 'page-nos-produits') {
         // ...
     });
 }
+
