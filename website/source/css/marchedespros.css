@@ -1,0 +1,120 @@
+/* css/marchedespros.css - Styles spécifiques pour la page du marché des professionnels */
+
+/* Hérite beaucoup de nos-produits.css pour la grille de produits, mais peut avoir des variations */
+
+#page-marche-des-pros .page-title {
+    color: var(--mt-truffle-burgundy); /* Couleur distinctive pour le titre B2B */
+}
+
+#b2b-user-welcome {
+    /* Style pour le message d'accueil de l'utilisateur B2B */
+    font-style: italic;
+}
+
+/* Style pour les cartes produits B2B, si différent de product-card standard */
+.b2b-product-card .card-title {
+    font-size: 1.1rem; /* Peut-être un peu plus sobre */
+}
+
+.b2b-pricing-info {
+    border-top: 1px solid var(--mt-cream-dark);
+    border-bottom: 1px solid var(--mt-cream-dark);
+    padding: 0.5rem 0;
+}
+
+.b2b-pricing-info .text-mt-truffle-burgundy { /* Prix B2B mis en évidence */
+    font-size: 1.25rem;
+}
+
+/* Section Panier/Actions B2B */
+#b2b-cart-actions-section {
+    background-color: var(--mt-cream-light, #FCF9F3); /* Un fond légèrement différent */
+}
+
+#b2b-cart-items-display .b2b-cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px dotted var(--mt-warm-taupe);
+}
+#b2b-cart-items-display .b2b-cart-item:last-child {
+    border-bottom: none;
+}
+#b2b-cart-items-display .item-name {
+    flex-grow: 1;
+}
+#b2b-cart-items-display .item-price,
+#b2b-cart-items-display .item-quantity,
+#b2b-cart-items-display .item-total {
+    margin-left: 1rem;
+    white-space: nowrap;
+}
+#b2b-cart-items-display .item-quantity input {
+    width: 50px;
+    text-align: center;
+    border: 1px solid var(--mt-warm-taupe);
+    border-radius: var(--border-radius-sm);
+    padding: 0.25rem;
+}
+
+
+.b2b-checkout-options h4 {
+    color: var(--mt-near-black);
+}
+
+/* S'assurer que les boutons dans les options de checkout ont une bonne apparence */
+.b2b-checkout-options .btn {
+    font-size: 0.875rem; /* Ajuster la taille de la police si nécessaire */
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+}
+
+#b2b-po-file {
+    padding: 0.5rem; /* Ajuster le padding pour les inputs de fichier */
+     border: 1px solid var(--mt-warm-taupe);
+    border-radius: var(--border-radius-md);
+    background-color: #fff;
+    color: var(--mt-near-black);
+    width: 100%;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    font-size: 0.875rem;
+}
+
+#b2b-po-file:focus {
+    outline: none;
+    border-color: var(--mt-classic-gold);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
+}
+
+/* Styles pour le modal de devis, réutilisant .admin-modal-overlay pour la base */
+#quote-cart-summary-modal ul {
+    list-style: disc;
+    padding-left: 20px;
+}
+#quote-cart-summary-modal li {
+    margin-bottom: 0.25rem;
+}
+
+/* Potentiels ajustements de style pour les filtres s'ils doivent être différents */
+#b2b-filters-section .form-select,
+#b2b-filters-section .form-input {
+    /* Styles si besoin de différencier des filtres B2C */
+}
+
+/* Ajustements responsives spécifiques à la page B2B si nécessaire */
+@media (max-width: 768px) {
+    .b2b-checkout-options {
+        grid-template-columns: 1fr; /* Empiler les options sur mobile */
+    }
+     #b2b-cart-items-display .b2b-cart-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    #b2b-cart-items-display .item-price,
+    #b2b-cart-items-display .item-quantity,
+    #b2b-cart-items-display .item-total {
+        margin-left: 0;
+        margin-top: 0.25rem;
+    }
+}
