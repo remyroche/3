@@ -1,111 +1,366 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ lang_code or 'fr' }}">
 <head>
     <meta charset="UTF-8">
-    <title>Invoice {{ invoice.invoice_number }}</title>
+    <title>Facture {{ invoice.invoice_number }} - Maison Trüvra</title>
     <style>
-        body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; font-size: 12px; }
-        .container { width: 90%; margin: 0 auto; }
-        .header, .footer { text-align: center; margin-bottom: 20px; }
-        .header img { max-width: 150px; margin-bottom: 10px; }
-        .header h1 { margin: 0; color: #1a1a1a; }
-        .details { display: block; margin-bottom: 30px; }
-        .details .company-details { float: left; width: 45%; }
-        .details .invoice-details { float: right; width: 45%; text-align: right; }
-        .details h2 { font-size: 14px; margin-top: 0; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-        .bill-to { margin-bottom: 30px; }
-        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        .items-table th, .items-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        .items-table th { background-color: #f2f2f2; }
+        @import url('https://fonts.googleapis.com/css2?family=Baskervville:ital@0;1&family=Raleway:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --mt-cream: #F5EEDE;
+            --mt-near-black: #11120D;
+            --mt-classic-gold: #D4AF37;
+            --mt-warm-taupe: #A28C6A;
+            --mt-earth-brown: #7D6A4F;
+            --mt-slate-blue-grey: #6E7582;
+            --mt-deep-sage-green: #4B5A59;
+            --mt-truffle-burgundy: #8A3E3E;
+
+            --font-primary: 'Raleway', sans-serif;
+            --font-secondary: 'Baskervville', serif;
+        }
+
+        @page {
+            size: A4;
+            margin: 20mm; 
+            
+            @bottom-center {
+                content: element(footer_content);
+                vertical-align: top;
+                padding-top: 10px; 
+            }
+        }
+
+        body { 
+            font-family: var(--font-primary); 
+            color: var(--mt-near-black); 
+            font-size: 11px; 
+            line-height: 1.5;
+            background-color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+        .container { 
+            width: 100%;
+            margin: 0 auto;
+            padding: 0;
+        }
+        .header { 
+            text-align: left; 
+            margin-bottom: 20px; 
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--mt-classic-gold);
+        }
+        .header img { 
+            max-width: 170px; 
+            max-height: 55px; /* Adjusted slightly */
+            margin-bottom: 5px; 
+        }
+        .header .company-name-text {
+            font-family: var(--font-secondary); 
+            color: var(--mt-near-black); 
+            margin:0; 
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .header .company-subtitle-text {
+            font-size: 10px; 
+            color: var(--mt-earth-brown); 
+            margin:2px 0 0 0;
+        }
+
+        .invoice-title-header {
+            text-align: right;
+            margin-top: -65px; /* Fine-tune based on logo/company name height */
+            margin-bottom: 25px; 
+        }
+        .invoice-title-header h1 { 
+            margin: 0; 
+            font-family: var(--font-secondary);
+            font-size: 28px; 
+            color: var(--mt-truffle-burgundy); 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .details-grid {
+            display: -weasy-table; 
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .details-column {
+            display: -weasy-table-cell; 
+            width: 48%;
+            vertical-align: top;
+        }
+        .details-column.company-details { padding-right: 4%; }
+        .details-column.invoice-details { text-align: right; }
+
+        .details-column h2, .bill-to h2 { 
+            font-family: var(--font-secondary);
+            font-size: 14px; 
+            margin-top: 0; 
+            margin-bottom: 8px;
+            color: var(--mt-near-black);
+            border-bottom: 1px solid var(--mt-warm-taupe); 
+            padding-bottom: 4px; 
+            font-weight: bold;
+        }
+        .details-column p, .bill-to p {
+            margin: 2px 0;
+        }
+        .bill-to { margin-bottom: 25px; } /* Increased margin */
+
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .items-table th, .items-table td { 
+            border: 1px solid var(--mt-warm-taupe); 
+            padding: 8px; 
+            text-align: left; 
+            vertical-align: top;
+        }
+        .items-table th { 
+            background-color: var(--mt-cream); 
+            font-family: var(--font-primary);
+            font-weight: 600; 
+            color: var(--mt-near-black);
+        }
         .items-table .text-right { text-align: right; }
-        .totals { float: right; width: 30%; }
-        .totals table { width: 100%; }
-        .totals td { padding: 5px; }
-        .totals .label { font-weight: bold; }
-        .totals .amount { text-align: right; }
-        .notes { clear: both; margin-top: 40px; }
-        .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 10px; color: #777; }
+        .items-table .item-description { width: 50%; }
+        .items-table .item-quantity { width: 10%; text-align: center; }
+        .items-table .item-price { width: 20%; text-align: right; }
+        .items-table .item-total { width: 20%; text-align: right; }
+
+        .passport-link-block {
+            font-size: 0.8em; /* 8.8px */
+            margin-top: 4px;
+        }
+        .passport-link {
+            color: var(--mt-earth-brown);
+            text-decoration: none; /* Underline on hover is enough */
+            font-style: italic;
+            display: block; 
+            margin-bottom: 2px;
+            word-break: break-all; /* If link text itself is long */
+        }
+        .passport-link strong { /* For Product Name part of the link */
+            font-weight: normal; /* Keep it subtle */
+            color: var(--mt-near-black);
+        }
+        .passport-link:hover {
+            color: var(--mt-classic-gold);
+            text-decoration: underline;
+        }
+
+        .totals-section { 
+            margin-top: 25px; /* Increased margin */
+            width: 45%; /* Slightly wider */
+            margin-left: 55%; 
+        }
+        .totals-section table { width: 100%; }
+        .totals-section td { padding: 6px 5px; } /* Adjusted padding */
+        .totals-section .label { font-weight: bold; color: var(--mt-near-black); text-align: left; }
+        .totals-section .amount { text-align: right; color: var(--mt-near-black); }
+        .totals-section .grand-total .label, .totals-section .grand-total .amount {
+            font-weight: bold;
+            font-size: 1.15em; /* Slightly larger */
+            color: var(--mt-truffle-burgundy);
+            padding-top: 10px; /* More space */
+            border-top: 1.5px solid var(--mt-near-black); /* Thicker border */
+        }
+        
+        .notes-section { 
+            clear: both; 
+            margin-top: 30px; 
+            padding-top:15px; 
+            border-top: 1px dashed var(--mt-warm-taupe);
+        }
+        .notes-section h3 {
+            font-family: var(--font-secondary);
+            font-size: 13px;
+            color: var(--mt-near-black);
+            margin-bottom: 5px;
+        }
+        .notes-section p {
+            font-size: 10px;
+            color: var(--mt-earth-brown);
+        }
+
+        .invoice-status-paid { /* For B2C since it's already paid */
+            margin-top: 20px;
+            text-align: right;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: var(--mt-deep-sage-green);
+            padding: 8px;
+            background-color: var(--mt-cream);
+            border-radius: 4px;
+            display: inline-block; /* Or block if full width desired */
+            float: right; /* Align right */
+        }
+
+        .footer-content { 
+            width: 100%; 
+            text-align: center; 
+            font-size: 9px; 
+            color: var(--mt-earth-brown);
+            border-top: 1px solid var(--mt-warm-taupe);
+            padding-top: 10px;
+        }
+        .footer-content .brand-name {
+            font-family: var(--font-secondary);
+            font-weight: bold;
+            color: var(--mt-near-black);
+        }
+        .footer-content .tagline {
+            font-style: italic;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             {% if company.logo_path %}
-                <img src="{{ company.logo_path }}" alt="{{ company.name }} Logo">
+                <img src="{{ company.logo_path }}" alt="{{ company.name or 'Maison Trüvra' }} Logo">
+            {% else %}
+                <p class="company-name-text">{{ company.name or 'Maison Trüvra' }}</p>
+                <p class="company-subtitle-text">Propriétaire récoltant</p>
             {% endif %}
-            <h1>INVOICE</h1>
         </div>
 
-        <div class="details">
-            <div class="company-details">
-                <h2>From:</h2>
-                <strong>{{ company.name }}</strong><br>
-                {{ company.address_line1 }}<br>
-                {% if company.address_line2 %}{{ company.address_line2 }}<br>{% endif %}
-                {{ company.city_postal_country }}<br>
-                VAT Number: {{ company.vat_number }}
+        <div class="invoice-title-header">
+            <h1>Facture</h1>
+        </div>
+
+        <div class="details-grid">
+            <div class="details-column company-details">
+                <h2>De :</h2>
+                <p><strong>{{ company.name or 'Maison Trüvra SARL' }}</strong></p>
+                <p>{{ company.address_line1 or '1 Rue de la Truffe' }}</p>
+                {% if company.address_line2 %}<p>{{ company.address_line2 }}</p>{% endif %}
+                <p>{{ company.city_postal_country or '75001 Paris, France' }}</p>
+                {% if company.vat_number %}<p>N° TVA : {{ company.vat_number }}</p>{% endif %}
+                {% if company.siret %}<p>SIRET : {{ company.siret }}</p>{% endif %}
             </div>
-            <div class="invoice-details">
-                <h2>Invoice Details:</h2>
-                <strong>Invoice #:</strong> {{ invoice.invoice_number }}<br>
-                <strong>Issue Date:</strong> {{ invoice.issue_date }}<br>
-                <strong>Due Date:</strong> {{ invoice.due_date }}<br>
+            <div class="details-column invoice-details">
+                <h2>Détails Facture :</h2>
+                <p><strong>Facture N° :</strong> {{ invoice.invoice_number }}</p>
+                <p><strong>Date d'émission :</strong> {{ invoice.issue_date.strftime('%d/%m/%Y') if invoice.issue_date else 'N/A' }}</p>
+                {% if invoice.order_id %}
+                    <p><strong>Commande N° :</strong> {{ invoice.order_id }}</p>
+                {% endif %}
+                <p><strong>Statut :</strong> <span style="color: var(--mt-deep-sage-green); font-weight: bold;">Payée</span></p> {# B2C invoices are for paid orders #}
             </div>
         </div>
 
         <div class="bill-to">
-            <h2>To:</h2>
-            <strong>{{ user.company_name or (user.first_name + ' ' + user.last_name) }}</strong><br>
-            {{ user.email }}<br>
-            {% if shipping_address %}
-                {{ shipping_address.line1 }}<br>
-                {% if shipping_address.line2 %}{{ shipping_address.line2 }}<br>{% endif %}
-                {{ shipping_address.city }}, {{ shipping_address.postal_code }}<br>
-                {{ shipping_address.country }}
+            <h2>Facturé à :</h2>
+            {% if user %}
+                <p><strong>{{ (user.first_name + ' ' + user.last_name if user.first_name and user.last_name else user.email) }}</strong></p>
+                 {% if user.email %} <p>{{ user.email }}</p> {% endif %}
+
+                {% if shipping_address %}
+                    <p>{{ shipping_address.line1 }}</p>
+                    {% if shipping_address.line2 %}<p>{{ shipping_address.line2 }}</p>{% endif %}
+                    <p>{{ shipping_address.city }}{% if shipping_address.postal_code %}, {{ shipping_address.postal_code }}{% endif %}</p>
+                    <p>{{ shipping_address.country }}</p>
+                {% endif %}
+            {% else %}
+                <p>Client non spécifié</p>
             {% endif %}
         </div>
 
         <table class="items-table">
             <thead>
                 <tr>
-                    <th>Description</th>
-                    <th>Quantity</th>
-                    <th class="text-right">Unit Price</th>
-                    <th class="text-right">Total</th>
+                    <th class="item-description">Description</th>
+                    <th class="item-quantity">Qté</th>
+                    <th class="item-price">Prix Unit. {{ 'TTC' if not invoice.vat_details else 'HT' }}</th> {# Adjust based on how prices are stored/sent #}
+                    <th class="item-total">Total {{ 'TTC' if not invoice.vat_details else 'HT' }}</th>
                 </tr>
             </thead>
             <tbody>
-                {% for item in invoice_items %}
-                <tr>
-                    <td>{{ item.description }}</td>
-                    <td>{{ item.quantity }}</td>
-                    <td class="text-right">{{ "%.2f"|format(item.unit_price) }} {{ invoice.currency }}</td>
-                    <td class="text-right">{{ "%.2f"|format(item.total_price) }} {{ invoice.currency }}</td>
-                </tr>
-                {% endfor %}
+                {% if invoice_items %}
+                    {% for item in invoice_items %}
+                    <tr>
+                        <td class="item-description">
+                            {{ item.description }}
+                            {% if item.passport_urls and item.passport_urls|length > 0 %}
+                                <div class="passport-link-block">
+                                {% for passport_item in item.passport_urls %}
+                                    <a href="{{ passport_item.url }}" class="passport-link" target="_blank">
+                                        <strong>{{ item.product_name_for_passport or 'Produit' }}</strong> (UID: {{ passport_item.uid }})
+                                    </a>
+                                {% endfor %}
+                                </div>
+                            {% elif item.passport_url %}
+                                <div class="passport-link-block">
+                                    <a href="{{ item.passport_url }}" class="passport-link" target="_blank">
+                                        <strong>{{ item.product_name_for_passport or 'Passeport d\'Authenticité' }}</strong>
+                                        {% if item.uid_for_passport %} (UID: {{ item.uid_for_passport }}) {% endif %}
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td class="item-quantity">{{ item.quantity }}</td>
+                        <td class="item-price">{{ "%.2f"|format(item.unit_price|float) }} {{ invoice.currency }}</td>
+                        <td class="item-total">{{ "%.2f"|format(item.total_price|float) }} {{ invoice.currency }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="4" style="text-align:center; padding: 20px;">Aucun article sur cette facture.</td></tr>
+                {% endif %}
             </tbody>
         </table>
 
-        <div class="totals">
+        <div class="totals-section">
             <table>
                 <tr>
-                    <td class="label">Subtotal:</td>
-                    <td class="amount">{{ "%.2f"|format(invoice.total_amount) }} {{ invoice.currency }}</td>
+                    <td class="label">Sous-Total {{ 'HT' if invoice.vat_details and invoice.total_vat_amount > 0.005 else 'TTC' }}:</td> {# Adjust based on what total_amount represents #}
+                    <td class="amount">{{ "%.2f"|format(invoice.total_amount|float) }} {{ invoice.currency }}</td>
                 </tr>
-                <tr>
-                    <td class="label">Grand Total:</td>
-                    <td class="amount">{{ "%.2f"|format(invoice.total_amount) }} {{ invoice.currency }}</td>
+                {% if invoice.vat_details and invoice.total_vat_amount is defined and invoice.total_vat_amount > 0.005 %}
+                    {% for rate, amount in invoice.vat_details.items() %}
+                    <tr>
+                        <td class="label">Dont TVA ({{rate}}%) :</td>
+                        <td class="amount">{{ "%.2f"|format(amount|float) }} {{ invoice.currency }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr>
+                        <td class="label">Total TVA :</td>
+                        <td class="amount">{{ "%.2f"|format(invoice.total_vat_amount|float) }} {{ invoice.currency }}</td>
+                    </tr>
+                {% endif %}
+                
+                <tr class="grand-total">
+                    <td class="label">TOTAL PAYÉ :</td>
+                    <td class="amount">{{ "%.2f"|format(invoice.final_total_ttc_or_ht|float) }} {{ invoice.currency }}</td>
                 </tr>
             </table>
         </div>
 
-        <div class="notes">
-            <h2>Notes:</h2>
-            <p>{{ invoice.notes or 'Thank you for your business.' }}</p>
-        </div>
+        {% if invoice.status and invoice.status.value == 'paid' %}
+            <div class="invoice-status-paid" style="clear:both; margin-top:15px; text-align:right;">
+                COMMANDE PAYÉE LE {{ invoice.payment_date.strftime('%d/%m/%Y') if invoice.payment_date else invoice.issue_date.strftime('%d/%m/%Y') }}
+            </div>
+        {% endif %}
 
-        <div class="footer">
-            <p>{{ company.name }} | {{ company.city_postal_country }}</p>
+        {% if notes %}
+        <div class="notes-section" style="clear:both;">
+            <h3>Notes :</h3>
+            <p>{{ notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Payment Information Section is REMOVED for B2C Paid Invoice -->
+
+        <div class="footer-content" style="running: element(footer_content)">
+            <p class="brand-name">{{ company.name or 'Maison Trüvra' }}</p>
+            <p class="tagline">« L’avenir de la truffe, cultivé avec art. »</p>
+            <p class="tagline" style="font-size: 1.1em;">« Maison Trüvra : le luxe cultivé. »</p>
+            {% if company.siret %}<p>{{ company.address_line1 or 'Adresse' }}, {{ company.city_postal_country or 'Ville' }} - SIRET : {{ company.siret }}</p>{% endif %}
+            <p>Tél : {{ company.phone or '+33 X XX XX XX XX' }} - Email : {{ company.email or 'contact@maisontruvra.com' }}</p>
+            <p class="tagline" style="margin-top: 5px; font-weight:bold; color: var(--mt-truffle-burgundy);">Merci de votre confiance !</p>
         </div>
     </div>
 </body>
