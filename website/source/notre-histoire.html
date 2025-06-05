@@ -3,91 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notre Histoire - Maison Trüvra</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="{{global.charset}}">
-    <meta name="viewport" content="{{global.viewport}}">
-    <title>{{public.story.title}}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'brand-cream': '#F5EEDE',
-                        'brand-near-black': '#11120D',
-                        'brand-classic-gold': '#D4AF37',
-                        'brand-warm-taupe': '#A28C6A',
-                        'brand-earth-brown': '#7D6A4F',
-                        'brand-slate-blue-grey': '#6E7582',
-                        'brand-deep-sage-green': '#4B5A59',
-                        'brand-truffle-burgundy': '#8A3E3E',
-                    }
-                }
+    <title data-translate-key="our_story.title">Notre Histoire - Maison Trüvra</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .story-content h2 { /* Uses .section-title from main.css */
+            margin-top: var(--spacing-xl);
+            margin-bottom: var(--spacing-md);
+            color: var(--mt-truffle-burgundy);
+        }
+        .story-content p {
+            margin-bottom: var(--spacing-lg);
+            line-height: 1.8; /* More spacing for readability on story page */
+            font-size: 1.05rem;
+            color: var(--mt-earth-brown);
+        }
+        .story-highlight {
+            background-color: var(--mt-cream);
+            padding: var(--spacing-lg);
+            margin: var(--spacing-xl) 0;
+            border-left: 4px solid var(--mt-classic-gold);
+            border-radius: var(--border-radius-sm);
+        }
+        .story-highlight p {
+            font-style: italic;
+            color: var(--mt-near-black);
+            font-size: 1.1rem;
+        }
+        .timeline {
+            position: relative;
+            padding: var(--spacing-lg) 0;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: var(--mt-classic-gold);
+            transform: translateX(-50%);
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: var(--spacing-xxl);
+            width: 50%;
+            padding: var(--spacing-sm) var(--spacing-lg);
+        }
+        .timeline-item:nth-child(odd) {
+            left: 0;
+            padding-right: calc(50% + var(--spacing-md)); /* Ensure content is to the left of the line */
+            text-align: right;
+        }
+        .timeline-item:nth-child(even) {
+            left: 50%;
+            padding-left: calc(var(--spacing-md)); /* Space from the line */
+             text-align: left;
+        }
+        .timeline-content {
+            background-color: #fff;
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius-md);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+        }
+        .timeline-content h3 { /* Baskervville from main.css */
+            color: var(--mt-truffle-burgundy);
+            font-size: 1.35rem;
+            margin-bottom: var(--spacing-xs);
+        }
+        .timeline-year {
+            font-family: var(--font-secondary);
+            font-weight: bold;
+            color: var(--mt-classic-gold);
+            font-size: 1.5rem;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--mt-cream); /* To sit on top of the line */
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: 50%;
+            border: 2px solid var(--mt-classic-gold);
+            z-index: 1;
+        }
+        .timeline-item:nth-child(odd) .timeline-year {
+            right: calc(-25px - var(--spacing-sm)); /* Adjust to center on line */
+        }
+        .timeline-item:nth-child(even) .timeline-year {
+            left: calc(-25px - var(--spacing-sm)); /* Adjust to center on line */
+        }
+
+         @media (max-width: 768px) {
+            .timeline::before { left: 20px; }
+            .timeline-item, .timeline-item:nth-child(odd), .timeline-item:nth-child(even) {
+                width: 100%;
+                left: 0;
+                padding-left: calc(20px + var(--spacing-lg)); /* Space from line */
+                padding-right: 0;
+                text-align: left;
+            }
+            .timeline-item:nth-child(odd) .timeline-year, .timeline-item:nth-child(even) .timeline-year {
+                left: calc(20px - 25px - var(--spacing-sm)); /* Position year circle on the line */
+                right: auto;
             }
         }
-    </script>
-    <style>
-        body {font-family: 'Inter', sans-serif; background-color: #F5EEDE; color: #7D6A4F;}
-        h1, h2, h3, .font-serif {font-family: 'Playfair Display', serif;}
-        .btn-primary {background-color: #7D6A4F; color: #F5EEDE; padding: 0.85rem 1.75rem; border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease; font-weight: 500; letter-spacing: 0.025em; display: inline-block;}
-        .btn-primary:hover {background-color: #11120D; transform: translateY(-2px);}
-        .section-title { @apply text-3xl md:text-4xl lg:text-5xl font-serif text-brand-earth-brown mb-12 text-center;}
-        .styled-subtitle { @apply font-serif italic text-brand-earth-brown mb-8 text-center;}
-        .modal-message { @apply fixed bottom-5 right-5 bg-brand-deep-sage-green text-brand-cream p-4 rounded-lg shadow-xl z-[100] transition-all duration-500 ease-out opacity-0 translate-y-10; }
-        .modal-message.show { @apply opacity-100 translate-y-0; }
+
     </style>
 </head>
-<body id="page-notre-histoire" class="antialiased" data-page-title-key="public.story.title">
+<body>
+    <div id="main-header-placeholder"></div>
 
-    <div id="header-placeholder"></div>
+    <main class="container mx-auto px-4 py-8 mt-20 md:mt-24 lg:mt-28">
+        <header class="page-header text-center mb-10 md:mb-12">
+            <h1 class="page-title text-3xl md:text-4xl lg:text-5xl font-bold" data-translate-key="our_story.main_title">L'Âme de Maison Trüvra</h1>
+            <p class="text-lg text-mt-earth-brown max-w-3xl mx-auto mt-4" data-translate-key="our_story.subtitle">Un héritage de passion, de terroir et d'excellence truffière.</p>
+        </header>
 
-    <main class="bg-brand-cream">
-        <section class="py-20">
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 class="font-serif italic text-brand-earth-brown mb-8 text-center text-3xl sm:text-4xl" data-translate="public.story.header">{{public.story.header}}</h1>
-                <div class="max-w-4xl mx-auto text-lg text-brand-earth-brown space-y-8 leading-relaxed">
-                    <p data-translate="public.story.p1">{{public.story.p1}}</p>
-                    <blockquote class="font-serif italic text-xl text-brand-near-black my-10 p-6 border-l-4 border-brand-classic-gold bg-white shadow-lg rounded-r-lg">
-                        "<span data-translate="public.story.blockquote">{{public.story.blockquote}}</span>"
-                    </blockquote>
-                    <p data-translate="public.story.p2">{{public.story.p2}}</p>
-                    <p data-translate="public.story.p3">{{public.story.p3}}</p>
-                    <div class="my-12 p-8 bg-white rounded-xl shadow-xl border border-brand-warm-taupe/30">
-                        <h2 class="text-2xl font-serif text-brand-near-black mb-4 text-center" data-translate="public.story.responsibility_title">{{public.story.responsibility_title}}</h2>
-                        <p class="text-center" data-translate="public.story.responsibility_desc">{{public.story.responsibility_desc}}</p>
+        <section class="story-content">
+            <div class="grid md:grid-cols-2 gap-8 items-center mb-12">
+                <div class="rounded-lg overflow-hidden shadow-xl">
+                    <img src="https://placehold.co/600x450/7D6A4F/F5EEDE?text=Racines+Historiques" alt="Les origines de Maison Trüvra" class="w-full h-auto object-cover">
+                </div>
+                <div>
+                    <h2 class="section-title" data-translate-key="our_story.section1_title">Nos Racines, Notre Fierté</h2>
+                    <p data-translate-key="our_story.section1_text1">L'histoire de Maison Trüvra est intimement liée à la terre généreuse de nos ancêtres, une terre qui a vu naître notre passion pour la truffe. Depuis des générations, notre famille cultive un savoir-faire unique, transmis avec respect et dévotion, pour extraire le meilleur de ce diamant noir.</p>
+                    <p data-translate-key="our_story.section1_text2">Nous croyons en une trufficulture durable, respectueuse des cycles naturels et de la biodiversité. Chaque truffe que nous récoltons est le témoignage de cet engagement, une promesse de qualité et d'authenticité.</p>
+                </div>
+            </div>
+
+            <div class="story-highlight">
+                <p data-translate-key="our_story.highlight_quote">« La truffe n'est pas simplement un produit, c'est une émotion, un voyage sensoriel que nous souhaitons partager avec le monde. »</p>
+                <p class="text-right text-sm mt-2">- Fondateurs de Maison Trüvra</p>
+            </div>
+            
+            <h2 class="section-title text-center" data-translate-key="our_story.timeline_title">Quelques Dates Clés</h2>
+            <div class="timeline my-10">
+                <div class="timeline-item">
+                    <div class="timeline-year">1923</div>
+                    <div class="timeline-content">
+                        <h3 data-translate-key="our_story.timeline_event1_title">Les Premiers Pas</h3>
+                        <p data-translate-key="our_story.timeline_event1_desc">Notre arrière-grand-père, visionnaire, plante les premiers chênes truffiers sur le domaine familial, initiant une tradition d'excellence.</p>
                     </div>
-                    <p data-translate="public.story.p4">{{public.story.p4}}</p>
-                    <p data-translate="public.story.p5">{{public.story.p5}}</p>
-                    <p class="font-semibold text-brand-near-black" data-translate="public.story.p6">{{public.story.p6}}</p>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-year">1985</div>
+                    <div class="timeline-content">
+                        <h3 data-translate-key="our_story.timeline_event2_title">L'Expansion Raisonnée</h3>
+                        <p data-translate-key="our_story.timeline_event2_desc">Le domaine s'agrandit, intégrant des techniques modernes tout en préservant les méthodes ancestrales de cavage et de soin des truffières.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-year">2020</div>
+                    <div class="timeline-content">
+                        <h3 data-translate-key="our_story.timeline_event3_title">Maison Trüvra Voit le Jour</h3>
+                        <p data-translate-key="our_story.timeline_event3_desc">Forts de notre héritage, nous créons Maison Trüvra pour partager notre passion et nos produits d'exception avec les connaisseurs du monde entier.</p>
+                    </div>
+                </div>
+                 <div class="timeline-item">
+                    <div class="timeline-year" data-translate-key="our_story.timeline_future_year">Demain</div>
+                    <div class="timeline-content">
+                        <h3 data-translate-key="our_story.timeline_event4_title">L'Avenir de la Truffe</h3>
+                        <p data-translate-key="our_story.timeline_event4_desc">Nous continuons d'innover, explorant de nouvelles variétés et de nouveaux terroirs, toujours guidés par notre quête de l'excellence et du goût authentique.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 items-center mt-12">
+                <div>
+                    <h2 class="section-title" data-translate-key="our_story.section2_title">Notre Philosophie</h2>
+                    <p data-translate-key="our_story.section2_text1">« Le luxe cultivé » n'est pas qu'un slogan pour nous. C'est une promesse : celle d'une qualité irréprochable, d'une traçabilité totale et d'une expérience gustative qui éveille les sens. Nous sommes les gardiens d'un trésor, et notre mission est de le magnifier.</p>
+                    <p data-translate-key="our_story.section2_text2">Chaque étape, de la culture à la sélection, est menée avec une rigueur et une attention méticuleuse. Nous collaborons étroitement avec la nature, car c'est elle qui nous offre ce don précieux. Rejoignez-nous dans cette aventure gustative et découvrez l'authenticité Maison Trüvra.</p>
+                     <a href="nos-produits.html" class="btn btn-primary mt-4" data-translate-key="our_story.discover_products_cta">Explorer nos collections</a>
+                </div>
+                 <div class="rounded-lg overflow-hidden shadow-xl">
+                    <img src="https://placehold.co/600x450/D4AF37/11120D?text=Terroir+d%27Excellence" alt="Terroir Maison Trüvra" class="w-full h-auto object-cover">
                 </div>
             </div>
         </section>
     </main>
 
-    <div id="footer-placeholder"></div>
-    
-    <div id="global-message-toast" style="display:none;" class="modal-message">
-        <p id="global-message-text"></p>
-    </div>
+    <div id="main-footer-placeholder"></div>
+    <div id="cart-toast-placeholder" class="fixed bottom-5 right-5 z-50"></div>
+    <div id="global-message-container" class="fixed top-20 right-5 z-[1000] w-auto max-w-sm"></div>
 
-    <script src="js/config.js"></script>
-    <script src="js/main.js"></script> <script src="js/ui.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/cart.js"></script>
-    <script src="js/products.js"></script>
-    <script src="js/checkout.js"></script>
-    <script src="js/newsletter.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
