@@ -4,101 +4,78 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voir Inventaire Détaillé - Maison Trüvra Admin</title>
-    <link rel="stylesheet" href="css/admin_style.css">
+    <link rel="stylesheet" href="css/admin_style.css"> <!-- Standardized path -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body id="page-admin-view-inventory">
-    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
-                    <i class="fas fa-arrow-left mr-2"></i>
-                    Retour au Tableau de Bord
-                </a>
-                <div id="admin-header-title-area">
-                     <h1 class="text-xl font-semibold text-gray-700">Maison Trüvra - Admin</h1>
-                </div>
-            </div>
-            <div class="flex items-center space-x-4">
-                <span id="admin-user-greeting" class="text-gray-700 text-sm mr-2"></span>
-                <button id="admin-logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-sm flex items-center">
-                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
-                </button>
-            </div>
-        </div>
-    </header>
+<body class="admin-body" id="page-admin-view-inventory">
 
-    <nav class="bg-gray-800 text-white shadow-md">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-start h-12 space-x-1 overflow-x-auto">
-                <a href="admin_dashboard.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Tableau de Bord</a>
-                <a href="admin_manage_products.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Produits</a>
-                <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Inventaire</a>
-                <a href="admin_view_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 active">Voir Inventaire</a>
-                <a href="admin_manage_orders.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Commandes</a>
-                <a href="admin_manage_users.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Utilisateurs</a>
-                <a href="admin_manage_categories.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Catégories</a>
-                <a href="admin_invoices.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Factures</a>
-                <a href="admin_manage_reviews.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Avis</a>
-            </div>
+    <div id="admin-header-placeholder"></div> <!-- Placeholder for the common header -->
+
+    <main class="admin-main-container">
+        <div class="admin-page-header">
+            <h1 class="admin-page-title">Inventaire Détaillé des Articles Sérialisés</h1>
         </div>
-    </nav>
-    <main class="admin-content-area container mx-auto p-6 space-y-6">
-        <h1 class="text-3xl font-semibold text-gray-800 mb-6">Inventaire Détaillé des Articles</h1>
         
-        <section class="admin-form-container">
-            <h2 class="admin-form-title">Filtres</h2>
-            <div class="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                    <label for="filter-view-product-name" class="form-label">Nom du Produit:</label>
-                    <input type="text" id="filter-view-product-name" placeholder="Filtrer par nom de produit..." class="form-input-admin mt-1">
+        <section class="admin-form-container content-card">
+            <h2 class="section-heading">Filtres de l'Inventaire Détaillé</h2>
+            <form id="view-inventory-filters-form" class="admin-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4"> {/* Adjusted to 5 columns for new filter */}
+                    <div class="form-group">
+                        <label for="filter-view-product-name" class="form-label">Nom du Produit:</label>
+                        <input type="text" id="filter-view-product-name" placeholder="Filtrer par nom de produit..." class="form-input-admin">
+                    </div>
+                     <div class="form-group">
+                        <label for="filter-view-product-code" class="form-label">Code Produit:</label>
+                        <input type="text" id="filter-view-product-code" placeholder="Filtrer par code produit..." class="form-input-admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-view-variant-sku-suffix" class="form-label">Suffixe SKU Variante:</label>
+                        <input type="text" id="filter-view-variant-sku-suffix" placeholder="Filtrer par suffixe SKU..." class="form-input-admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-view-item-status" class="form-label">Statut de l'Article:</label>
+                        <select id="filter-view-item-status" class="form-input-admin">
+                            <option value="">Tous les statuts</option>
+                            <option value="available">Disponible</option>
+                            <option value="allocated">Alloué</option>
+                            <option value="sold">Vendu</option>
+                            <option value="damaged">Endommagé</option>
+                            <option value="returned">Retourné</option>
+                            <option value="recalled">Rappelé</option>
+                            <option value="reserved_internal">Réservé (Interne)</option>
+                            <option value="missing">Manquant</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="search-view-item-uid" class="form-label">Rechercher par UID Article:</label>
+                        <input type="text" id="search-view-item-uid" placeholder="Entrer UID..." class="form-input-admin">
+                    </div>
                 </div>
-                 <div>
-                    <label for="filter-view-product-code" class="form-label">Code Produit:</label>
-                    <input type="text" id="filter-view-product-code" placeholder="Filtrer par code produit..." class="form-input-admin mt-1">
-                </div>
-                <div>
-                    <label for="filter-view-item-status" class="form-label">Statut de l'Article:</label>
-                    <select id="filter-view-item-status" class="form-input-admin mt-1">
-                        <option value="">Tous les statuts</option>
-                        <option value="available">Disponible</option>
-                        <option value="allocated">Alloué</option>
-                        <option value="sold">Vendu</option>
-                        <option value="damaged">Endommagé</option>
-                        <option value="returned">Retourné</option>
-                        <option value="recalled">Rappelé</option>
-                        <option value="reserved_internal">Réservé (Interne)</option>
-                        <option value="missing">Manquant</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="search-view-item-uid" class="form-label">Rechercher par UID:</label>
-                    <input type="text" id="search-view-item-uid" placeholder="Entrer UID..." class="form-input-admin mt-1">
-                </div>
-            </div>
-            <div class="mt-4 flex flex-wrap gap-4 items-center">
+            </form>
+            <div class="mt-4 d-flex flex-wrap gap-4 align-items-center">
                  <button id="export-inventory-csv-button" class="btn btn-admin-secondary">
                     <i class="fas fa-file-csv mr-2"></i>Exporter en CSV
                 </button>
-                <div class="flex items-center gap-2">
+                <form id="import-inventory-form" class="d-flex align-items-center gap-2">
                     <label for="import-inventory-csv-file" class="form-label sr-only">Importer CSV</label>
-                    <input type="file" id="import-inventory-csv-file" accept=".csv" class="form-input-admin text-sm p-1.5 border rounded">
-                    <button id="import-inventory-csv-button" class="btn btn-admin-primary">
+                    <input type="file" id="import-inventory-csv-file" accept=".csv" class="form-input-admin text-sm" style="padding: 0.375rem 0.75rem; border-radius: var(--border-radius-sm);">
+                    <button type="button" id="import-inventory-csv-button" class="btn btn-admin-primary">
                         <i class="fas fa-file-upload mr-2"></i>Importer
                     </button>
-                </div>
+                </form>
             </div>
         </section>
 
-        <section class="admin-table-container">
-            <h2 class="admin-table-title">Liste des Articles en Stock</h2>
+        <section class="admin-table-container content-card">
+            <h2 class="section-heading">Liste des Articles en Stock (Sérialisés)</h2>
             <div class="overflow-x-auto">
                 <table class="admin-table min-w-full">
                     <thead>
                         <tr>
                             <th>Produit</th>
-                            <th>Variante</th>
+                            <th>Variante (Descr.)</th>
                             <th>Code Produit</th>
+                            <th>Suffixe SKU Variante</th> {/* New Column */}
                             <th>UID Article</th>
                             <th>Statut</th>
                             <th>Lot</th>
@@ -108,35 +85,34 @@
                         </tr>
                     </thead>
                     <tbody id="detailed-inventory-table-body">
-                        <tr><td colspan="9" class="text-center p-4">Chargement de l'inventaire détaillé...</td></tr>
+                        {/* Adjusted colspan for loading message */}
+                        <tr><td colspan="10" class="text-center p-4">Chargement de l'inventaire détaillé...</td></tr>
                     </tbody>
                 </table>
             </div>
         </section>
     </main>
     
-    <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
+    <footer class="admin-footer">
         <p>&copy; <span id="currentYearViewInv"></span> Maison Trüvra - Admin Panel</p>
     </footer>
 
     <div id="admin-toast-container"></div>
 
     <div id="product-overview-tooltip" 
-         class="hidden absolute z-[1060] p-3 bg-gray-900 text-white text-sm rounded-md shadow-lg pointer-events-none max-w-xs"
-         role="tooltip">
+         class="hidden absolute z-[1060] p-3 text-white text-sm rounded-md shadow-lg pointer-events-none max-w-xs"
+         role="tooltip" style="background-color: var(--mt-near-black); border-radius: var(--border-radius-md); border: 1px solid var(--mt-gold);">
+        <!-- Content populated by JS -->
     </div>
 
     <script src="js/admin_config.js"></script>
     <script src="js/admin_ui.js"></script>
     <script src="js/admin_api.js"></script>
     <script src="js/admin_auth.js"></script>
-    <script src="js/admin_main.js"></script>
+    <script src="js/admin_main.js"></script> <!-- This will load the common header -->
     <script src="js/admin_view_inventory.js"></script>
     <script>
-        const currentYearSpanViewInv = document.getElementById('currentYearViewInv');
-        if (currentYearSpanViewInv) {
-            currentYearSpanViewInv.textContent = new Date().getFullYear();
-        }
+        document.getElementById('currentYearViewInv').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
