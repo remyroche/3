@@ -1,0 +1,238 @@
+/* website/source/pro/css/pro_common.css */
+/* Maison Trüvra - Common Styles for Professional (B2B) Section */
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Baskervville:ital@0;1&family=Raleway:wght@300;400;500;600;700&display=swap');
+
+/* CSS Variables (from main.css, ensure consistency) */
+:root {
+    --mt-cream: #F5EEDE;
+    --mt-near-black: #11120D;
+    --mt-classic-gold: #D4AF37;
+    --mt-warm-taupe: #A28C6A;
+    --mt-earth-brown: #7D6A4F;
+    --mt-slate-blue-grey: #6E7582;
+    --mt-deep-sage-green: #4B5A59;
+    --mt-truffle-burgundy: #8A3E3E;
+
+    --font-primary: 'Raleway', sans-serif;
+    --font-secondary: 'Baskervville', serif;
+
+    --border-radius-sm: 0.25rem; /* 4px */
+    --border-radius-md: 0.375rem; /* 6px */
+    --border-radius-lg: 0.5rem; /* 8px */
+
+    --spacing-unit: 8px;
+    --spacing-xs: calc(var(--spacing-unit) * 0.5);   /* 4px */
+    --spacing-sm: var(--spacing-unit);             /* 8px */
+    --spacing-md: calc(var(--spacing-unit) * 2);   /* 16px */
+    --spacing-lg: calc(var(--spacing-unit) * 3);   /* 24px */
+    --spacing-xl: calc(var(--spacing-unit) * 4);   /* 32px */
+}
+
+/* Global Styles for Pro Pages */
+body.pro-page {
+    font-family: var(--font-primary); /* Raleway */
+    background-color: var(--mt-cream);
+    color: var(--mt-near-black);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.pro-main-container {
+    flex-grow: 1;
+    padding-top: 80px; /* Adjust based on pro_header height */
+    padding-bottom: var(--spacing-xl);
+}
+
+/* Typography for Pro Pages */
+.pro-page h1, .pro-page h2, .pro-page h3, .pro-page h4, .pro-page h5, .pro-page h6,
+.pro-page .page-title,
+.pro-page .section-title,
+.pro-page .card-title {
+    font-family: var(--font-secondary); /* Baskervville */
+    color: var(--mt-near-black);
+}
+
+.pro-page .page-title {
+    font-size: 2.5rem; /* 40px */
+    color: var(--mt-truffle-burgundy);
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
+}
+
+.pro-page .section-title {
+    font-size: 1.75rem; /* 28px */
+    color: var(--mt-earth-brown);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--mt-warm-taupe);
+}
+
+.pro-page p, .pro-page li, .pro-page label, .pro-page input, .pro-page select, .pro-page textarea, .pro-page button, .pro-page a {
+    font-family: var(--font-primary); /* Raleway */
+}
+
+/* Pro Header Styles (to be used in pro_header.html) */
+.pro-header {
+    background-color: var(--mt-near-black);
+    color: var(--mt-cream);
+    padding: var(--spacing-md) var(--spacing-lg);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.pro-header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.pro-header-logo img {
+    height: 40px; /* Adjust as needed */
+}
+.pro-nav ul {
+    list-style: none;
+    display: flex;
+    gap: var(--spacing-md);
+}
+.pro-nav a {
+    color: var(--mt-cream);
+    text-decoration: none;
+    font-weight: 500;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.pro-nav a:hover, .pro-nav a.active {
+    background-color: var(--mt-classic-gold);
+    color: var(--mt-near-black);
+}
+.pro-user-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+.pro-user-actions .user-greeting {
+    font-size: 0.9rem;
+}
+
+/* Pro Footer Styles (to be used in pro_footer.html) */
+.pro-footer {
+    background-color: var(--mt-near-black);
+    color: var(--mt-warm-taupe);
+    padding: var(--spacing-xl) var(--spacing-lg);
+    text-align: center;
+    font-size: 0.875rem;
+}
+.pro-footer p {
+    margin-bottom: var(--spacing-xs);
+}
+.pro-footer a {
+    color: var(--mt-classic-gold);
+    text-decoration: underline;
+}
+.pro-footer a:hover {
+    color: var(--mt-cream);
+}
+
+/* Common B2B elements styling */
+.b2b-product-card { /* Assuming you'll use a similar card structure */
+    background-color: #fff;
+    border: 1px solid var(--mt-warm-taupe);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.b2b-product-card .card-title {
+    font-family: var(--font-secondary); /* Baskervville */
+    color: var(--mt-truffle-burgundy);
+}
+
+/* Buttons for B2B section */
+.pro-page .btn-pro-primary {
+    background-color: var(--mt-truffle-burgundy);
+    color: var(--mt-cream);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--border-radius-sm);
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+.pro-page .btn-pro-primary:hover {
+    background-color: #733333; /* Darker burgundy */
+}
+
+.pro-page .btn-pro-secondary {
+    background-color: var(--mt-classic-gold);
+    color: var(--mt-near-black);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--border-radius-sm);
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+.pro-page .btn-pro-secondary:hover {
+    background-color: #c09d2e; /* Darker gold */
+}
+
+/* Forms in Pro section */
+.pro-form .form-group {
+    margin-bottom: var(--spacing-md);
+}
+.pro-form .form-label {
+    display: block;
+    font-family: var(--font-primary); /* Raleway */
+    font-weight: 500;
+    margin-bottom: var(--spacing-xs);
+    color: var(--mt-earth-brown);
+}
+.pro-form .form-input,
+.pro-form .form-select,
+.pro-form .form-textarea {
+    width: 100%;
+    padding: var(--spacing-sm);
+    font-family: var(--font-primary); /* Raleway */
+    border: 1px solid var(--mt-warm-taupe);
+    border-radius: var(--border-radius-sm);
+    background-color: #fff;
+    color: var(--mt-near-black);
+}
+.pro-form .form-input:focus,
+.pro-form .form-select:focus,
+.pro-form .form-textarea:focus {
+    outline: none;
+    border-color: var(--mt-classic-gold);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
+}
+
+/* General table styling for Pro pages */
+.pro-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--spacing-lg);
+}
+.pro-table th, .pro-table td {
+    font-family: var(--font-primary); /* Raleway */
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--mt-warm-taupe);
+    text-align: left;
+}
+.pro-table th {
+    background-color: var(--mt-earth-brown);
+    color: var(--mt-cream);
+    font-family: var(--font-secondary); /* Baskervville for table headers */
+    font-weight: 600;
+}
+.pro-table tbody tr:nth-child(even) {
+    background-color: #fdfaf6; /* Lighter cream for alternate rows */
+}
+.pro-table tbody tr:hover {
+    background-color: var(--mt-cream);
+}
