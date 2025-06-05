@@ -1,5 +1,15 @@
-// admin_create_invoice_js.js
+// website/source/admin/js/admin_create_invoice_js.js
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Ensure this code runs only on the create invoice page
+    if (document.body.id !== 'page-admin-create-invoice') {
+        // console.log("Not on admin_create_invoice page, skipping admin_create_invoice_js.js logic.");
+        return;
+    }
+    console.log("admin_create_invoice_js.js: Initializing for page-admin-create-invoice.");
+
+
+    // --- DOM Elements ---
     const professionalUserSelect = document.getElementById('professional-user-select');
     const invoiceItemsTbody = document.getElementById('invoice-items-tbody');
     const addInvoiceItemBtn = document.getElementById('add-invoice-item-btn');
@@ -7,419 +17,501 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const invoiceDateInput = document.getElementById('invoice-date');
     const invoiceDueDateInput = document.getElementById('invoice-due-date');
-    const invoiceNumberDisplay = document.getElementById('invoice-number-display');
+    const invoiceNumberDisplay = document.getElementById('invoice-number-display'); // Span in preview
+    const adminInvoiceNotesInput = document.getElementById('admin-invoice-notes'); // Textarea for admin notes
 
-    // Company info display elements (from config, could be dynamic if needed)
+    // Company info display elements (in preview)
     const companyNameDisplay = document.getElementById('company-name');
     const companyAddress1Display = document.getElementById('company-address1');
-    // const companyAddress2Display = document.getElementById('company-address2'); // If you have this field
     const companyCityPostalCountryDisplay = document.getElementById('company-city-postal-country');
-    const companySiretDisplay = document.getElementById('company-siret'); // Assuming this is your company's SIRET
-    const companyVatDisplay = document.getElementById('company-vat'); // Assuming this is your company's VAT
-    // Hypothetical element for a tagline, if you add one to your HTML:
-    // const companyTaglineDisplay = document.getElementById('company-tagline'); 
+    const companySiretDisplay = document.getElementById('company-siret');
+    const companyVatDisplay = document.getElementById('company-vat');
+    const companyIbanDisplay = document.getElementById('company-iban');
+    const companySwiftDisplay = document.getElementById('company-swift');
+    const paymentDueDaysDisplay = document.getElementById('payment-due-days');
 
-
-    // Customer billing info display elements
+    // Customer billing info display elements (in preview)
     const customerCompanyNameDisplay = document.getElementById('customer-company-name');
     const customerContactNameDisplay = document.getElementById('customer-contact-name');
     const customerBillingAddressDisplay = document.getElementById('customer-billing-address');
     const customerSiretDisplay = document.getElementById('customer-siret-display');
     const customerVatDisplay = document.getElementById('customer-vat-display');
 
-    // Customer delivery info display elements
+    // Customer delivery info display elements (in preview)
     const deliveryCompanyNameDisplay = document.getElementById('delivery-company-name');
     const customerDeliveryAddressDisplay = document.getElementById('customer-delivery-address');
 
-    // Totals display
+    // Totals display (in preview)
     const subtotalHTDisplay = document.getElementById('subtotal-ht');
     const vatSummaryContainer = document.getElementById('vat-summary-container');
     const totalVATDisplay = document.getElementById('total-vat');
     const grandTotalTTCDisplay = document.getElementById('grand-total-ttc');
     const netToPayDisplay = document.getElementById('net-to-pay');
-    const paymentDueDaysDisplay = document.getElementById('payment-due-days'); // From config
+    
+    const invoiceForm = document.getElementById('create-invoice-form'); // The main form for inputs
+    // const saveInvoiceBtn = document.getElementById('save-invoice-btn'); // Replaced by form submit
+    const previewPdfBtn = document.getElementById('preview-invoice-pdf-btn');
 
-    const saveInvoiceBtn = document.getElementById('save-invoice-btn');
-    const previewInvoiceBtn = document.getElementById('preview-invoice-btn');
-
+    // --- State Variables ---
     let professionalUsersData = []; // To store fetched professional users with their details
+    let companyInfoData = null; // To store fetched company info
 
     // --- Initialize Page ---
+    async function initializePage() {
+        console.log("admin_create_invoice_js.js: initializePage called");
+        await loadCompanyInfoForPreview(); // Load and display company info in preview
+        await populateProfessionalUsers(); // Populate client dropdown
+        setDefaultDates();
+        addInvoiceItemRow(); // Add one initial empty line item
+        
+        // Attach event listeners
+        if (professionalUserSelect) {
+            professionalUserSelect.addEventListener('change', handleProfessionalUserChange);
+        }
+        if (addInvoiceItemBtn) {
+            addInvoiceItemBtn.addEventListener('click', addInvoiceItemRow);
+        }
+        if (invoiceItemsTbody) {
+            invoiceItemsTbody.addEventListener('click', handleItemTableActions);
+            invoiceItemsTbody.addEventListener('input', handleItemTableInput);
+        }
+        if (invoiceDateInput) {
+            invoiceDateInput.addEventListener('change', updateDueDateBasedOnInvoiceDate);
+        }
+        if (invoiceForm) {
+            invoiceForm.addEventListener('submit', handleFormSubmit);
+        }
+        if (previewPdfBtn) {
+            previewPdfBtn.addEventListener('click', handlePreviewInvoiceAsPDF);
+        }
 
-    // 1. Load company info (from config or a dedicated endpoint)
-    // This section demonstrates how Maison Trüvra's specific branding details
-    // would be fetched and applied if provided by a backend API.
-    // The HTML already contains "Maison Trüvra SARL" as a placeholder.
-    // This fetch would update it with authoritative data from the backend.
-    /*
-    fetchAPIData('/api/admin/company-info', {}, 'GET')
-        .then(data => {
-            if (data) {
-                companyNameDisplay.textContent = data.name || "Maison Trüvra"; // Default to brand name
-                companyAddress1Display.textContent = data.address_line1 || "1 Rue de la Truffe";
-                companyCityPostalCountryDisplay.textContent = data.city_postal_country || "75001 Paris, France";
-                companySiretDisplay.textContent = data.siret || "Votre SIRET"; 
-                companyVatDisplay.textContent = data.vat_number || "Votre N° TVA"; 
-                
-                // Populate other company details from backend
-                document.getElementById('company-iban').textContent = data.iban || 'FRXX XXXX XXXX XXXX XXXX XXX';
-                document.getElementById('company-swift').textContent = data.swift || 'XXXXXXX';
-                paymentDueDaysDisplay.textContent = data.invoice_due_days || 30;
+        // Initial calculation and preview update
+        updateAllPreviewFields(); 
+        console.log("admin_create_invoice_js.js: Initialization complete.");
+    }
 
-                // Example of setting a tagline if the element and data exist
-                // if (companyTaglineDisplay && data.tagline) {
-                //    companyTaglineDisplay.textContent = data.tagline; // e.g., "L’avenir de la truffe, cultivé avec art."
-                // }
+    async function loadCompanyInfoForPreview() {
+        try {
+            // Assuming adminApi.getSettings() can fetch company details or you have a dedicated endpoint
+            // For now, using placeholders or potentially hardcoded values if API doesn't provide this.
+            // This part would ideally fetch from backend, e.g., adminApi.getCompanyInfo()
+            companyInfoData = { // Placeholder data
+                name: "Maison Trüvra SARL",
+                tagline: "Propriétaire récoltant",
+                address_line1: "1 Rue de la Truffe",
+                city_postal_country: "75001 Paris, France",
+                siret: "FRXX123456789",
+                vat_number: "FRXX123456789",
+                iban: "FRXX XXXX XXXX XXXX XXXX XXX",
+                swift: "XXXXXXX",
+                invoice_due_days: 30,
+                logo_url: "../images/maison_truvra_invoice_logo.png" // Relative to HTML, ensure correct path
+            };
+            // If fetched via API: companyInfoData = await adminApi.getCompanyInfo();
 
-                // Update any other brand-specific elements here
-            } else {
-                console.warn("Company info could not be loaded from API. Using HTML placeholders.");
-                // Fallback to ensure essential brand name is displayed if API fails or data is incomplete
-                if (!companyNameDisplay.textContent) {
-                    companyNameDisplay.textContent = "Maison Trüvra";
+            if (companyInfoData) {
+                if (companyNameDisplay) companyNameDisplay.textContent = companyInfoData.name;
+                // const companyTaglineDisplay = document.querySelector('.invoice-preview-header .company-tagline');
+                // if (companyTaglineDisplay) companyTaglineDisplay.textContent = companyInfoData.tagline;
+                if (companyAddress1Display) companyAddress1Display.textContent = companyInfoData.address_line1;
+                if (companyCityPostalCountryDisplay) companyCityPostalCountryDisplay.textContent = companyInfoData.city_postal_country;
+                if (companySiretDisplay) companySiretDisplay.textContent = companyInfoData.siret;
+                if (companyVatDisplay) companyVatDisplay.textContent = companyInfoData.vat_number;
+                if (companyIbanDisplay) companyIbanDisplay.textContent = companyInfoData.iban;
+                if (companySwiftDisplay) companySwiftDisplay.textContent = companyInfoData.swift;
+                if (paymentDueDaysDisplay) paymentDueDaysDisplay.textContent = companyInfoData.invoice_due_days;
+
+                // Update logo in preview
+                const logoImg = document.querySelector('.invoice-preview-header .company-logo');
+                if (logoImg && companyInfoData.logo_url) {
+                    logoImg.src = companyInfoData.logo_url;
                 }
             }
-        })
-        .catch(error => {
-            console.error('Error fetching company info:', error);
-            // Fallback to ensure essential brand name is displayed on error
-            if (!companyNameDisplay.textContent) {
-                companyNameDisplay.textContent = "Maison Trüvra";
-            }
-        });
-    */
-    // If the above API call is not used, the values in the HTML will be used.
-    // Ensure HTML placeholders reflect Maison Trüvra branding.
+        } catch (error) {
+            console.error("Error loading company info for preview:", error);
+            if(typeof showAdminToast === 'function') showAdminToast("Erreur chargement infos entreprise.", "error");
+        }
+    }
 
 
-    // 2. Set default dates
-    const today = new Date();
-    invoiceDateInput.valueAsDate = today;
-    const dueDate = new Date(today);
-    const dueDays = parseInt(paymentDueDaysDisplay.textContent || "30", 10);
-    dueDate.setDate(today.getDate() + dueDays);
-    invoiceDueDateInput.valueAsDate = dueDate;
+    function setDefaultDates() {
+        const today = new Date();
+        if(invoiceDateInput) invoiceDateInput.valueAsDate = today;
+        updateDueDateBasedOnInvoiceDate();
+    }
 
-    invoiceDateInput.addEventListener('change', () => {
-        const newInvoiceDate = new Date(invoiceDateInput.value);
-        const newDueDate = new Date(newInvoiceDate);
-        newDueDate.setDate(newInvoiceDate.getDate() + (parseInt(paymentDueDaysDisplay.textContent, 10) || 30));
-        invoiceDueDateInput.valueAsDate = newDueDate;
-    });
-    
+    function updateDueDateBasedOnInvoiceDate() {
+        if (!invoiceDateInput || !invoiceDueDateInput || !paymentDueDaysDisplay) return;
+        try {
+            const issueDate = invoiceDateInput.valueAsDate || new Date();
+            const dueDays = parseInt(paymentDueDaysDisplay.textContent, 10) || 30;
+            const dueDate = new Date(issueDate);
+            dueDate.setDate(issueDate.getDate() + dueDays);
+            invoiceDueDateInput.valueAsDate = dueDate;
+        } catch (e) {
+            console.error("Error setting due date:", e);
+            invoiceDueDateInput.value = '';
+        }
+        updateInvoiceNumberPreview(); // Regenerate invoice number if date changes
+    }
 
-    // 3. Fetch professional users for the select dropdown
-    // Replace with your actual API endpoint for fetching professional users
-    fetchAPIData('/api/admin/users?role=professional', {}, 'GET')
-        .then(response => {
-            if (response && response.users && Array.isArray(response.users)) {
-                professionalUsersData = response.users; // Store for later use
-                professionalUserSelect.innerHTML = '<option value="">Sélectionnez un client</option>'; // Clear existing
-                response.users.forEach(user => {
+
+    async function populateProfessionalUsers() {
+        if (!professionalUserSelect) return;
+        professionalUserSelect.innerHTML = `<option value="">${t('admin.invoices.loading_users', 'Chargement des professionnels...')}</option>`;
+        try {
+            const response = await adminApi.getProfessionalUsers(); // from admin_api.js
+            const users = response.users || response; 
+            professionalUsersData = users; // Cache for later use
+
+            professionalUserSelect.innerHTML = `<option value="">-- ${t('admin.invoices.select_user', 'Sélectionner un Utilisateur')} --</option>`;
+            if (users && users.length > 0) {
+                users.forEach(user => {
                     const option = document.createElement('option');
                     option.value = user.id;
-                    // Display company name if available, otherwise full name
-                    option.textContent = user.company_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || `Utilisateur ID: ${user.id}`;
+                    option.textContent = `${user.company_name || (user.first_name || '') + ' ' + (user.last_name || '')} (${user.email})`;
                     professionalUserSelect.appendChild(option);
                 });
             } else {
-                console.error('Failed to load professional users or invalid format:', response);
-                professionalUserSelect.innerHTML = '<option value="">Erreur de chargement</option>';
+                 professionalUserSelect.innerHTML = `<option value="">-- ${t('admin.invoices.no_pro_users_found', 'Aucun utilisateur B2B trouvé')} --</option>`;
             }
-        })
-        .catch(error => {
-            console.error('Error fetching professional users:', error);
-            professionalUserSelect.innerHTML = '<option value="">Erreur de chargement</option>';
-        });
+        } catch (error) {
+            console.error('Failed to load professional users:', error);
+            professionalUserSelect.innerHTML = `<option value="">${t('admin.invoices.error_loading_users', 'Erreur chargement utilisateurs')}</option>`;
+            if(typeof showAdminToast === 'function') showAdminToast(t('admin.invoices.error_loading_users_toast', 'Erreur chargement des utilisateurs B2B.'), 'error');
+        }
+    }
 
-    // --- Event Listeners ---
-
-    professionalUserSelect.addEventListener('change', (event) => {
+    function handleProfessionalUserChange(event) {
         const selectedUserId = event.target.value;
-        if (selectedUserId) {
-            const selectedUser = professionalUsersData.find(user => user.id.toString() === selectedUserId);
+        updateCustomerInfoPreview(selectedUserId);
+        updateInvoiceNumberPreview(selectedUserId);
+    }
+
+    function updateCustomerInfoPreview(userId) {
+        const defaultText = 'N/A';
+        if (userId) {
+            const selectedUser = professionalUsersData.find(user => user.id.toString() === userId);
             if (selectedUser) {
-                populateCustomerInfo(selectedUser);
-                generateInvoiceNumber(selectedUser.company_name || 'Client');
-            } else {
-                clearCustomerInfo();
-                invoiceNumberDisplay.textContent = 'En attente de sélection client';
+                if(customerCompanyNameDisplay) customerCompanyNameDisplay.textContent = selectedUser.company_name || defaultText;
+                if(customerContactNameDisplay) customerContactNameDisplay.textContent = `${selectedUser.first_name || ''} ${selectedUser.last_name || ''}`.trim() || defaultText;
+                
+                // Assuming address fields exist on user object; adjust if nested or different
+                const billingAddress = [
+                    selectedUser.billing_address_line1 || selectedUser.address_line1, // Fallback to general address
+                    selectedUser.billing_address_line2 || selectedUser.address_line2,
+                    `${selectedUser.billing_city || selectedUser.city || ''} ${selectedUser.billing_postal_code || selectedUser.postal_code || ''}`,
+                    selectedUser.billing_country || selectedUser.country
+                ].filter(Boolean).join('<br>');
+                if(customerBillingAddressDisplay) customerBillingAddressDisplay.innerHTML = billingAddress || defaultText;
+
+                if(customerSiretDisplay) customerSiretDisplay.textContent = selectedUser.siret_number || defaultText;
+                if(customerVatDisplay) customerVatDisplay.textContent = selectedUser.vat_number || defaultText;
+
+                // Delivery Address (could be same or specific fields like delivery_address_line1)
+                const deliveryAddr = [
+                    selectedUser.delivery_address_line1 || selectedUser.billing_address_line1 || selectedUser.address_line1,
+                    selectedUser.delivery_address_line2 || selectedUser.billing_address_line2 || selectedUser.address_line2,
+                    `${selectedUser.delivery_city || selectedUser.billing_city || selectedUser.city || ''} ${selectedUser.delivery_postal_code || selectedUser.billing_postal_code || selectedUser.postal_code || ''}`,
+                    selectedUser.delivery_country || selectedUser.billing_country || selectedUser.country
+                ].filter(Boolean).join('<br>');
+                if(deliveryCompanyNameDisplay) deliveryCompanyNameDisplay.textContent = selectedUser.delivery_company_name || selectedUser.company_name || defaultText;
+                if(customerDeliveryAddressDisplay) customerDeliveryAddressDisplay.innerHTML = deliveryAddr || defaultText;
+                return;
             }
-        } else {
-            clearCustomerInfo();
-            invoiceNumberDisplay.textContent = 'En attente de sélection client';
         }
-    });
-
-    addInvoiceItemBtn.addEventListener('click', addInvoiceItemRow);
-
-    invoiceItemsTbody.addEventListener('click', (event) => {
-        if (event.target.classList.contains('remove-item-btn')) {
-            event.target.closest('tr').remove();
-            calculateTotals();
-        }
-    });
-
-    invoiceItemsTbody.addEventListener('input', (event) => {
-        if (event.target.classList.contains('item-quantity') || 
-            event.target.classList.contains('item-unit-price-ht') ||
-            event.target.classList.contains('item-vat-rate')) {
-            const row = event.target.closest('tr');
-            updateLineItemTotals(row);
-            calculateTotals();
-        }
-    });
-
-    saveInvoiceBtn.addEventListener('click', handleSaveInvoice);
-    previewInvoiceBtn.addEventListener('click', handlePreviewInvoice);
-
-
-    // --- Functions ---
-
-    function populateCustomerInfo(userData) {
-        customerCompanyNameDisplay.textContent = userData.company_name || 'N/A';
-        customerContactNameDisplay.textContent = `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'N/A';
-        
-        // Billing Address (assuming address fields like street, city, postal_code, country exist)
-        const billingAddress = [
-            userData.billing_address_line1,
-            userData.billing_address_line2,
-            `${userData.billing_city || ''} ${userData.billing_postal_code || ''}`,
-            userData.billing_country
-        ].filter(Boolean).join('<br>');
-        customerBillingAddressDisplay.innerHTML = billingAddress || 'N/A';
-
-        customerSiretDisplay.textContent = userData.siret_number || 'N/A';
-        customerVatDisplay.textContent = userData.vat_number || 'N/A';
-
-        // Delivery Address (can be same as billing or different fields)
-        deliveryCompanyNameDisplay.textContent = userData.delivery_company_name || userData.company_name || 'N/A';
-        const deliveryAddress = [
-            userData.delivery_address_line1,
-            userData.delivery_address_line2,
-            `${userData.delivery_city || ''} ${userData.delivery_postal_code || ''}`,
-            userData.delivery_country
-        ].filter(Boolean).join('<br>');
-        customerDeliveryAddressDisplay.innerHTML = deliveryAddress || 'N/A';
+        // Clear if no user selected or found
+        if(customerCompanyNameDisplay) customerCompanyNameDisplay.textContent = 'Nom de l\'Entreprise Cliente';
+        if(customerContactNameDisplay) customerContactNameDisplay.textContent = 'Prénom Nom (Contact)';
+        if(customerBillingAddressDisplay) customerBillingAddressDisplay.innerHTML = 'Adresse de facturation';
+        if(customerSiretDisplay) customerSiretDisplay.textContent = 'SIRET Client';
+        if(customerVatDisplay) customerVatDisplay.textContent = 'N° TVA Client';
+        if(deliveryCompanyNameDisplay) deliveryCompanyNameDisplay.textContent = 'Nom Entreprise (Livraison)';
+        if(customerDeliveryAddressDisplay) customerDeliveryAddressDisplay.innerHTML = 'Adresse de livraison';
     }
+    
+    function updateInvoiceNumberPreview(selectedUserId = null) {
+        if (!invoiceNumberDisplay || !invoiceDateInput) return;
 
-    function clearCustomerInfo() {
-        customerCompanyNameDisplay.textContent = 'Nom de l\'Entreprise Cliente';
-        customerContactNameDisplay.textContent = 'Prénom Nom (Contact)';
-        customerBillingAddressDisplay.innerHTML = 'Adresse de facturation';
-        customerSiretDisplay.textContent = '';
-        customerVatDisplay.textContent = '';
-        deliveryCompanyNameDisplay.textContent = 'Nom de l\'Entreprise Cliente (Livraison)';
-        customerDeliveryAddressDisplay.innerHTML = 'Adresse de livraison';
-    }
-
-    function generateInvoiceNumber(customerIdentifier) {
-        const date = new Date(invoiceDateInput.value || Date.now());
+        const date = invoiceDateInput.valueAsDate || new Date();
         const year = date.getFullYear();
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         const day = date.getDate().toString().padStart(2, '0');
         const yyyymmdd = `${year}${month}${day}`;
         
-        // Sanitize customerIdentifier for use in filename/ID (basic example)
-        const safeCustomerName = customerIdentifier.replace(/[^a-zA-Z0-9]/g, '').substring(0, 10);
+        let customerIdentifier = "CLIENT";
+        if (selectedUserId) {
+             const selectedUser = professionalUsersData.find(user => user.id.toString() === selectedUserId);
+             if (selectedUser && selectedUser.company_name) {
+                 customerIdentifier = selectedUser.company_name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8).toUpperCase();
+             } else if (selectedUser && selectedUser.last_name) {
+                 customerIdentifier = selectedUser.last_name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8).toUpperCase();
+             }
+        }
         
-        // XXX part: For frontend, can be a timestamp or random. Backend should ensure uniqueness.
-        const xxx = Math.floor(Math.random() * 900) + 100; // Example: 3 random digits
-        
-        invoiceNumberDisplay.textContent = `${safeCustomerName.toUpperCase()}-${yyyymmdd}-${xxx}`;
+        const randomNumber = Math.floor(Math.random() * 900) + 100; // Example: 3 random digits
+        invoiceNumberDisplay.textContent = `${customerIdentifier}-${yyyymmdd}-${randomNumber}`; // Update preview
     }
+
 
     function addInvoiceItemRow() {
-        const newRow = invoiceItemTemplate.content.cloneNode(true);
-        invoiceItemsTbody.appendChild(newRow);
-        // Attach event listeners or re-calculate if needed for the new row specifically
-        // For simplicity, global tbody listener handles inputs.
+        if (!invoiceItemTemplate || !invoiceItemsTbody) return;
+        const newRowContent = invoiceItemTemplate.content.cloneNode(true);
+        invoiceItemsTbody.appendChild(newRowContent);
+        // No need to re-attach listeners if using event delegation on tbody
     }
 
-    function updateLineItemTotals(row) {
-        const quantityInput = row.querySelector('.item-quantity');
-        const unitPriceInput = row.querySelector('.item-unit-price-ht');
-        const vatRateSelect = row.querySelector('.item-vat-rate');
-        const totalHTSpan = row.querySelector('.item-total-ht');
-        const totalTTCSpan = row.querySelector('.item-total-ttc');
+    function handleItemTableActions(event) {
+        if (event.target.classList.contains('remove-item-btn') || event.target.closest('.remove-item-btn')) {
+            const row = event.target.closest('tr');
+            if (row) {
+                row.remove();
+                updateAllPreviewFields(); // Recalculate totals after removing an item
+            }
+        }
+    }
+    
+    function handleItemTableInput(event) {
+        const target = event.target;
+        if (target.classList.contains('item-quantity') || 
+            target.classList.contains('item-unit-price-ht') ||
+            target.classList.contains('item-vat-rate') ||
+            target.classList.contains('item-description') ) { // Also update if description changes for preview
+            
+            const row = target.closest('tr');
+            if (row) {
+                updateLineItemTotalsInPreview(row); // Update this specific row in preview
+            }
+            calculateAndDisplayOverallTotals(); // Recalculate and display overall totals
+        }
+    }
 
-        const quantity = parseFloat(quantityInput.value) || 0;
-        const unitPriceHT = parseFloat(unitPriceInput.value) || 0;
-        const vatRate = parseFloat(vatRateSelect.value) || 0;
+    function updateLineItemTotalsInPreview(formRow) { // formRow is the <tr> from the input form area
+        const quantity = parseFloat(formRow.querySelector('.item-quantity').value) || 0;
+        const unitPriceHT = parseFloat(formRow.querySelector('.item-unit-price-ht').value) || 0;
+        const vatRate = parseFloat(formRow.querySelector('.item-vat-rate').value); // Keep as selected value string for key
 
         const totalHT = quantity * unitPriceHT;
-        const totalTTC = totalHT * (1 + vatRate / 100);
+        const totalTTC = totalHT * (1 + vatRate / 100); // Calculate TTC for display
 
-        totalHTSpan.textContent = totalHT.toFixed(2);
-        totalTTCSpan.textContent = totalTTC.toFixed(2);
+        // Update the spans within the form row itself
+        const totalHTSpan = formRow.querySelector('.item-total-ht');
+        const totalTTCSpan = formRow.querySelector('.item-total-ttc');
+        if(totalHTSpan) totalHTSpan.textContent = totalHT.toFixed(2);
+        if(totalTTCSpan) totalTTCSpan.textContent = totalTTC.toFixed(2);
     }
+    
+    function calculateAndDisplayOverallTotals() {
+        if (!invoiceItemsTbody || !subtotalHTDisplay || !vatSummaryContainer || !totalVATDisplay || !grandTotalTTCDisplay || !netToPayDisplay) return;
 
-    function calculateTotals() {
         let overallSubtotalHT = 0;
-        const vatDetails = {}; // To store VAT amounts per rate: { '20': 100, '5.5': 20 }
+        const vatDetails = {}; // { '20': amount, '5.5': amount }
 
         invoiceItemsTbody.querySelectorAll('tr').forEach(row => {
             const quantity = parseFloat(row.querySelector('.item-quantity').value) || 0;
             const unitPriceHT = parseFloat(row.querySelector('.item-unit-price-ht').value) || 0;
-            const vatRate = parseFloat(row.querySelector('.item-vat-rate').value); // Keep as string for key
+            const vatRateInput = row.querySelector('.item-vat-rate');
+            const vatRate = vatRateInput ? parseFloat(vatRateInput.value) : 20; // Default VAT if not found
 
             const lineTotalHT = quantity * unitPriceHT;
             overallSubtotalHT += lineTotalHT;
 
-            if (!isNaN(vatRate)) { // Ensure vatRate is a number before using it in calculations
+            if (!isNaN(vatRate)) {
                 const vatAmount = lineTotalHT * (vatRate / 100);
-                const vatRateStr = vatRate.toString(); // Use string for object key
-                if (vatDetails[vatRateStr]) {
-                    vatDetails[vatRateStr] += vatAmount;
-                } else {
-                    vatDetails[vatRateStr] = vatAmount;
-                }
+                const vatRateStr = vatRate.toString(); 
+                vatDetails[vatRateStr] = (vatDetails[vatRateStr] || 0) + vatAmount;
             }
         });
 
-        subtotalHTDisplay.textContent = overallSubtotalHT.toFixed(2);
+        subtotalHTDisplay.textContent = `${overallSubtotalHT.toFixed(2)} €`;
 
         vatSummaryContainer.innerHTML = ''; // Clear previous VAT summary
         let overallTotalVAT = 0;
         for (const rate in vatDetails) {
-            if (vatDetails.hasOwnProperty(rate) && vatDetails[rate] > 0) {
+            if (vatDetails.hasOwnProperty(rate) && vatDetails[rate] > 0.005) { // Only display if VAT amount is significant
                 const vatAmount = vatDetails[rate];
                 overallTotalVAT += vatAmount;
                 const div = document.createElement('div');
-                div.innerHTML = `<span>TVA (${rate}%) :</span> <span>${vatAmount.toFixed(2)} €</span>`;
+                // Using textContent for safety, assuming rate is numeric/simple string.
+                const rateSpan = document.createElement('span');
+                rateSpan.textContent = `TVA (${rate}%) :`;
+                const amountSpan = document.createElement('span');
+                amountSpan.textContent = `${vatAmount.toFixed(2)} €`;
+                div.appendChild(rateSpan);
+                div.appendChild(amountSpan);
                 vatSummaryContainer.appendChild(div);
             }
         }
         
-        totalVATDisplay.textContent = overallTotalVAT.toFixed(2);
+        totalVATDisplay.textContent = `${overallTotalVAT.toFixed(2)} €`;
         const grandTotalTTC = overallSubtotalHT + overallTotalVAT;
-        grandTotalTTCDisplay.textContent = grandTotalTTC.toFixed(2);
-        netToPayDisplay.textContent = grandTotalTTC.toFixed(2); // Assuming net to pay is same as grand total
+        grandTotalTTCDisplay.textContent = `${grandTotalTTC.toFixed(2)} €`;
+        netToPayDisplay.textContent = `${grandTotalTTC.toFixed(2)} €`;
+    }
+
+    function updateAllPreviewFields() {
+        const selectedUserId = professionalUserSelect ? professionalUserSelect.value : null;
+        updateCustomerInfoPreview(selectedUserId);
+        updateInvoiceNumberPreview(selectedUserId); 
+        
+        invoiceItemsTbody.querySelectorAll('tr').forEach(row => {
+            updateLineItemTotalsInPreview(row);
+        });
+        calculateAndDisplayOverallTotals();
     }
     
-    function getInvoiceData() {
+    // Periodically update the preview if form fields change
+    if (invoiceForm) {
+         invoiceForm.addEventListener('input', updateAllPreviewFields);
+         invoiceForm.addEventListener('change', updateAllPreviewFields); // For select changes
+    }
+
+
+    function getStructuredInvoiceData() {
         const items = [];
         invoiceItemsTbody.querySelectorAll('tr').forEach(row => {
-            const description = row.querySelector('.item-description').value;
-            const quantity = parseFloat(row.querySelector('.item-quantity').value);
-            const unitPriceHT = parseFloat(row.querySelector('.item-unit-price-ht').value);
-            const vatRate = parseFloat(row.querySelector('.item-vat-rate').value);
-            const totalHT = parseFloat(row.querySelector('.item-total-ht').textContent);
-            const totalTTC = parseFloat(row.querySelector('.item-total-ttc').textContent);
+            const descriptionInput = row.querySelector('.item-description');
+            const quantityInput = row.querySelector('.item-quantity');
+            const unitPriceInput = row.querySelector('.item-unit-price-ht');
+            const vatRateSelect = row.querySelector('.item-vat-rate');
 
-            if (description && !isNaN(quantity) && !isNaN(unitPriceHT)) { // Basic validation
-                 items.push({
-                    description,
-                    quantity,
-                    unit_price_ht: unitPriceHT,
-                    vat_rate: vatRate,
-                    total_ht: totalHT,
-                    total_ttc: totalTTC
-                });
+            if (descriptionInput && quantityInput && unitPriceInput && vatRateSelect) {
+                const description = descriptionInput.value;
+                const quantity = parseFloat(quantityInput.value);
+                const unitPriceHT = parseFloat(unitPriceInput.value);
+                const vatRate = parseFloat(vatRateSelect.value);
+
+                if (description && !isNaN(quantity) && quantity > 0 && !isNaN(unitPriceHT) && unitPriceHT >= 0 && !isNaN(vatRate)) {
+                     items.push({
+                        description,
+                        quantity,
+                        unit_price: unitPriceHT, // Backend expects unit_price
+                        vat_rate: vatRate // Send VAT rate for backend calculation or record
+                    });
+                }
             }
         });
 
         const invoiceData = {
-            professional_user_id: professionalUserSelect.value,
-            invoice_number: invoiceNumberDisplay.textContent,
-            invoice_date: invoiceDateInput.value,
-            due_date: invoiceDueDateInput.value,
-            // Customer details (can be re-fetched on backend or taken from display for confirmation)
-            customer_details: {
-                company_name: customerCompanyNameDisplay.textContent,
-                contact_name: customerContactNameDisplay.textContent,
-                billing_address: customerBillingAddressDisplay.innerHTML.replace(/<br\s*[\/]?>/gi, "\n"), // Convert <br> to newlines
-                siret: customerSiretDisplay.textContent,
-                vat_number: customerVatDisplay.textContent,
-                delivery_address: customerDeliveryAddressDisplay.innerHTML.replace(/<br\s*[\/]?>/gi, "\n")
-            },
-            items: items,
-            subtotal_ht: parseFloat(subtotalHTDisplay.textContent),
-            total_vat: parseFloat(totalVATDisplay.textContent),
-            vat_details: (() => { // Reconstruct vat_details from summary
-                const details = {};
-                vatSummaryContainer.querySelectorAll('div').forEach(div => {
-                    const text = div.children[0].textContent; // "TVA (20%) :"
-                    const rateMatch = text.match(/\((.*?)\%\)/);
-                    if (rateMatch && rateMatch[1]) {
-                        const rate = rateMatch[1];
-                        const amount = parseFloat(div.children[1].textContent);
-                        details[rate] = amount;
-                    }
-                });
-                return details;
-            })(),
-            grand_total_ttc: parseFloat(grandTotalTTCDisplay.textContent),
-            net_to_pay: parseFloat(netToPayDisplay.textContent),
-            payment_terms: `Paiement à réception de facture, au plus tard sous ${paymentDueDaysDisplay.textContent} jours.`,
-            // Company details (can be added by backend or included here)
-            // company_info: { 
-            //    name: companyNameDisplay.textContent, // Example
-            //    address_line1: companyAddress1Display.textContent,
-            //    // ... other details from your company for the invoice
-            // } 
+            b2b_user_id: professionalUserSelect ? professionalUserSelect.value : null,
+            // invoice_number: invoiceNumberDisplay ? invoiceNumberDisplay.textContent : null, // Backend should generate final number
+            invoice_date: invoiceDateInput ? invoiceDateInput.value : null,
+            due_date: invoiceDueDateInput ? invoiceDueDateInput.value : null,
+            line_items: items,
+            notes: adminInvoiceNotesInput ? adminInvoiceNotesInput.value : '',
+            currency: 'EUR', // Or from a form field if variable
+            // Totals are usually recalculated by the backend for accuracy, but can be sent for validation
+            // subtotal_ht: parseFloat(subtotalHTDisplay.textContent),
+            // total_vat: parseFloat(totalVATDisplay.textContent),
+            // grand_total_ttc: parseFloat(grandTotalTTCDisplay.textContent),
         };
         return invoiceData;
     }
 
-    async function handleSaveInvoice() {
-        const invoiceData = getInvoiceData();
-        if (!invoiceData.professional_user_id) {
-            // Consider a more refined UI notification than alert()
-            console.warn("Attempted to save invoice without selecting a professional client.");
-            alert("Veuillez sélectionner un client professionnel.");
+    async function handleFormSubmit(event) {
+        event.preventDefault();
+        const submitButton = invoiceForm.querySelector('button[type="submit"]');
+        
+        const structuredData = getStructuredInvoiceData();
+
+        if (!structuredData.b2b_user_id) {
+            if(typeof showAdminToast === 'function') showAdminToast(t('admin.invoices.error_select_user_and_items', 'Veuillez sélectionner un client.'), 'error');
             return;
         }
-        if (invoiceData.items.length === 0) {
-            console.warn("Attempted to save invoice with no items.");
-            alert("Veuillez ajouter au moins un article à la facture.");
+        if (structuredData.line_items.length === 0) {
+            if(typeof showAdminToast === 'function') showAdminToast(t('admin.invoices.error_select_user_and_items', 'Veuillez ajouter au moins une ligne valide.'), 'error');
+            return;
+        }
+        if (!structuredData.invoice_date || !structuredData.due_date) {
+             if(typeof showAdminToast === 'function') showAdminToast('Veuillez spécifier la date de facture et la date d\'échéance.', 'error');
             return;
         }
 
-        console.log("Invoice data to save:", invoiceData);
+        const invoicePreviewElement = document.querySelector('.invoice-preview-container');
+        let invoiceHtmlPreviewString = null;
+        if (invoicePreviewElement) {
+            const clonedPreview = invoicePreviewElement.cloneNode(true);
+            // Remove input fields from the cloned preview to send clean HTML
+            clonedPreview.querySelectorAll('input, select, textarea, button#add-invoice-item-btn, button.remove-item-btn').forEach(el => {
+                // For inputs/textareas, replace with their value as text
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    const textNode = document.createTextNode(el.value);
+                    el.parentNode.replaceChild(textNode, el);
+                } else if (el.tagName === 'SELECT') {
+                     const selectedOption = el.options[el.selectedIndex];
+                     const textNode = document.createTextNode(selectedOption ? selectedOption.textContent : '');
+                     el.parentNode.replaceChild(textNode, el);
+                }
+                else {
+                    el.remove();
+                }
+            });
+            invoiceHtmlPreviewString = clonedPreview.innerHTML; // Get innerHTML of the preview container
+        } else {
+            console.warn("Invoice preview element not found.");
+            if(typeof showAdminToast === 'function') showAdminToast("Erreur: Aperçu de facture introuvable.", "error");
+            return;
+        }
+        
+        // Add the HTML preview to the payload
+        structuredData.invoice_html_preview = invoiceHtmlPreviewString;
+
+        if(submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> ${t('admin.invoices.generating_invoice', 'Génération...')}`;
+        }
 
         try {
-            // Replace with your actual API endpoint for saving invoices
-            const response = await fetchAPIData('/api/admin/invoices', invoiceData, 'POST');
-            if (response && (response.id || response.invoice_id || response.success)) {
-                alert('Facture enregistrée avec succès !');
-                // Optionally redirect or clear form
-                // window.location.href = `/admin/invoices/${response.id || response.invoice_id}`;
-            } else {
-                alert('Erreur lors de l\'enregistrement de la facture: ' + (response.message || response.error || 'Réponse invalide du serveur.'));
+            const result = await adminApi.createManualInvoice(structuredData); // from admin_api.js
+            if (typeof showAdminToast === 'function') {
+                 showAdminToast(t('admin.invoices.create_success_toast', `Facture ${result.invoice_number} créée !`), 'success');
             }
+            invoiceForm.reset(); // Reset the input form part
+            // Clear line items from the table
+            if(invoiceItemsTbody) invoiceItemsTbody.innerHTML = '';
+            addInvoiceItemRow(); // Add back one empty row
+            setDefaultDates();
+            if(professionalUserSelect) professionalUserSelect.value = '';
+            updateAllPreviewFields(); // Reset preview
         } catch (error) {
-            console.error('Error saving invoice:', error);
-            alert('Erreur lors de la connexion au serveur pour enregistrer la facture.');
+            console.error('Failed to create invoice:', error);
+            // Error toast likely handled by adminApi directly
+        } finally {
+            if(submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = `<i class="fas fa-file-invoice mr-2"></i> Générer & Enregistrer la Facture`;
+            }
         }
     }
     
-    async function handlePreviewInvoice() {
-        const invoiceData = getInvoiceData();
-         if (!invoiceData.professional_user_id) {
-            alert("Veuillez sélectionner un client professionnel pour l'aperçu.");
+    async function handlePreviewInvoiceAsPDF() {
+        if (typeof showAdminToast === 'function') showAdminToast("La génération d'aperçu PDF direct est en cours de développement. Le PDF final sera créé lors de l'enregistrement.", 'info', 6000);
+        // For a true PDF preview, you'd typically send the data (or the captured HTML)
+        // to a backend endpoint that returns a PDF blob, then display that blob.
+        // Example (conceptual, requires backend endpoint /api/admin/invoices/preview-pdf):
+        /*
+        const structuredData = getStructuredInvoiceData();
+        const invoicePreviewElement = document.querySelector('.invoice-preview-container');
+        structuredData.invoice_html_preview = invoicePreviewElement ? invoicePreviewElement.innerHTML : null;
+
+        if (!structuredData.b2b_user_id || structuredData.line_items.length === 0 || !structuredData.invoice_html_preview) {
+            showAdminToast("Veuillez sélectionner un client, ajouter des articles et s'assurer que l'aperçu est visible.", "error");
             return;
         }
-        console.log("Invoice data for preview:", invoiceData);
-        // This would typically send the data to a backend endpoint that generates a PDF preview
-        // For now, it just logs the data.
-        // Example:
-        // try {
-        //     const response = await fetchAPIData('/api/admin/invoices/preview', invoiceData, 'POST', 'blob'); // Expect a blob (PDF)
-        //     if (response) {
-        //         const fileURL = URL.createObjectURL(response);
-        //         window.open(fileURL, '_blank'); // Open PDF in new tab
-        //     } else {
-        //         alert('Erreur lors de la génération de l\'aperçu.');
-        //     }
-        // } catch (error) {
-        //     console.error('Error generating preview:', error);
-        //     alert('Erreur serveur lors de la génération de l\'aperçu.');
-        // }
-        alert("La fonctionnalité d'aperçu PDF n'est pas encore implémentée. Les données de la facture ont été consignées dans la console.");
+        
+        try {
+            const pdfBlob = await adminApi.generateInvoicePreviewPdf(structuredData); // This method would need to be in admin_api.js
+            const fileURL = URL.createObjectURL(pdfBlob);
+            window.open(fileURL, '_blank');
+            URL.revokeObjectURL(fileURL); // Clean up
+        } catch (error) {
+            showAdminToast("Erreur lors de la génération de l'aperçu PDF.", "error");
+            console.error("Preview PDF error:", error);
+        }
+        */
     }
 
-
-    // Initial call to add one empty item row
-    addInvoiceItemRow();
+    // --- Initial Execution ---
+    initializePage();
 });
+
