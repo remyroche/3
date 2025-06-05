@@ -26,7 +26,7 @@ class ProductTypeEnum(enum.Enum):
     SIMPLE = "simple"
     VARIABLE_WEIGHT = "variable_weight"
 
-class PreservationTypeEnum(enum.Enum): # New Enum
+class PreservationTypeEnum(enum.Enum):
     FRESH = "frais"
     PRESERVED_CANNED = "conserve"
     DRY = "sec"
@@ -96,6 +96,7 @@ class AssetTypeEnum(enum.Enum):
     PRODUCT_IMAGE = "product_image"
     CATEGORY_IMAGE = "category_image"
 
+# --- Model Definitions ---
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -200,7 +201,7 @@ class Product(db.Model):
     base_price = db.Column(db.Float) 
     currency = db.Column(db.String(10), default='EUR')
     main_image_url = db.Column(db.String(255))
-    
+        
     unit_of_measure = db.Column(db.String(50)) 
     is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
     is_featured = db.Column(db.Boolean, default=False, index=True)
@@ -229,9 +230,8 @@ class Product(db.Model):
 
     @property
     def aggregate_stock_quantity(self):
-        """Calculates total stock quantity across variants or from direct non-serialized stock."""
+        """Calculates total available stock quantity."""
         if self.type == ProductTypeEnum.VARIABLE_WEIGHT:
-            # Sum stock from active variants
             total_variant_stock = db.session.query(
                 db.func.sum(ProductWeightOption.aggregate_stock_quantity)
             ).filter(
@@ -240,68 +240,37 @@ class Product(db.Model):
             ).scalar()
             return total_variant_stock or 0
         elif self.type == ProductTypeEnum.SIMPLE:
-            # For simple products, stock could be tracked via SerializedInventoryItem without a variant_id,
-            # or a dedicated non-serialized stock table/field (if you add one back).
-            # For now, if 'simple' products are also serialized (e.g. unique bottles of oil)
+            # Stock for simple products that are serialized (no variant_id)
             simple_serialized_stock = db.session.query(
                 db.func.count(SerializedInventoryItem.id)
             ).filter(
                 SerializedInventoryItem.product_id == self.id,
-                SerializedInventoryItem.variant_id == None, # Explicitly no variant
+                SerializedInventoryItem.variant_id == None,
                 SerializedInventoryItem.status == SerializedInventoryItemStatusEnum.AVAILABLE
             ).scalar()
+            # If simple products can also have non-serialized stock managed elsewhere, add that logic here.
+            # For now, assuming simple product stock comes from such serialized items or is 0.
             return simple_serialized_stock or 0
         return 0
         
     def to_dict(self, lang_code='fr'):
-        # Fetch the specific localization or default to None
-        loc = self.localizations.filter_by(lang_code=lang_code).first()
+        loc_fr = self.localizations.filter_by(lang_code='fr').first()
+        loc_en = self.localizations.filter_by(lang_code='en').first()
         
-        # Fallback mechanism for localized fields: Use specific lang if available, else default Product field, else None/empty
-        name_display = self.name # Default
-        description_display = self.description 
-        long_description_display = self.long_description
-        meta_title_display = self.meta_title
-        meta_description_display = self.meta_description
-        
-        sensory_evaluation_display = None
-        food_pairings_display = None
-        species_display = None
-        ideal_uses_display = None
-        pairing_suggestions_display = None
-
-        if lang_code == 'fr':
-            if loc and loc.name_fr: name_display = loc.name_fr
-            if loc and loc.description_fr: description_display = loc.description_fr
-            if loc and loc.long_description_fr: long_description_display = loc.long_description_fr
-            if loc and loc.meta_title_fr: meta_title_display = loc.meta_title_fr
-            if loc and loc.meta_description_fr: meta_description_display = loc.meta_description_fr
-            if loc and loc.sensory_evaluation_fr: sensory_evaluation_display = loc.sensory_evaluation_fr
-            if loc and loc.food_pairings_fr: food_pairings_display = loc.food_pairings_fr
-            if loc and loc.species_fr: species_display = loc.species_fr
-            if loc and loc.ideal_uses_fr: ideal_uses_display = loc.ideal_uses_fr
-            if loc and loc.pairing_suggestions_fr: pairing_suggestions_display = loc.pairing_suggestions_fr
-        elif lang_code == 'en':
-            if loc and loc.name_en: name_display = loc.name_en
-            if loc and loc.description_en: description_display = loc.description_en
-            if loc and loc.long_description_en: long_description_display = loc.long_description_en
-            if loc and loc.meta_title_en: meta_title_display = loc.meta_title_en
-            if loc and loc.meta_description_en: meta_description_display = loc.meta_description_en
-            if loc and loc.sensory_evaluation_en: sensory_evaluation_display = loc.sensory_evaluation_en
-            if loc and loc.food_pairings_en: food_pairings_display = loc.food_pairings_en
-            if loc and loc.species_en: species_display = loc.species_en
-            if loc and loc.ideal_uses_en: ideal_uses_display = loc.ideal_uses_en
-            if loc and loc.pairing_suggestions_en: pairing_suggestions_display = loc.pairing_suggestions_en
-        
-        # Ensure all fields needed by admin form are present, fetching from specific lang attributes
-        loc_fr_specific = self.localizations.filter_by(lang_code='fr').first()
-        loc_en_specific = self.localizations.filter_by(lang_code='en').first()
-
         return {
             "id": self.id, 
-            "name": name_display, # This will be the localized name based on lang_code for general display
-            "name_fr": loc_fr_specific.name_fr if loc_fr_specific and loc_fr_specific.name_fr else self.name,
-            "name_en": loc_en_specific.name_en if loc_en_specific and loc_en_specific.name_en else None,
+            "name": loc_fr.name_fr if loc_fr and loc_fr.name_fr else self.name, # Default to FR name
+            "name_fr": loc_fr.name_fr if loc_fr and loc_fr.name_fr else self.name,
+            "name_en": loc_en.name_en if loc_en and loc_en.name_en else None, # No fallback to FR for specific EN field
+            
+            "description": loc_fr.description_fr if loc_fr and loc_fr.description_fr else self.description,
+            "description_fr": loc_fr.description_fr if loc_fr and loc_fr.description_fr else self.description,
+            "description_en": loc_en.description_en if loc_en and loc_en.description_en else None,
+
+            "long_description": loc_fr.long_description_fr if loc_fr and loc_fr.long_description_fr else self.long_description,
+            "long_description_fr": loc_fr.long_description_fr if loc_fr and loc_fr.long_description_fr else self.long_description,
+            "long_description_en": loc_en.long_description_en if loc_en and loc_en.long_description_en else None,
+            
             "product_code": self.product_code, 
             "slug": self.slug, 
             "type": self.type.value if self.type else None, 
@@ -315,34 +284,28 @@ class Product(db.Model):
             "unit_of_measure": self.unit_of_measure,
             "brand": self.brand,
             "currency": self.currency,
-            "description": description_display, # Localized short description
-            "description_fr": loc_fr_specific.description_fr if loc_fr_specific and loc_fr_specific.description_fr else self.description,
-            "description_en": loc_en_specific.description_en if loc_en_specific and loc_en_specific.description_en else None,
-            "long_description": long_description_display, # Localized long description
-            "long_description_fr": loc_fr_specific.long_description_fr if loc_fr_specific and loc_fr_specific.long_description_fr else self.long_description,
-            "long_description_en": loc_en_specific.long_description_en if loc_en_specific and loc_en_specific.long_description_en else None,
             
-            "sensory_evaluation": sensory_evaluation_display, # Localized sensory
-            "sensory_evaluation_fr": loc_fr_specific.sensory_evaluation_fr if loc_fr_specific else None,
-            "sensory_evaluation_en": loc_en_specific.sensory_evaluation_en if loc_en_specific else None,
-            
-            "food_pairings": food_pairings_display, # Localized pairings
-            "food_pairings_fr": loc_fr_specific.food_pairings_fr if loc_fr_specific else None,
-            "food_pairings_en": loc_en_specific.food_pairings_en if loc_en_specific else None,
-            
-            "species": species_display, # Localized species
-            "species_fr": loc_fr_specific.species_fr if loc_fr_specific else None,
-            "species_en": loc_en_specific.species_en if loc_en_specific else None,
-            
+            "sensory_evaluation_fr": loc_fr.sensory_evaluation_fr if loc_fr else None,
+            "sensory_evaluation_en": loc_en.sensory_evaluation_en if loc_en else None,
+            "food_pairings_fr": loc_fr.food_pairings_fr if loc_fr else None,
+            "food_pairings_en": loc_en.food_pairings_en if loc_en else None,
+            "species_fr": loc_fr.species_fr if loc_fr else None,
+            "species_en": loc_en.species_en if loc_en else None,
+            # For general display, pick based on lang_code or default.
+            "sensory_evaluation": loc_fr.sensory_evaluation_fr if lang_code == 'fr' and loc_fr else (loc_en.sensory_evaluation_en if lang_code == 'en' and loc_en else (loc_fr.sensory_evaluation_fr if loc_fr else None)),
+            "food_pairings": loc_fr.food_pairings_fr if lang_code == 'fr' and loc_fr else (loc_en.food_pairings_en if lang_code == 'en' and loc_en else (loc_fr.food_pairings_fr if loc_fr else None)),
+            "species": loc_fr.species_fr if lang_code == 'fr' and loc_fr else (loc_en.species_en if lang_code == 'en' and loc_en else (loc_fr.species_fr if loc_fr else None)),
+
+
             "preservation_type": self.preservation_type.value if self.preservation_type else None,
             "notes_internal": self.notes_internal,
             "supplier_info": self.supplier_info,
             
-            "meta_title": meta_title_display, # Localized meta title
-            "meta_description": meta_description_display, # Localized meta desc
-            
+            "meta_title": loc_fr.meta_title_fr if lang_code == 'fr' and loc_fr and loc_fr.meta_title_fr else (loc_en.meta_title_en if lang_code == 'en' and loc_en and loc_en.meta_title_en else (loc_fr.meta_title_fr if loc_fr and loc_fr.meta_title_fr else self.meta_title)),
+            "meta_description": loc_fr.meta_description_fr if lang_code == 'fr' and loc_fr and loc_fr.meta_description_fr else (loc_en.meta_description_en if lang_code == 'en' and loc_en and loc_en.meta_description_en else (loc_fr.meta_description_fr if loc_fr and loc_fr.meta_description_fr else self.meta_description)),
+
             "variant_count": self.weight_options.filter_by(is_active=True).count() if self.type == ProductTypeEnum.VARIABLE_WEIGHT else 0,
-            "aggregate_stock_quantity": self.aggregate_stock_quantity # Use the property
+            "aggregate_stock_quantity": self.aggregate_stock_quantity 
         }
     def __repr__(self): return f'<Product {self.name}>'
 
@@ -378,7 +341,7 @@ class SerializedInventoryItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_uid = db.Column(db.String(100), unique=True, nullable=False, index=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id', ondelete='CASCADE'), nullable=False, index=True)
-    variant_id = db.Column(db.Integer, db.ForeignKey('product_weight_options.id', ondelete='SET NULL'), index=True, nullable=True) # Allow null if variant deleted
+    variant_id = db.Column(db.Integer, db.ForeignKey('product_weight_options.id', ondelete='SET NULL'), index=True, nullable=True)
     batch_number = db.Column(db.String(100), index=True)
     production_date = db.Column(db.DateTime)
     expiry_date = db.Column(db.DateTime, index=True)
@@ -393,7 +356,7 @@ class SerializedInventoryItem(db.Model):
     supplier_id = db.Column(db.Integer) 
     received_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     sold_at = db.Column(db.DateTime)
-    order_item_id = db.Column(db.Integer, db.ForeignKey('order_items.id', ondelete='SET NULL'), unique=True, index=True, nullable=True) # Allow null if order item deleted
+    order_item_id = db.Column(db.Integer, db.ForeignKey('order_items.id', ondelete='SET NULL'), unique=True, index=True, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     stock_movements = db.relationship('StockMovement', backref='serialized_item', lazy='dynamic', cascade="all, delete-orphan")
@@ -427,7 +390,7 @@ class Order(db.Model):
     shipping_address_line1 = db.Column(db.String(255)); shipping_address_line2 = db.Column(db.String(255)); shipping_city = db.Column(db.String(100)); shipping_postal_code = db.Column(db.String(20)); shipping_country = db.Column(db.String(100))
     billing_address_line1 = db.Column(db.String(255)); billing_address_line2 = db.Column(db.String(255)); billing_city = db.Column(db.String(100)); billing_postal_code = db.Column(db.String(20)); billing_country = db.Column(db.String(100))
     payment_method = db.Column(db.String(50)); payment_transaction_id = db.Column(db.String(100), index=True)
-    payment_date = db.Column(db.DateTime, nullable=True) # New field
+    payment_date = db.Column(db.DateTime, nullable=True)
     shipping_method = db.Column(db.String(100)); shipping_cost = db.Column(db.Float, default=0.0); tracking_number = db.Column(db.String(100))
     notes_customer = db.Column(db.Text); notes_internal = db.Column(db.Text)
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'), unique=True)
@@ -440,7 +403,7 @@ class OrderItem(db.Model):
     __tablename__ = 'order_items'
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id', ondelete='CASCADE'), nullable=False, index=True)
-    product_id = db.Column(db.Integer, db.ForeignKey('products.id', ondelete='SET NULL'), nullable=True, index=True) # Allow product to be deleted but keep order item
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id', ondelete='SET NULL'), nullable=True, index=True)
     variant_id = db.Column(db.Integer, db.ForeignKey('product_weight_options.id', ondelete='SET NULL'), index=True, nullable=True)
     serialized_item_id = db.Column(db.Integer, db.ForeignKey('serialized_inventory_items.id', ondelete='SET NULL'), unique=True, index=True, nullable=True)
     quantity = db.Column(db.Integer, nullable=False); unit_price = db.Column(db.Float, nullable=False); total_price = db.Column(db.Float, nullable=False)
@@ -491,7 +454,6 @@ class ProfessionalDocument(db.Model):
     notes = db.Column(db.Text)
     reviewed_by_admin = db.relationship('User', foreign_keys=[reviewed_by_admin_id])
 
-
 class Invoice(db.Model):
     __tablename__ = 'invoices'
     id = db.Column(db.Integer, primary_key=True)
@@ -500,21 +462,19 @@ class Invoice(db.Model):
     invoice_number = db.Column(db.String(50), unique=True, nullable=False, index=True)
     issue_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     due_date = db.Column(db.DateTime, index=True)
-    total_amount = db.Column(db.Float, nullable=False) # This should be the final amount (e.g. HT or TTC based on context)
+    total_amount = db.Column(db.Float, nullable=False)
     currency = db.Column(db.String(10), default='EUR') 
     status = db.Column(db.Enum(InvoiceStatusEnum, name="invoice_status_enum"), nullable=False, default=InvoiceStatusEnum.DRAFT, index=True) 
     pdf_path = db.Column(db.String(255))
     notes = db.Column(db.Text)
-    created_by_admin_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Admin who created manual B2B invoice
+    created_by_admin_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     items = db.relationship('InvoiceItem', backref='invoice', lazy='dynamic', cascade="all, delete-orphan")
-    # For B2C invoices, for template display. Could be calculated on the fly.
     payment_date = db.Column(db.DateTime, nullable=True)
-    vat_details = db.Column(db.JSON, nullable=True) # Store dict like {'20': amount, '5.5': amount}
+    vat_details = db.Column(db.JSON, nullable=True) 
     total_vat_amount = db.Column(db.Float, nullable=True)
-    final_total_ttc_or_ht = db.Column(db.Float, nullable=True) # Store the grand total that was displayed
-
+    final_total_ttc_or_ht = db.Column(db.Float, nullable=True)
 
 class InvoiceItem(db.Model):
     __tablename__ = 'invoice_items'
@@ -522,9 +482,9 @@ class InvoiceItem(db.Model):
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id', ondelete='CASCADE'), nullable=False, index=True)
     description = db.Column(db.Text, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
-    unit_price = db.Column(db.Float, nullable=False) # Assuming this is HT if VAT is separate
-    total_price = db.Column(db.Float, nullable=False) # Line total HT if unit_price is HT
-    vat_rate = db.Column(db.Float, nullable=True) # Store VAT rate if applied per line
+    unit_price = db.Column(db.Float, nullable=False) 
+    total_price = db.Column(db.Float, nullable=False) 
+    vat_rate = db.Column(db.Float, nullable=True) 
     product_id = db.Column(db.Integer, db.ForeignKey('products.id', ondelete='SET NULL'), nullable=True) 
     serialized_item_id = db.Column(db.Integer, db.ForeignKey('serialized_inventory_items.id', ondelete='SET NULL'), nullable=True) 
 
@@ -625,5 +585,6 @@ class TokenBlocklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     jti = db.Column(db.String(36), nullable=False, index=True, unique=True)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    expires_at = db.Column(db.DateTime, nullable=False, index=True)
+    expires_at = db.Column(db.DateTime, nullable=False, index=True) # Token expiry for cleanup
     def __repr__(self): return f"<TokenBlocklist {self.jti}>"
+
