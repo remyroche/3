@@ -3,135 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Panier - Maison Trüvra</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Displ<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="{{global.charset}}">
-    <meta name="viewport" content="{{global.viewport}}">
-    <title>{{public.cart.title}}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'brand-cream': '#F5EEDE',
-                        'brand-near-black': '#11120D',
-                        'brand-classic-gold': '#D4AF37',
-                        'brand-warm-taupe': '#A28C6A',
-                        'brand-earth-brown': '#7D6A4F',
-                        'brand-slate-blue-grey': '#6E7582',
-                        'brand-deep-sage-green': '#4B5A59',
-                        'brand-truffle-burgundy': '#8A3E3E',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #F5EEDE;
-            color: #7D6A4F;
-        }
-        h1, h2, h3, .font-serif {
-            font-family: 'Playfair Display', serif;
-        }
-        .btn-primary {
-            background-color: #7D6A4F; color: #F5EEDE; padding: 0.85rem 1.75rem; 
-            border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease;
-            font-weight: 500; letter-spacing: 0.025em; display: inline-block; cursor: pointer;
-        }
-        .btn-primary:hover { background-color: #11120D; transform: translateY(-2px); }
-        .btn-secondary {
-            background-color: #A28C6A; color: #F5EEDE; padding: 0.75rem 1.5rem;
-            border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease;
-            font-weight: 500; display: inline-block; cursor: pointer;
-        }
-        .btn-secondary:hover { background-color: #7D6A4F; transform: translateY(-1px); }
-         .btn-gold {
-            background-color: #D4AF37; color: #11120D; padding: 0.85rem 1.75rem;
-            border-radius: 0.375rem; transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.2s ease;
-            font-weight: 600; display: inline-block; cursor: pointer;
-        }
-        .btn-gold:hover { background-color: #D4AF37; opacity: 0.85; transform: translateY(-2px); }
-        .cart-item { @apply flex items-center justify-between py-4 border-b border-brand-warm-taupe/30; }
-        .cart-item-image { @apply w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-md mr-4; }
-        .quantity-input-controls button { @apply px-2 py-0.5 border border-brand-warm-taupe/50 text-brand-near-black hover:bg-brand-warm-taupe/20 text-sm; }
-        .quantity-input { @apply w-10 sm:w-12 text-center border-y border-brand-warm-taupe/50 py-1 text-sm appearance-none; }
-        .page-header { @apply text-3xl md:text-4xl font-serif text-brand-near-black mb-8 text-center py-8 bg-white shadow-sm; }
-        .modal-overlay { @apply fixed inset-0 bg-brand-near-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 pointer-events-none; }
-        .modal-overlay.active { @apply opacity-100 pointer-events-auto; }
-        .modal-content { @apply bg-brand-cream p-6 sm:p-8 rounded-lg shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300; }
-        .modal-overlay.active .modal-content { @apply scale-100; }
-        .modal-message { @apply fixed bottom-5 right-5 bg-brand-deep-sage-green text-brand-cream p-4 rounded-lg shadow-xl z-[100] transition-all duration-500 ease-out opacity-0 translate-y-10; }
-        .modal-message.show { @apply opacity-100 translate-y-0; }
-    </style>
+    <title data-translate-key="cart_page.title">Votre Panier - Maison Trüvra</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/panier.css"> <!-- Specific styles for cart page -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
-<body id="page-panier" class="antialiased" data-page-title-key="public.cart.title">
+<body id="page-panier">
+    <div id="main-header-placeholder"></div>
 
-    <div id="header-placeholder"></div>
+    <main class="container mx-auto px-4 py-8 mt-20 md:mt-24 lg:mt-28">
+        <header class="page-header mb-8 md:mb-12 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold page-title" data-translate-key="cart_page.main_title">Votre Panier d'Achat</h1>
+        </header>
 
-    <main class="bg-brand-cream">
-        <section id="cart-section" class="py-12 bg-brand-cream">
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 class="font-serif italic text-brand-earth-brown mb-8 text-center text-3xl sm:text-4xl" data-translate="public.cart.header">{{public.cart.header}}</h1>
-                
-                <div id="cart-login-prompt" class="bg-white shadow-lg rounded-lg p-6 md:p-8 text-center" style="display: none;">
-                    <p class="text-brand-earth-brown text-lg mb-4" data-translate="public.cart.login_prompt">{{public.cart.login_prompt}}</p>
-                    <a href="compte.html" class="btn-primary" data-translate="public.cart.login_btn">{{public.cart.login_btn}}</a>
+        <div id="cart-content" class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+            <div id="empty-cart-message" class="text-center py-10 hidden">
+                <i class="fas fa-shopping-cart text-6xl text-mt-warm-taupe mb-4"></i>
+                <h2 class="text-2xl mb-3 section-title" data-translate-key="cart_page.empty_cart_title">Votre panier est vide.</h2>
+                <p class="text-mt-earth-brown mb-6 font-primary" data-translate-key="cart_page.empty_cart_subtitle">Parcourez nos collections pour trouver des trésors truffés.</p>
+                <a href="nos-produits.html" class="btn btn-primary" data-translate-key="cart_page.continue_shopping">Continuer vos achats</a>
+            </div>
+
+            <div id="cart-table-and-summary">
+                <div class="cart-table-container overflow-x-auto mb-8">
+                    <table class="cart-table w-full text-left">
+                        <thead class="font-primary">
+                            <tr class="border-b-2 border-mt-warm-taupe">
+                                <th class="py-3 px-2 md:px-4 font-semibold text-mt-near-black uppercase tracking-wider" data-translate-key="cart_page.table.product">Produit</th>
+                                <th class="py-3 px-2 md:px-4 font-semibold text-mt-near-black uppercase tracking-wider text-center" data-translate-key="cart_page.table.price">Prix</th>
+                                <th class="py-3 px-2 md:px-4 font-semibold text-mt-near-black uppercase tracking-wider text-center" data-translate-key="cart_page.table.quantity">Quantité</th>
+                                <th class="py-3 px-2 md:px-4 font-semibold text-mt-near-black uppercase tracking-wider text-right" data-translate-key="cart_page.table.total">Total</th>
+                                <th class="py-3 px-2 md:px-4 font-semibold text-mt-near-black uppercase tracking-wider text-right" data-translate-key="cart_page.table.actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-items-container" class="font-primary">
+                            <!-- Cart items will be populated here by js/cart.js -->
+                        </tbody>
+                    </table>
                 </div>
 
-                <div id="cart-content-wrapper" style="display: none;">
-                    <div id="cart-items-container" class="bg-white shadow-lg rounded-lg p-6 md:p-8">
-                        <p id="empty-cart-message" class="text-center text-brand-earth-brown py-8" data-translate="public.cart.empty_message">{{public.cart.empty_message}}</p>
+                <div class="cart-summary-section grid md:grid-cols-2 gap-8 items-start">
+                    <div class="coupon-section">
+                        <h3 class="text-xl mb-3 font-serif" data-translate-key="cart_page.summary.coupon_code">Code de Réduction</h3>
+                        <form id="coupon-form" class="flex gap-2">
+                            <label for="coupon-code" class="sr-only" data-translate-key="cart_page.summary.coupon_label">Code Coupon</label>
+                            <input type="text" id="coupon-code" placeholder="Entrez votre code" class="form-input flex-grow" data-translate-placeholder="cart_page.summary.coupon_placeholder">
+                            <button type="submit" class="btn btn-secondary" data-translate-key="cart_page.summary.apply_coupon">Appliquer</button>
+                        </form>
+                        <p id="coupon-message" class="text-xs mt-2 font-primary"></p>
                     </div>
-                <div id="cart-summary-container" class="mt-8 md:flex md:justify-end" style="display:none;"> 
-                    <div class="bg-white shadow-lg rounded-lg p-6 w-full md:w-2/5 lg:w-1/3">
-                        <h2 class="text-xl font-serif text-brand-near-black mb-6" data-translate="public.cart.summary_header">{{public.cart.summary_header}}</h2>
-                        <div class="space-y-3 text-brand-earth-brown">
-                            <div class="flex justify-between">
-                                <span data-translate="public.cart.subtotal">{{public.cart.subtotal}}</span>
-                                <span id="cart-subtotal">0,00 €</span>
+
+                    <div class="cart-totals bg-mt-cream p-6 rounded-md shadow">
+                        <h2 class="text-2xl mb-6 text-center section-title" data-translate-key="cart_page.summary.title">Récapitulatif</h2>
+                        <div class="space-y-3 font-primary">
+                            <div class="flex justify-between text-lg">
+                                <span data-translate-key="cart_page.summary.subtotal">Sous-total :</span>
+                                <span id="cart-summary-subtotal" class="font-semibold">€0.00</span>
                             </div>
-                            <div class="flex justify-between">
-                                <span data-translate="public.cart.shipping">{{public.cart.shipping}}</span>
-                                <span id="cart-shipping" data-translate="public.cart.shipping_info">{{public.cart.shipping_info}}</span>
+                            <div class="flex justify-between text-lg">
+                                <span data-translate-key="cart_page.summary.shipping">Livraison :</span>
+                                <span id="cart-summary-shipping" class="font-semibold" data-translate-key="cart_page.summary.shipping_calculated">Calculée à la caisse</span>
                             </div>
-                            <div class="flex justify-between text-lg font-bold text-brand-near-black pt-3 border-t border-brand-warm-taupe/30">
-                                <span data-translate="public.cart.total">{{public.cart.total}}</span>
-                                <span id="cart-total">0,00 €</span>
+                            <hr class="my-3 border-mt-warm-taupe">
+                            <div class="flex justify-between text-xl font-bold text-mt-near-black">
+                                <span data-translate-key="cart_page.summary.total_amount">Total :</span>
+                                <span id="cart-summary-total">€0.00</span>
                             </div>
                         </div>
-                        <a href="paiement.html" class="btn-gold w-full text-center mt-8 py-3" data-translate="public.cart.checkout_btn">{{public.cart.checkout_btn}}</a>
-                        <a href="nos-produits.html" class="btn-secondary w-full text-center mt-3" data-translate="public.cart.continue_shopping_btn">{{public.cart.continue_shopping_btn}}</a>
+                        <a href="payment.html" id="checkout-button-cart-page" class="btn btn-primary w-full mt-6 py-3 text-lg" data-translate-key="cart_page.summary.proceed_to_checkout">
+                            Passer à la Caisse <i class="fas fa-arrow-right ml-2"></i>
+                        </a>
                     </div>
                 </div>
+                 <div class="text-center mt-8">
+                    <button id="clear-cart-btn-page" class="btn btn-outline text-sm" data-translate-key="cart_page.clear_cart">
+                        <i class="fas fa-times-circle mr-2"></i> Vider le Panier
+                    </button>
                 </div>
             </div>
-        </section>
+        </div>
     </main>
 
-    <div id="footer-placeholder"></div>
+    <div id="main-footer-placeholder"></div>
+    <div id="cart-toast-placeholder" class="fixed bottom-5 right-5 z-50"></div>
+    <div id="global-message-container" class="fixed top-20 right-5 z-[1000] w-auto max-w-sm"></div>
 
-    <div id="global-message-toast" class="modal-message">
-        <p id="global-message-text"></p>
-    </div>
-
-    <script src="js/config.js"></script>
-    <script src="js/main.js"></script> <script src="js/ui.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/cart.js"></script> 
-    <script src="js/products.js"></script> 
-    <script src="js/checkout.js"></script>
-    <script src="js/newsletter.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+    <!-- Specific JS for cart page if any, but most logic is in cart.js -->
 </body>
 </html>
