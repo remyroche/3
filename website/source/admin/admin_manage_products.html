@@ -4,111 +4,225 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Produits - Admin - Maison Trüvra</title>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;700&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS (if you are using it for base or utilities) -->
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
-
-    <!-- Your EXISTING admin_style.css (if any parts are still needed) -->
-    <link rel="stylesheet" href="js/css/admin_style.css"> 
-    
-    <!-- NEW Global Admin Styles for Maison Trüvra Branding -->
-    <link rel="stylesheet" href="js/css/admin_global_styles.css"> 
+    <link rel="stylesheet" href="css/admin_style.css"> <!-- Standardized path -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body class="admin-body">
-    <div class="admin-main-container">
-        <header class="admin-page-header d-flex justify-content-between align-items-center">
-            <h1 class="admin-page-title mb-0">Gestion des Produits</h1> <!-- mb-0 to align with button -->
-            <a href="#" class="btn btn-primary" id="add-new-product-btn">Ajouter un Nouveau Produit</a>
-        </header>
+<body class="admin-body" id="page-admin-manage-products">
 
-        <main>
-            <section class="admin-content-area">
-                <div class="form-group">
-                    <label for="product-search">Rechercher un produit :</label>
-                    <input type="search" id="product-search" name="search" placeholder="Nom du produit, catégorie, SKU...">
+    <div id="admin-header-placeholder"></div> <!-- Placeholder for the common header -->
+
+    <main class="admin-main-container">
+        <div class="admin-page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="admin-page-title mb-0">Gestion des Produits</h1>
+                 <button type="button" class="btn btn-admin-primary" id="add-new-product-btn-main"><i class="fas fa-plus-circle mr-2"></i>Ajouter un Produit</button>
+            </div>
+        </div>
+        
+        <section id="productFormContainer" class="admin-form-container content-card" style="display: none;"> <!-- Initially hidden -->
+            <h2 class="section-heading" id="formTitle">Ajouter un Nouveau Produit</h2>
+            <form id="productForm" class="admin-form" enctype="multipart/form-data">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label for="productCode" class="form-label">Code Produit (SKU Principal): <span class="required">*</span></label>
+                        <input type="text" id="productCode" name="product_code" required class="form-input-admin">
+                        <small class="form-text">Identifiant unique pour le produit. Ex: TRF-NOIRE-MELANO</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="productName" class="form-label">Nom du Produit: <span class="required">*</span></label>
+                        <input type="text" id="productName" name="name" required class="form-input-admin">
+                    </div>
                 </div>
 
-                <table class="admin-table" id="products-table">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label for="productCategory" class="form-label">Catégorie: <span class="required">*</span></label>
+                        <select id="productCategory" name="category_id" required class="form-input-admin">
+                            <option value="">Chargement des catégories...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="productType" class="form-label">Type de Produit: <span class="required">*</span></label>
+                        <select id="productType" name="type" required class="form-input-admin">
+                            <option value="simple">Simple (Prix Fixe, Stock Unique)</option>
+                            <option value="variable_weight">Poids Variable (Options de Poids/Prix)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group" id="basePriceSection">
+                    <label for="productPrice" class="form-label">Prix de Base (€) (pour produits 'Simple'):</label>
+                    <input type="number" id="productPrice" name="price" step="0.01" min="0" class="form-input-admin">
+                </div>
+                <div class="form-group" id="baseQuantitySection">
+                    <label for="productQuantity" class="form-label">Quantité en Stock (pour produits 'Simple'):</label>
+                    <input type="number" id="productQuantity" name="quantity" min="0" class="form-input-admin">
+                </div>
+                
+                <div class="form-group">
+                    <label for="productDescription" class="form-label">Description Courte:</label>
+                    <textarea id="productDescription" name="description" class="form-input-admin" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="productLongDescription" class="form-label">Description Longue (HTML permis si backend le gère):</label>
+                    <textarea id="productLongDescription" name="long_description" class="form-input-admin" rows="5"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label for="productImageUrlTextMain" class="form-label">URL Image Principale (Texte):</label> <!-- Changed ID -->
+                        <input type="url" id="productImageUrlTextMain" name="main_image_url_text" placeholder="https://example.com/image.jpg" class="form-input-admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="productImageFileMain" class="form-label">Ou Télécharger Image Principale:</label>
+                        <input type="file" id="productImageFileMain" name="main_image_file" class="form-input-admin" accept="image/*">
+                        <div id="main-image-preview-container" class="mt-2">
+                             <img id="main-image-preview" src="#" alt="Aperçu Image Principale" style="max-height: 100px; display:none;" class="rounded-md border">
+                             <button type="button" id="remove-main-image-btn" class="btn btn-admin-danger btn-sm mt-1" style="display:none;">Supprimer Image</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                     <label for="productAdditionalImageFiles" class="form-label">Images Additionnelles (Télécharger fichiers):</label> <!-- Changed ID/Name -->
+                     <input type="file" id="productAdditionalImageFiles" name="additional_image_files" multiple class="form-input-admin mb-2" accept="image/*">
+                     <label for="productAdditionalImagesText" class="form-label">Ou URLs Images Additionnelles (JSON Array):</label>
+                     <small class="form-text">Format: [{"image_url":"url1", "alt_text":"alt1"}, {"image_url":"url2"}]</small>
+                     <textarea id="productAdditionalImagesText" name="additional_images_text" class="form-input-admin mt-1" rows="3" placeholder='[{"image_url":"https://...", "alt_text":"description1"}, ...]'></textarea>
+                     <div id="additional-images-preview-container" class="mt-2 d-flex flex-wrap gap-2"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="lowStockThreshold" class="form-label">Seuil de Stock Bas:</label>
+                    <input type="number" id="lowStockThreshold" name="low_stock_threshold" min="0" value="10" class="form-input-admin">
+                </div>
+                <div class="form-group">
+                    <label for="supplierInfo" class="form-label">Informations Fournisseur:</label>
+                    <input type="text" id="supplierInfo" name="supplier_info" class="form-input-admin">
+                </div>
+                
+                <div class="form-group">
+                    <input type="checkbox" id="productIsActive" name="is_active" checked class="form-checkbox-admin">
+                    <label for="productIsActive" class="form-label-inline">Actif (visible sur le site)</label>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="productIsFeatured" name="is_featured" class="form-checkbox-admin">
+                    <label for="productIsFeatured" class="form-label-inline">En Vedette (mis en avant)</label>
+                </div>
+                
+                <div class="form-actions button-group">
+                    <button type="submit" id="saveProductButton" class="btn btn-admin-primary"><i class="fas fa-save mr-2"></i>Enregistrer Produit</button>
+                    <button type="button" id="cancelEditButton" class="btn btn-admin-secondary" style="display:none;"><i class="fas fa-times mr-2"></i>Annuler Modification</button>
+                </div>
+            </form>
+        </section>
+
+        <section id="productsTableContainer" class="admin-table-container content-card">
+            <h2 class="section-heading">Produits Existants</h2>
+            <div class="form-group">
+                <input type="text" id="productSearchInput" placeholder="Rechercher par nom, code, catégorie..." class="form-input-admin mb-4">
+            </div>
+            <div class="overflow-x-auto">
+                <table id="productsTable" class="admin-table">
                     <thead>
                         <tr>
-                            <th>Nom du Produit</th>
+                            <th>Code</th>
+                            <th>Nom</th>
                             <th>Catégorie</th>
-                            <th>Prix (HT)</th>
+                            <th>Prix (€)</th>
                             <th>Stock</th>
-                            <th>Statut</th>
+                            <th>Type</th>
+                            <th>Actif</th>
+                            <th>Vedette</th>
                             <th class="text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Example Row (JS would populate this) -->
-                        <tr>
-                            <td class="font-weight-medium">Truffe Noire Mélanosporum Extra</td>
-                            <td>Truffes Fraîches</td>
-                            <td>150.00 €</td>
-                            <td>25</td>
-                            <td><span class="text-small p-1 rounded font-weight-medium" style="background-color: var(--mt-deep-sage-green); color: white; display: inline-block; padding: 4px 8px;">Publié</span></td>
-                            <td class="actions text-right">
-                                <a href="#" class="edit-product">Modifier</a>
-                                <button type="button" class="btn-link danger delete-product">Supprimer</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-medium">Huile d'Olive à la Truffe Blanche</td>
-                            <td>Huiles & Condiments</td>
-                            <td>25.50 €</td>
-                            <td>120</td>
-                            <td><span class="text-small p-1 rounded font-weight-medium" style="background-color: var(--mt-deep-sage-green); color: white; display: inline-block; padding: 4px 8px;">Publié</span></td>
-                            <td class="actions text-right">
-                                <a href="#" class="edit-product">Modifier</a>
-                                <button type="button" class="btn-link danger delete-product">Supprimer</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-medium">Sel de Guérande à la Truffe d'Été</td>
-                            <td>Épicerie Fine</td>
-                            <td>12.00 €</td>
-                            <td><span class="color-danger font-weight-semibold">0</span></td>
-                            <td><span class="text-small p-1 rounded font-weight-medium" style="background-color: var(--mt-slate-blue-grey); color: white; display: inline-block; padding: 4px 8px;">Brouillon</span></td>
-                            <td class="actions text-right">
-                                <a href="#" class="edit-product">Modifier</a>
-                                <button type="button" class="btn-link danger delete-product">Supprimer</button>
-                            </td>
-                        </tr>
-                        <!-- More rows here, populated by JS -->
+                    <tbody id="productsTableBody">
+                        <tr><td colspan="9" class="text-center py-4">Chargement des produits...</td></tr>
                     </tbody>
                 </table>
-                
-                <!-- Pagination (Example structure) -->
-                <nav aria-label="Pagination" class="mt-4 d-flex justify-content-center">
-                    <ul class="d-flex" style="list-style: none; padding: 0; gap: var(--spacing-unit);">
-                        <li><a href="#" class="btn btn-outline-gold btn-sm">&laquo; Précédent</a></li>
-                        <li><a href="#" class="btn btn-secondary btn-sm">1</a></li>
-                        <li><a href="#" class="btn btn-outline-gold btn-sm">2</a></li>
-                        <li><a href="#" class="btn btn-outline-gold btn-sm">3</a></li>
-                        <li><a href="#" class="btn btn-outline-gold btn-sm">Suivant &raquo;</a></li>
-                    </ul>
-                </nav>
-            </section>
-        </main>
+            </div>
+        </section>
 
-        <footer class="text-center text-small mt-4 py-4 border-t border-mt-warm-taupe">
-            <p>&copy; <span id="current-year"></span> Maison Trüvra. Tous droits réservés.</p>
-        </footer>
-    </div>
+         <!-- Modal for Product Options/Variants -->
+        <div id="product-options-modal" class="admin-modal-overlay">
+            <div class="admin-modal-content sm-max-w-2xl">
+                <form id="product-options-form" class="admin-form">
+                    <div class="admin-modal-header">
+                        <h3 id="product-options-modal-title" class="admin-form-title">Gérer les Options de Poids pour <span id="modal-product-name-placeholder"></span></h3>
+                        <button type="button" class="admin-modal-close" id="close-product-options-modal">&times;</button>
+                    </div>
+                    <div class="admin-modal-body">
+                        <input type="hidden" id="options-product-id">
+                        <div id="product-options-container" class="space-y-4">
+                            <!-- Product options will be dynamically added here -->
+                        </div>
+                        <button type="button" id="add-product-option-button" class="btn btn-admin-secondary btn-sm mt-4"><i class="fas fa-plus mr-1"></i> Ajouter une Option de Poids</button>
+                    </div>
+                    <div class="admin-modal-actions">
+                        <button type="submit" id="save-product-options-button" class="btn btn-admin-primary">Enregistrer les Options</button>
+                        <button type="button" id="cancel-product-options-button" class="btn btn-admin-secondary">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Template for product option row -->
+        <template id="product-option-template">
+            <div class="weight-option-row grid grid-cols-12 gap-2 items-center">
+                <input type="hidden" name="option_id[]" value="">
+                <div class="col-span-3 form-group mb-0">
+                    <label class="form-label text-xs">Poids (g) <span class="required">*</span></label>
+                    <input type="number" name="weight_grams[]" required class="form-input-admin" placeholder="Ex: 20">
+                </div>
+                <div class="col-span-3 form-group mb-0">
+                    <label class="form-label text-xs">Prix (€) <span class="required">*</span></label>
+                    <input type="number" name="price[]" step="0.01" required class="form-input-admin" placeholder="Ex: 75.00">
+                </div>
+                <div class="col-span-3 form-group mb-0">
+                    <label class="form-label text-xs">Suffixe SKU <span class="required">*</span></label>
+                    <input type="text" name="sku_suffix[]" required class="form-input-admin" placeholder="Ex: 20G">
+                </div>
+                 <div class="col-span-2 form-group mb-0">
+                    <label class="form-label text-xs">Stock</label>
+                    <input type="number" name="option_stock[]" min="0" class="form-input-admin" placeholder="Ex: 10">
+                </div>
+                <div class="col-span-1">
+                    <button type="button" class="remove-option-btn btn btn-admin-danger btn-sm p-1 mt-4"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </div>
+        </template>
 
-    <!-- Admin specific JS for product management -->
-    <script src="js/admin_products.js"></script>
+    </main>
+
+    <footer class="admin-footer">
+        <p>&copy; <span id="currentYearManageProducts"></span> Maison Trüvra - Admin Panel</p>
+    </footer>
+
+    <div id="admin-toast-container"></div>
+
+    <script src="js/admin_config.js"></script>
+    <script src="js/admin_ui.js"></script> 
+    <script src="js/admin_api.js"></script>
+    <script src="js/admin_auth.js"></script>
+    <script src="js/admin_main.js"></script> <!-- This will load the common header -->
+    <script src="js/admin_products.js"></script> 
     <script>
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-        // Add event listener for 'Add New Product' button or other JS interactions
-        // document.getElementById('add-new-product-btn').addEventListener('click', function() {
-        //    window.location.href = 'admin_edit_product.html'; // Or open a modal
-        // });
+        document.getElementById('currentYearManageProducts').textContent = new Date().getFullYear();
+        // Event listener for the main "Add New Product" button on this page
+        const mainAddProductBtn = document.getElementById('add-new-product-btn-main');
+        const productFormContainer = document.getElementById('productFormContainer');
+        const productFormTitle = document.getElementById('formTitle');
+        
+        if(mainAddProductBtn && productFormContainer) {
+            mainAddProductBtn.addEventListener('click', () => {
+                // Logic from admin_products.js to reset/show form for adding new
+                if (typeof resetForm === 'function') resetForm(); // Assuming resetForm is global from admin_products.js
+                productFormTitle.textContent = 'Ajouter un Nouveau Produit';
+                productFormContainer.style.display = 'block';
+                document.getElementById('productCode').focus();
+            });
+        }
     </script>
 </body>
 </html>
