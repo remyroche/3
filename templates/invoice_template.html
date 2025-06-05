@@ -243,7 +243,7 @@
                 {% if company.siret %}<p>SIRET : {{ company.siret }}</p>{% endif %}
             </div>
             <div class="details-column invoice-details">
-                <h2>Détails Facture :</h2>
+                <h2>Détails de la facture :</h2>
                 <p><strong>Facture N° :</strong> {{ invoice.invoice_number }}</p>
                 <p><strong>Date d'émission :</strong> {{ invoice.issue_date.strftime('%d/%m/%Y') if invoice.issue_date else 'N/A' }}</p>
                 {% if invoice.order_id %}
