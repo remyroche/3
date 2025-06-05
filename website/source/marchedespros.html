@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-translate-key="b2b_shop.title">Marché des Professionnels - Maison Trüvra</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/marchedespros.css"> <!-- Specific styles for this page -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Styles from nos-produits.css might be relevant for product grid styling -->
+    <link rel="stylesheet" href="css/nos-produits.css">
+</head>
+<body id="page-marche-des-pros">
+    <div id="main-header-placeholder"></div>
+
+    <main class="container mx-auto px-4 py-8 mt-20 md:mt-24 lg:mt-28">
+        <header class="page-header text-center mb-10 md:mb-12">
+            <h1 class="page-title text-3xl md:text-4xl lg:text-5xl font-bold" data-translate-key="b2b_shop.main_title">Marché des Professionnels Trüvra</h1>
+            <p class="text-lg text-mt-earth-brown max-w-3xl mx-auto mt-4" data-translate-key="b2b_shop.subtitle">Catalogue exclusif, tarifs préférentiels et options d'achat adaptées à vos besoins professionnels.</p>
+            <div id="b2b-user-welcome" class="mt-4 text-sm text-mt-deep-sage-green">
+                <!-- Welcome message populated by JS, e.g., "Bienvenue, [Nom Entreprise] (Tier: Gold)" -->
+            </div>
+        </header>
+
+        <!-- Filters and Sorting Section (similar to nos-produits.html) -->
+        <section id="b2b-filters-section" class="mb-8 p-4 md:p-6 bg-white shadow-md rounded-lg">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label for="b2b-category-filter" class="block text-sm font-medium text-mt-earth-brown mb-1" data-translate-key="b2b_shop.filter_category">Filtrer par Catégorie :</label>
+                    <select id="b2b-category-filter" class="form-select w-full rounded-md border-mt-warm-taupe focus:ring-mt-classic-gold focus:border-mt-classic-gold">
+                        <option value="" data-translate-key="b2b_shop.all_categories">Toutes les catégories</option>
+                        <!-- Options populated by JS from categories relevant to B2B -->
+                    </select>
+                </div>
+                <div>
+                    <label for="b2b-sort-by" class="block text-sm font-medium text-mt-earth-brown mb-1" data-translate-key="b2b_shop.sort_by">Trier par :</label>
+                    <select id="b2b-sort-by" class="form-select w-full rounded-md border-mt-warm-taupe focus:ring-mt-classic-gold focus:border-mt-classic-gold">
+                        <option value="default" data-translate-key="b2b_shop.sort_default">Défaut</option>
+                        <option value="price-asc" data-translate-key="b2b_shop.sort_price_asc">Prix : Croissant</option>
+                        <option value="price-desc" data-translate-key="b2b_shop.sort_price_desc">Prix : Décroissant</option>
+                        <option value="name-asc" data-translate-key="b2b_shop.sort_name_asc">Nom : A-Z</option>
+                        <option value="name-desc" data-translate-key="b2b_shop.sort_name_desc">Nom : Z-A</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="b2b-search-products" class="block text-sm font-medium text-mt-earth-brown mb-1" data-translate-key="b2b_shop.search_label">Rechercher :</label>
+                    <input type="search" id="b2b-search-products" placeholder="Nom du produit, SKU..." class="form-input w-full rounded-md border-mt-warm-taupe focus:ring-mt-classic-gold focus:border-mt-classic-gold" data-translate-placeholder="b2b_shop.search_placeholder">
+                </div>
+            </div>
+        </section>
+
+        <!-- B2B Product Grid Section -->
+        <section id="b2b-product-grid">
+            <div id="b2b-product-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+                <!-- B2B Product cards will be dynamically inserted here by marchedespros.js -->
+                <!-- Example B2B Product Card Structure:
+                <div class="product-card b2b-product-card bg-white rounded-lg shadow-lg overflow-hidden ...">
+                    <a href="produit-detail-pro.html?slug=..." class="block group">... image ...</a>
+                    <div class="p-4 ...">
+                        <h3 class="card-title ..."><a href="produit-detail-pro.html?slug=...">Nom du Produit Pro</a></h3>
+                        <p class="text-xs text-mt-warm-taupe mb-2 truncate">Catégorie Pro</p>
+                        <div class="b2b-pricing-info my-2">
+                            <p class="text-sm text-mt-earth-brown">Votre Prix (Tier Gold): <span class="font-bold text-mt-truffle-burgundy">€XX.XX</span></p>
+                            <p class="text-xs text-mt-warm-taupe">Prix Public Conseillé: <del>€YY.YY</del></p>
+                        </div>
+                        <p class="text-sm text-mt-earth-brown mb-3 ...">Description courte pro.</p>
+                        <div class="mt-auto">
+                            <a href="produit-detail-pro.html?slug=..." class="btn btn-outline w-full mb-2">Voir Détails & Options</a>
+                            <button class="btn btn-primary w-full add-to-b2b-cart-btn" data-product-id="...">Ajouter au Devis/Panier</button>
+                        </div>
+                    </div>
+                </div>
+                -->
+            </div>
+            <div id="b2b-loading-indicator" class="text-center py-10 hidden">
+                <i class="fas fa-spinner fa-spin text-3xl text-mt-classic-gold"></i>
+                <p class="text-mt-earth-brown mt-2" data-translate-key="b2b_shop.loading">Chargement des produits professionnels...</p>
+            </div>
+            <div id="b2b-no-products-message" class="text-center py-10 hidden">
+                <p class="text-xl text-mt-earth-brown mb-4" data-translate-key="b2b_shop.no_products">Aucun produit professionnel ne correspond à vos critères actuellement.</p>
+            </div>
+        </section>
+
+        <!-- B2B Cart / Quote / PO Section -->
+        <section id="b2b-cart-actions-section" class="mt-12 p-6 md:p-8 bg-white shadow-xl rounded-lg">
+            <h2 class="section-title text-2xl mb-6" data-translate-key="b2b_shop.cart_actions_title">Panier Professionnel & Actions</h2>
+            <div id="b2b-cart-summary" class="mb-6">
+                <h3 class="text-xl font-semibold mb-3" data-translate-key="b2b_shop.cart_summary_title">Résumé du Panier/Devis</h3>
+                <div id="b2b-cart-items-display" class="space-y-2 mb-4">
+                    <!-- Cart items will be populated here by JS -->
+                    <p class="text-mt-earth-brown" data-translate-key="b2b_shop.cart_empty">Votre panier professionnel est vide.</p>
+                </div>
+                <div class="border-t border-mt-cream-dark pt-4">
+                    <p class="text-lg font-bold text-mt-near-black" data-translate-key="b2b_shop.cart_total_ht">Total Estimé (HT): <span id="b2b-cart-total-ht">€0.00</span></p>
+                    <p class="text-xs text-mt-warm-taupe" data-translate-key="b2b_shop.cart_vat_shipping_info">(TVA et frais de port seront calculés à la finalisation)</p>
+                </div>
+            </div>
+
+            <div class="b2b-checkout-options grid md:grid-cols-3 gap-4">
+                <div>
+                    <h4 class="font-semibold mb-2" data-translate-key="b2b_shop.option_cc_title">Achat Direct par Carte</h4>
+                    <button id="b2b-checkout-cc-btn" class="btn btn-primary w-full" data-translate-key="b2b_shop.option_cc_btn">Payer par Carte</button>
+                    <p class="text-xs text-mt-warm-taupe mt-1" data-translate-key="b2b_shop.option_cc_desc">Paiement sécurisé pour une expédition rapide.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-2" data-translate-key="b2b_shop.option_quote_title">Demande de Devis</h4>
+                    <button id="b2b-request-quote-btn" class="btn btn-secondary w-full" data-translate-key="b2b_shop.option_quote_btn">Obtenir un Devis Personnalisé</button>
+                     <p class="text-xs text-mt-warm-taupe mt-1" data-translate-key="b2b_shop.option_quote_desc">Idéal pour les commandes volumineuses ou spécifiques.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-2" data-translate-key="b2b_shop.option_po_title">Commander avec un Bon de Commande</h4>
+                    <form id="b2b-po-upload-form" class="space-y-2">
+                        <label for="b2b-po-file" class="sr-only" data-translate-key="b2b_shop.option_po_file_label">Télécharger votre Bon de Commande</label>
+                        <input type="file" id="b2b-po-file" name="purchase_order" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" class="form-input-admin text-sm w-full">
+                        <button type="submit" id="b2b-submit-po-btn" class="btn btn-outline w-full" data-translate-key="b2b_shop.option_po_btn">Soumettre le Bon de Commande</button>
+                    </form>
+                    <p class="text-xs text-mt-warm-taupe mt-1" data-translate-key="b2b_shop.option_po_desc">Soumettez votre PO pour traitement.</p>
+                </div>
+            </div>
+            <p class="text-sm text-mt-earth-brown mt-6" data-translate-key="b2b_shop.invoice_format_note">Note : Toutes les factures B2B seront émises au format professionnel détaillé.</p>
+        </section>
+
+        <!-- Pagination Section -->
+        <nav id="b2b-pagination-container" aria-label="Pagination des produits professionnels" class="mt-10 md:mt-12 flex justify-center">
+            <!-- Pagination links will be dynamically inserted here -->
+        </nav>
+    </main>
+
+    <!-- Modal for B2B Quote Request -->
+    <div id="b2b-quote-modal" class="admin-modal-overlay"> <!-- Re-using admin-modal styles for consistency -->
+        <div class="admin-modal-content sm-max-w-lg">
+            <form id="b2b-quote-request-form" class="admin-form">
+                <div class="admin-modal-header">
+                    <h3 class="admin-form-title" data-translate-key="b2b_shop.quote_modal_title">Demande de Devis</h3>
+                    <button type="button" class="admin-modal-close" id="close-b2b-quote-modal" aria-label="Close">&times;</button>
+                </div>
+                <div class="admin-modal-body">
+                    <p class="text-sm mb-4" data-translate-key="b2b_shop.quote_modal_intro">Veuillez fournir des détails supplémentaires pour votre demande de devis. Notre équipe vous contactera rapidement.</p>
+                    <div id="quote-cart-summary-modal" class="mb-4 p-3 bg-mt-cream rounded-md text-sm">
+                        <h4 class="font-semibold mb-2" data-translate-key="b2b_shop.quote_modal_summary_title">Articles dans la demande :</h4>
+                        <!-- Summary of cart items for quote will be injected here -->
+                        <p data-translate-key="b2b_shop.quote_modal_loading_summary">Chargement du résumé...</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="quote-notes" class="form-label" data-translate-key="b2b_shop.quote_modal_notes_label">Notes ou Instructions Spécifiques :</label>
+                        <textarea id="quote-notes" name="notes" class="form-input-admin" rows="4" data-translate-placeholder="b2b_shop.quote_modal_notes_placeholder" placeholder="Ex: Quantités souhaitées si différentes du panier, date de livraison préférée, etc."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="quote-contact-person" class="form-label" data-translate-key="b2b_shop.quote_modal_contact_label">Personne à Contacter (si différent du compte) :</label>
+                        <input type="text" id="quote-contact-person" name="contact_person" class="form-input-admin">
+                    </div>
+                     <div class="form-group">
+                        <label for="quote-contact-phone" class="form-label" data-translate-key="b2b_shop.quote_modal_phone_label">Téléphone Direct (optionnel) :</label>
+                        <input type="tel" id="quote-contact-phone" name="contact_phone" class="form-input-admin">
+                    </div>
+                </div>
+                <div class="admin-modal-actions">
+                    <button type="submit" id="submit-b2b-quote-request-btn" class="btn btn-primary" data-translate-key="b2b_shop.quote_modal_submit_btn">Envoyer la Demande de Devis</button>
+                    <button type="button" id="cancel-b2b-quote-request-btn" class="btn btn-secondary" data-translate-key="common.cancel">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <div id="main-footer-placeholder"></div>
+    <div id="cart-toast-placeholder" class="fixed bottom-5 right-5 z-50"></div>
+    <div id="global-message-container" class="fixed top-20 right-5 z-[1000] w-auto max-w-sm"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/cart.js"></script> <!-- B2C cart, might need a B2B specific cart logic or adapt this one -->
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/products.js"></script> <!-- Re-use displayProductCard logic if adaptable -->
+    <script src="js/marchedespros.js"></script> <!-- Specific logic for this B2B shop page -->
+</body>
+</html>
