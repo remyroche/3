@@ -4,48 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Factures - Admin - Maison Trüvra</title>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;700&display=swap" rel="stylesheet">
-    
-    <!-- Maison Trüvra Global Admin Styles (now in admin_style.css) -->
-    <link rel="stylesheet" href="js/css/admin_style.css"> 
-    
+    <link rel="stylesheet" href="css/admin_style.css"> <!-- Standardized path -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body class="admin-body">
-    <div class="admin-main-container">
-        <header class="admin-page-header d-flex justify-content-between align-items-center">
-            <h1 class="admin-page-title mb-0">Gestion des Factures</h1>
-            <a href="admin_create_invoice.html" class="btn btn-primary" id="create-new-invoice-btn">Créer une Facture</a>
-        </header>
+<body class="admin-body" id="page-admin-invoices">
 
-        <main>
-            <section class="admin-content-area">
+    <div id="admin-header-placeholder"></div> <!-- Placeholder for the common header -->
+
+    <main class="admin-main-container">
+        <div class="admin-page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                 <h1 class="admin-page-title mb-0">Gestion des Factures</h1>
+                 <a href="admin_create_invoice.html" class="btn btn-admin-primary" id="create-new-invoice-btn"><i class="fas fa-plus-circle mr-2"></i> Créer une Facture Manuelle</a>
+            </div>
+        </div>
+        
+        <section class="admin-form-container content-card">
+            <h2 class="section-heading">Filtrer les Factures</h2>
+            <form id="invoice-filters-form" class="admin-form"> <!-- Added ID for JS targeting if needed -->
                 <div class="grid md:grid-cols-3 gap-4 mb-4">
                     <div class="form-group">
-                        <label for="invoice-search">Rechercher une facture :</label>
-                        <input type="search" id="invoice-search" name="search" placeholder="N° de facture, client...">
+                        <label for="filter-manage-invoice-user" class="form-label">Rechercher (N°, Client, Email):</label>
+                        <input type="search" id="filter-manage-invoice-user" name="search" placeholder="N° facture, nom client, email..." class="form-input-admin">
                     </div>
                     <div class="form-group">
-                        <label for="invoice-status-filter">Filtrer par statut :</label>
-                        <select id="invoice-status-filter" name="status_filter">
+                        <label for="filter-manage-invoice-status" class="form-label">Filtrer par statut :</label>
+                        <select id="filter-manage-invoice-status" name="status_filter" class="form-input-admin">
                             <option value="">Tous les statuts</option>
                             <option value="draft">Brouillon</option>
+                            <option value="issued">Émise</option>
                             <option value="sent">Envoyée</option>
                             <option value="paid">Payée</option>
-                            <option value="overdue">En retard</option>
+                            <option value="partially_paid">Partiellement Payée</option>
+                            <option value="overdue">En Retard</option>
                             <option value="cancelled">Annulée</option>
+                            <option value="voided">Annulée (Comptab.)</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="invoice-date-filter">Filtrer par date d'émission :</label>
-                        <input type="date" id="invoice-date-filter" name="date_filter">
+                        <label for="filter-manage-invoice-date" class="form-label">Filtrer par date d'émission :</label>
+                        <input type="date" id="filter-manage-invoice-date" name="date_filter" class="form-input-admin">
                     </div>
                 </div>
+                <button type="button" id="apply-invoice-filters-button" class="btn btn-admin-primary"><i class="fas fa-filter mr-2"></i>Appliquer Filtres</button>
+            </form>
+        </section>
 
-                <table class="admin-table" id="invoices-table">
+        <section class="admin-table-container content-card">
+            <h2 class="section-heading">Liste des Factures</h2>
+            <div class="overflow-x-auto">
+                <table class="admin-table" id="manage-invoices-table"> <!-- Ensure ID is unique if different from other tables -->
                     <thead>
                         <tr>
                             <th>N° Facture</th>
@@ -57,71 +65,30 @@
                             <th class="text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Example Row (JS would populate this) -->
-                        <tr>
-                            <td class="font-weight-medium">DUPONT-20240601-001</td>
-                            <td>Jean Dupont SARL</td>
-                            <td>2024-06-01</td>
-                            <td>2024-07-01</td>
-                            <td>185.50 €</td>
-                            <td><span class="text-small p-1 rounded font-weight-medium" style="background-color: var(--mt-deep-sage-green); color: white; display: inline-block; padding: 4px 8px;">Payée</span></td>
-                            <td class="actions text-right">
-                                <a href="#" class="view-invoice">Voir</a>
-                                <a href="#" class="download-invoice-pdf">PDF</a>
-                                <a href="#" class="edit-invoice">Modifier</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-medium">MARTIN-20240528-003</td>
-                            <td>Alice Martin & Co</td>
-                            <td>2024-05-28</td>
-                            <td>2024-06-28</td>
-                            <td>75.00 €</td>
-                            <td><span class="text-small p-1 rounded font-weight-medium" style="background-color: var(--mt-gold); color: var(--mt-near-black); display: inline-block; padding: 4px 8px;">Envoyée</span></td>
-                            <td class="actions text-right">
-                                <a href="#" class="view-invoice">Voir</a>
-                                <a href="#" class="download-invoice-pdf">PDF</a>
-                                <a href="#" class="edit-invoice">Modifier</a>
-                            </td>
-                        </tr>
-                         <tr>
-                            <td class="font-weight-medium">LEFEVRE-20240515-001</td>
-                            <td>Robert Lefevre SAS</td>
-                            <td>2024-05-15</td>
-                            <td>2024-06-15</td>
-                            <td>350.00 €</td>
-                            <td><span class="text-small p-1 rounded font-weight-medium" style="background-color: #c94040; color: white; display: inline-block; padding: 4px 8px;">En Retard</span></td>
-                            <td class="actions text-right">
-                                <a href="#" class="view-invoice">Voir</a>
-                                <a href="#" class="download-invoice-pdf">PDF</a>
-                                <a href="#" class="send-reminder">Rappel</a>
-                            </td>
-                        </tr>
-                        <!-- More rows here, populated by JS -->
+                    <tbody id="manage-invoices-table-body">
+                        <tr><td colspan="7" class="text-center p-4">Chargement des factures...</td></tr>
                     </tbody>
                 </table>
-                
-                <nav aria-label="Pagination" class="mt-4 d-flex justify-content-center">
-                    <ul class="d-flex" style="list-style: none; padding: 0; gap: var(--spacing-unit);">
-                        <li><a href="#" class="btn btn-outline-gold btn-sm">&laquo; Précédent</a></li>
-                        <li><a href="#" class="btn btn-secondary btn-sm">1</a></li>
-                        <li><a href="#" class="btn btn-outline-gold btn-sm">2</a></li>
-                        <li><a href="#" class="btn btn-outline-gold btn-sm">Suivant &raquo;</a></li>
-                    </ul>
-                </nav>
-            </section>
-        </main>
+            </div>
+            <nav aria-label="Pagination des factures" class="mt-4 d-flex justify-content-center" id="invoice-pagination-controls">
+                <!-- Pagination controls will be inserted here by JS -->
+            </nav>
+        </section>
+    </main>
 
-        <footer class="text-center text-small mt-4 py-4 border-t border-mt-warm-taupe">
-            <p>&copy; <span id="current-year"></span> Maison Trüvra. Tous droits réservés.</p>
-        </footer>
-    </div>
+    <footer class="admin-footer">
+        <p>&copy; <span id="currentYearInvoices"></span> Maison Trüvra - Admin Panel</p>
+    </footer>
+    <div id="admin-toast-container"></div>
 
-    <!-- Admin specific JS for invoice management -->
+    <script src="js/admin_config.js"></script>
+    <script src="js/admin_ui.js"></script>
+    <script src="js/admin_api.js"></script>
+    <script src="js/admin_auth.js"></script>
+    <script src="js/admin_main.js"></script> <!-- This will load the common header -->
     <script src="js/admin_invoices.js"></script>
     <script>
-        document.getElementById('current-year').textContent = new Date().getFullYear();
+        document.getElementById('currentYearInvoices').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
