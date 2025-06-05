@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gérer les Demandes de Devis B2B - Admin - Maison Trüvra</title>
+    <link rel="stylesheet" href="css/admin_style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+<body class="admin-body" id="page-admin-manage-quotes">
+
+    <div id="admin-header-placeholder"></div>
+
+    <main class="admin-main-container">
+        <div class="admin-page-header">
+            <h1 class="admin-page-title">Gestion des Demandes de Devis B2B</h1>
+        </div>
+
+        <section class="admin-form-container content-card">
+            <h2 class="section-heading">Filtrer les Demandes de Devis</h2>
+            <form id="quote-filters-form" class="admin-form">
+                <div class="grid md:grid-cols-3 gap-4 mb-4">
+                    <div class="form-group">
+                        <label for="filter-quote-status" class="form-label">Statut :</label>
+                        <select id="filter-quote-status" class="form-input-admin">
+                            <option value="">Tous</option>
+                            <option value="pending">En attente</option>
+                            <option value="processing">En traitement</option>
+                            <option value="sent_to_client">Devis Envoyé</option>
+                            <option value="accepted_by_client">Accepté par Client</option>
+                            <option value="converted_to_order">Converti en Commande</option>
+                            <option value="declined_by_client">Refusé par Client</option>
+                            <option value="expired">Expiré</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-quote-customer" class="form-label">Client (Email, Nom, Société) :</label>
+                        <input type="search" id="filter-quote-customer" placeholder="Email, nom, société..." class="form-input-admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-quote-date" class="form-label">Date de Demande :</label>
+                        <input type="date" id="filter-quote-date" class="form-input-admin">
+                    </div>
+                </div>
+                <button type="button" id="apply-quote-filters-button" class="btn btn-admin-primary"><i class="fas fa-filter mr-2"></i>Appliquer</button>
+                <button type="button" id="reset-quote-filters-button" class="btn btn-admin-secondary ml-2"><i class="fas fa-undo mr-2"></i>Réinitialiser</button>
+            </form>
+        </section>
+
+        <section class="admin-table-container content-card">
+            <h2 class="section-heading">Demandes de Devis B2B Récentes</h2>
+            <div class="overflow-x-auto">
+                <table class="admin-table min-w-full" id="quotes-table">
+                    <thead>
+                        <tr>
+                            <th>ID Devis</th>
+                            <th>Client (Société / Contact)</th>
+                            <th>Date Demande</th>
+                            <th>Statut</th>
+                            <th>Nb Articles</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quotes-table-body">
+                        <tr><td colspan="6" class="text-center p-4">Chargement des demandes de devis...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <nav aria-label="Pagination des devis" class="mt-4 d-flex justify-content-center" id="quote-pagination-controls">
+                <!-- Pagination -->
+            </nav>
+        </section>
+
+        <!-- Quote Detail Modal -->
+        <div id="quote-detail-modal" class="admin-modal-overlay">
+            <div class="admin-modal-content sm-max-w-3xl"> <!-- Larger modal -->
+                <form id="quote-update-form" class="admin-form">
+                    <div class="admin-modal-header">
+                        <h3 id="quote-detail-modal-title" class="admin-form-title">Détails Demande de Devis #<span id="modal-quote-id"></span></h3>
+                        <button type="button" class="admin-modal-close" id="close-quote-detail-modal-button" aria-label="Close">&times;</button>
+                    </div>
+                    <div class="admin-modal-body space-y-4">
+                        <input type="hidden" id="modal-quote-request-id-hidden" name="quote_request_id">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                            <div>
+                                <h4 class="subsection-heading mb-1">Informations Client</h4>
+                                <p><strong>Client:</strong> <span id="modal-quote-customer-name"></span> (<span id="modal-quote-customer-email"></span>)</p>
+                                <p><strong>Société:</strong> <span id="modal-quote-customer-company"></span></p>
+                                <p><strong>Contact pour Devis:</strong> <span id="modal-quote-contact-person"></span> (<span id="modal-quote-contact-phone"></span>)</p>
+                                <p><strong>Date Demande:</strong> <span id="modal-quote-request-date"></span></p>
+                            </div>
+                            <div>
+                                <h4 class="subsection-heading mb-1">Statut & Admin</h4>
+                                <p><strong>Statut Actuel:</strong> <span id="modal-quote-current-status" class="font-weight-semibold"></span></p>
+                                <p><strong>Admin Assigné:</strong> <span id="modal-quote-admin-assigned"></span></p>
+                                <p><strong>Date d'Expiration Devis:</strong> <span id="modal-quote-valid-until"></span></p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="subsection-heading mb-1">Notes du Client</h4>
+                            <p id="modal-quote-customer-notes" class="text-sm p-2 border rounded bg-gray-50 min-h-[40px] whitespace-pre-wrap"></p>
+                        </div>
+
+                        <h4 class="subsection-heading">Articles Demandés</h4>
+                        <div class="overflow-x-auto admin-table-container max-h-60">
+                            <table class="admin-table w-full text-xs">
+                                <thead>
+                                    <tr>
+                                        <th>Produit (Réf.)</th>
+                                        <th>Variante</th>
+                                        <th class="text-center">Qté Demandée</th>
+                                        <th class="text-right">Prix Demandé (HT)</th>
+                                        <th class="text-right">Prix Proposé (HT)</th>
+                                        <th class="text-right">Total Proposé (HT)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modal-quote-items-table-body"></tbody>
+                            </table>
+                        </div>
+                        <p class="text-right font-bold">Total Devis Estimé (HT): <span id="modal-quote-total-ht-estimate">€0.00</span></p>
+
+
+                        <div class="border-t pt-4">
+                            <h4 class="subsection-heading">Actions Administrateur</h4>
+                            <div class="form-group">
+                                <label for="modal-quote-new-status" class="form-label">Nouveau Statut :</label>
+                                <select id="modal-quote-new-status" name="new_status" class="form-input-admin">
+                                    <option value="pending">En attente</option>
+                                    <option value="processing">En traitement</option>
+                                    <option value="sent_to_client">Devis Envoyé au Client</option>
+                                    <option value="accepted_by_client">Accepté par Client</option>
+                                    <option value="converted_to_order">Converti en Commande</option>
+                                    <option value="declined_by_client">Refusé par Client</option>
+                                    <option value="expired">Expiré</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="modal-quote-admin-notes" class="form-label">Notes Internes Administrateur :</label>
+                                <textarea id="modal-quote-admin-notes" name="admin_notes" rows="2" class="form-input-admin"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="modal-quote-valid-until-date" class="form-label">Date de validité du devis (si envoyé) :</label>
+                                <input type="date" id="modal-quote-valid-until-date" name="valid_until" class="form-input-admin">
+                            </div>
+                             <!-- Input fields for proposed prices per item would go here if editing is complex.
+                                  For simplicity, admin might adjust prices and note them, or a more complex item editor is needed. -->
+                        </div>
+                    </div>
+                    <div class="admin-modal-actions">
+                        <button type="submit" id="update-quote-status-button" class="btn btn-admin-primary">Mettre à Jour Devis</button>
+                        <button type="button" id="convert-quote-to-order-button" class="btn btn-admin-success ml-2 hidden">Convertir en Commande</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="admin-footer">
+        <p>&copy; <span id="currentYearManageQuotes"></span> Maison Trüvra - Admin Panel</p>
+    </footer>
+    <div id="admin-toast-container"></div>
+
+    <script src="js/admin_config.js"></script>
+    <script src="js/admin_ui.js"></script>
+    <script src="js/admin_api.js"></script>
+    <script src="js/admin_auth.js"></script>
+    <script src="js/admin_main.js"></script>
+    <script src="js/admin_manage_quotes.js"></script> <!-- New JS file -->
+    <script>
+        document.getElementById('currentYearManageQuotes').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
