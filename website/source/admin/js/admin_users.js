@@ -1,5 +1,4 @@
-// website/admin/js/admin_users.js
-// Logic for managing users in the Admin Panel.
+he Admin Panel.
 
 document.addEventListener('DOMContentLoaded', () => {
     if (document.body.id !== 'page-admin-manage-users') return;
@@ -86,9 +85,8 @@ async function loadAdminUsersList(filters = {}, page = 1) {
             const nameCell = row.insertCell();
             nameCell.textContent = `${user.first_name || ''} ${user.last_name || ''}`.trim() || '-';
 
-            row.insertCell().textContent = user.role ? t(`admin.users.filter.role_${user.role.replace('-', '_')}`, user.role) : '-'; // Handle potential hyphens in enum values from backend
+            row.insertCell().textContent = user.role ? t(`admin.users.filter.role_${user.role.replace('-', '_')}`, user.role) : '-';
             
-            // New B2B Tier column
             const b2bTierCell = row.insertCell();
             b2bTierCell.textContent = (user.role === 'b2b_professional' && user.b2b_tier) ? t(`admin.users.modal.b2b_tier_${user.b2b_tier}`, user.b2b_tier) : '-';
 
@@ -104,13 +102,12 @@ async function loadAdminUsersList(filters = {}, page = 1) {
 
 
             const actionsCell = row.insertCell();
-            actionsCell.className = "text-right actions"; // Added 'actions' for potential specific styling
+            actionsCell.className = "text-right actions"; 
             const editButton = document.createElement('button');
             editButton.innerHTML = `<i class="fas fa-edit mr-1"></i> ${t('common.edit', 'Éditer')}`;
             editButton.className = "btn btn-admin-secondary btn-sm";
             editButton.onclick = () => openUserEditModal(user.id);
             actionsCell.appendChild(editButton);
-            // Add other actions like delete, impersonate, etc. if needed
         });
 
         renderPagination(paginationControls, pagination, (newPage) => loadAdminUsersList(filters, newPage));
@@ -129,14 +126,12 @@ function renderPagination(container, paginationData, pageChangeCallback) {
     }
 
     let html = '<div class="pagination-controls space-x-1">';
-    // Previous Button
     html += `<button class="btn btn-admin-secondary btn-sm ${paginationData.current_page === 1 ? 'opacity-50 cursor-not-allowed' : ''}" 
                      onclick="if(${paginationData.current_page !== 1}) pageChangeCallback(${paginationData.current_page - 1})"
                      ${paginationData.current_page === 1 ? 'disabled' : ''}>
                      <i class="fas fa-chevron-left"></i>
              </button>`;
 
-    // Page Numbers (simplified)
     const maxPagesToShow = 5;
     let startPage = Math.max(1, paginationData.current_page - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(paginationData.total_pages, startPage + maxPagesToShow - 1);
@@ -162,7 +157,6 @@ function renderPagination(container, paginationData, pageChangeCallback) {
         html += `<button class="btn btn-admin-outline-gold btn-sm" onclick="pageChangeCallback(${paginationData.total_pages})">${paginationData.total_pages}</button>`;
     }
 
-    // Next Button
     html += `<button class="btn btn-admin-secondary btn-sm ${paginationData.current_page === paginationData.total_pages ? 'opacity-50 cursor-not-allowed' : ''}" 
                      onclick="if(${paginationData.current_page !== paginationData.total_pages}) pageChangeCallback(${paginationData.current_page + 1})"
                      ${paginationData.current_page === paginationData.total_pages ? 'disabled' : ''}>
@@ -170,8 +164,6 @@ function renderPagination(container, paginationData, pageChangeCallback) {
              </button>`;
     html += '</div>';
     container.innerHTML = html;
-
-    // Make pageChangeCallback globally accessible for inline onclick, or re-attach listeners
     window.pageChangeCallback = pageChangeCallback;
 }
 
@@ -188,7 +180,7 @@ function applyUserFilters() {
     if (professionalStatus) filters.professional_status = professionalStatus;
     if (search) filters.search = search;
 
-    loadAdminUsersList(filters, 1); // Load first page with new filters
+    loadAdminUsersList(filters, 1);
 }
 
 function resetUserFiltersAndLoad() {
@@ -196,14 +188,14 @@ function resetUserFiltersAndLoad() {
     document.getElementById('filter-user-is-active').value = '';
     document.getElementById('filter-user-professional-status').value = '';
     document.getElementById('search-user-email').value = '';
-    loadAdminUsersList({}, 1); // Load first page with no filters
+    loadAdminUsersList({}, 1); 
 }
 
 
 async function openUserEditModal(userId) {
     try {
         if(typeof showAdminToast === 'function') showAdminToast(t('admin.users.toast.loading_details', 'Chargement des détails...'), "info");
-        const response = await adminApi.getUserDetail(userId);
+        const response = await adminApi.getUserDetail(userId); // From admin_api.js
         const userDetails = response.user;
 
         if (userDetails) {
@@ -212,10 +204,15 @@ async function openUserEditModal(userId) {
             document.getElementById('edit-user-first-name').value = userDetails.first_name || '';
             document.getElementById('edit-user-last-name').value = userDetails.last_name || '';
             document.getElementById('edit-user-email').value = userDetails.email || '';
-            document.getElementById('edit-user-email').readOnly = true; // Email should not be editable
+            document.getElementById('edit-user-email').readOnly = true; 
             document.getElementById('edit-user-role').value = userDetails.role || 'b2c_customer';
             document.getElementById('edit-user-is-active').value = userDetails.is_active ? 'true' : 'false';
             document.getElementById('edit-user-is-verified').value = userDetails.is_verified ? 'true' : 'false';
+
+            // Newsletter fields
+            document.getElementById('edit-user-newsletter-b2c').checked = userDetails.newsletter_b2c_opt_in || false;
+            document.getElementById('edit-user-newsletter-b2b').checked = userDetails.newsletter_b2b_opt_in || false;
+
 
             // B2B Fields
             document.getElementById('edit-user-company-name').value = userDetails.company_name || '';
@@ -223,16 +220,14 @@ async function openUserEditModal(userId) {
             document.getElementById('edit-user-siret-number').value = userDetails.siret_number || '';
             document.getElementById('edit-user-professional-status').value = userDetails.professional_status || 'pending_review';
             
-            // New B2B Tier field
             const b2bTierSelect = document.getElementById('edit-user-b2b-tier');
             if (b2bTierSelect) {
-                b2bTierSelect.value = userDetails.b2b_tier || 'standard'; // Default to 'standard' if null
+                b2bTierSelect.value = userDetails.b2b_tier || 'standard'; 
             }
 
-            // Display professional documents
             const documentsListEl = document.getElementById('user-documents-list');
             if (documentsListEl) {
-                documentsListEl.innerHTML = ''; // Clear previous
+                documentsListEl.innerHTML = ''; 
                 if (userDetails.professional_documents && userDetails.professional_documents.length > 0) {
                     const ul = document.createElement('ul');
                     ul.className = 'list-disc pl-5';
@@ -287,6 +282,8 @@ async function handleUserEditFormSubmit(event) {
         role: form.querySelector('#edit-user-role').value,
         is_active: form.querySelector('#edit-user-is-active').value === 'true',
         is_verified: form.querySelector('#edit-user-is-verified').value === 'true',
+        newsletter_b2c_opt_in: form.querySelector('#edit-user-newsletter-b2c').checked, // Get checkbox state
+        newsletter_b2b_opt_in: form.querySelector('#edit-user-newsletter-b2b').checked  // Get checkbox state
     };
 
     if (userData.role === 'b2b_professional') {
@@ -294,15 +291,14 @@ async function handleUserEditFormSubmit(event) {
         userData.vat_number = form.querySelector('#edit-user-vat-number').value.trim();
         userData.siret_number = form.querySelector('#edit-user-siret-number').value.trim();
         userData.professional_status = form.querySelector('#edit-user-professional-status').value;
-        userData.b2b_tier = form.querySelector('#edit-user-b2b-tier').value; // Add B2B Tier
+        userData.b2b_tier = form.querySelector('#edit-user-b2b-tier').value;
     } else {
-        // Ensure B2B specific fields are nulled out if role is not B2B,
-        // or backend should handle this logic. For explicit client-side:
         userData.company_name = null;
         userData.vat_number = null;
         userData.siret_number = null;
         userData.professional_status = null;
         userData.b2b_tier = null;
+        // userData.newsletter_b2b_opt_in = false; // Optionally ensure B2B newsletter is off if not a B2B role
     }
 
     const saveButton = form.querySelector('#save-user-changes-button');
@@ -312,18 +308,22 @@ async function handleUserEditFormSubmit(event) {
 
 
     try {
-        const response = await adminApi.updateUser(userId, userData);
+        const response = await adminApi.updateUser(userId, userData); // from admin_api.js
         if (response.success) {
             if(typeof showAdminToast === 'function') showAdminToast(response.message || t('admin.users.toast.update_success', "Utilisateur mis à jour !"), "success");
             if(typeof closeAdminModal === 'function') closeAdminModal('user-edit-modal');
-            const currentFilters = getCurrentFilters(); // Get current filters before reloading
+            const currentFilters = getCurrentFilters(); 
             loadAdminUsersList(currentFilters, currentFilters.page || 1);
         } else {
              if(typeof showAdminToast === 'function') showAdminToast(response.message || t('admin.users.toast.update_failed', "Échec MAJ utilisateur."), "error");
         }
     } catch (error) {
         console.error(`Error updating user ${userId}:`, error);
-        // Error toast is likely handled by adminApi.js, but can add a specific one here too.
+        if(typeof showAdminToast === 'function' && error.data && error.data.message) {
+            showAdminToast(error.data.message, "error");
+        } else if(typeof showAdminToast === 'function') {
+            showAdminToast(t('admin.users.toast.update_failed_server', 'Erreur serveur lors de la MAJ.'), 'error');
+        }
     } finally {
         saveButton.disabled = false;
         saveButton.textContent = originalButtonText;
@@ -336,7 +336,7 @@ function getCurrentFilters() {
     const professionalStatus = document.getElementById('filter-user-professional-status').value;
     const search = document.getElementById('search-user-email').value.trim();
     const paginationControls = document.getElementById('user-pagination-controls');
-    const currentPageButton = paginationControls.querySelector('button.btn-admin-primary'); // Active page button
+    const currentPageButton = paginationControls.querySelector('button.btn-admin-primary');
     const currentPage = currentPageButton ? parseInt(currentPageButton.textContent) : 1;
 
 
@@ -349,16 +349,3 @@ function getCurrentFilters() {
 
     return filters;
 }
-
-
-// Add missing translation keys to fr.json / en.json for:
-// "admin.users.table.no_users_found", "admin.users.table.load_error", "admin.users.toast.load_failed"
-// "admin.users.toast.loading_details", "admin.users.toast.details_not_found", "admin.users.toast.load_details_error"
-// "admin.users.toast.update_success", "admin.users.toast.update_failed"
-// "common.edit", "common.saving"
-// "admin.users.filter.role_staff"
-// "admin.users.modal.status_pending_review", "admin.users.modal.status_pending_documents", "admin.users.modal.status_on_hold"
-// "admin.users.modal.b2b_tier_standard", "admin.users.modal.b2b_tier_gold", "admin.users.modal.b2b_tier_platinum" (and other tiers)
-// "admin.users.doc_status.pending_review", etc. for document statuses
-// "admin.users.no_documents_submitted"
-
