@@ -2052,121 +2052,133 @@ def update_product_options_admin(product_id):
 
 
 # --- User Management ---        
-@admin_api_bp.route('/users', methods=['GET'])
+admin_api_bp.route('/users', methods=['GET'])
 @admin_required
-def get_users_admin(): # Renamed to avoid conflict if a public /users endpoint exists
-    # Filters
-    role_filter_str = sanitize_input(request.args.get('role'))
-    status_filter_str = sanitize_input(request.args.get('is_active'))
-    search_term = sanitize_input(request.args.get('search'))
-
-    query = User.query
-    if role_filter_str:
-        try:
-            role_enum = UserRoleEnum(role_filter_str)
-            query = query.filter(User.role == role_enum)
-        except ValueError:
-            return jsonify(message=f"Invalid role filter value: {role_filter_str}", success=False), 400
-            
-    if status_filter_str is not None:
-        is_active_val = status_filter_str.lower() == 'true'
-        query = query.filter(User.is_active == is_active_val)
-    
-    if search_term:
-        term_like = f"%{search_term.lower()}%"
-        query = query.filter(
-            or_(
-                func.lower(User.email).like(term_like),
-                func.lower(User.first_name).like(term_like),
-                func.lower(User.last_name).like(term_like),
-                func.lower(User.company_name).like(term_like),
-                func.cast(User.id, db.String).like(term_like)
-            )
-        )
-    
+def get_users_admin():
+    audit_logger = current_app.audit_log_service
+    current_admin_id = get_jwt_identity()
     try:
-        users_models = query.order_by(User.created_at.desc()).all()
-        users_data = [u.to_dict() for u in users_models] # Leverage to_dict for consistency
-        return jsonify(users=users_data, success=True), 200
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 15, type=int)
+        role_filter = request.args.get('role')
+        is_active_filter = request.args.get('is_active')
+        professional_status_filter = request.args.get('professional_status')
+        search_term = request.args.get('search')
+
+        query = User.query
+
+        if role_filter:
+            try: query = query.filter(User.role == UserRoleEnum(role_filter))
+            except ValueError: return jsonify(message=f"Invalid role filter: {role_filter}", success=False), 400
+        if is_active_filter is not None:
+            query = query.filter(User.is_active == (is_active_filter.lower() == 'true'))
+        if professional_status_filter:
+            try: query = query.filter(User.professional_status == ProfessionalStatusEnum(professional_status_filter))
+            except ValueError: return jsonify(message=f"Invalid professional status filter: {professional_status_filter}", success=False), 400
+        if search_term:
+            term_like = f"%{search_term.lower()}%"
+            query = query.filter(
+                or_(
+                    User.email.ilike(term_like),
+                    User.first_name.ilike(term_like),
+                    User.last_name.ilike(term_like),
+                    User.company_name.ilike(term_like),
+                    func.cast(User.id, db.String).ilike(term_like)
+                )
+            )
+        
+        paginated_users = query.order_by(User.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+        users_data = [u.to_dict() for u in paginated_users.items]
+        
+        audit_logger.log_action(user_id=current_admin_id, action='admin_get_users_list', status='success', ip_address=request.remote_addr)
+        return jsonify({
+            "users": users_data,
+            "pagination": {
+                "current_page": paginated_users.page,
+                "per_page": paginated_users.per_page,
+                "total_items": paginated_users.total,
+                "total_pages": paginated_users.pages
+            },
+            "success": True
+        }), 200
     except Exception as e:
         current_app.logger.error(f"Error fetching users for admin: {e}", exc_info=True)
-        return jsonify(message="Failed to fetch users. Please try again later.", success=False), 500
+        return jsonify(message="Failed to fetch users.", success=False), 500
+
+
+
+
+
 
 @admin_api_bp.route('/users/<int:user_id>', methods=['GET'])
 @admin_required
-def get_user_admin_detail(user_id): # Renamed
-    try:
-        user_model = User.query.get(user_id)
-        if not user_model: 
-            return jsonify(message="User not found.", success=False), 404
-        
-        user_data = user_model.to_dict()
-        # Add more details if to_dict() is too brief for admin view, e.g., order history
-        user_data['created_at_display'] = format_datetime_for_display(user_model.created_at)
-        user_data['updated_at_display'] = format_datetime_for_display(user_model.updated_at)
-        # Example: Fetch recent orders
-        # user_data['recent_orders'] = [o.to_dict_summary() for o in user_model.orders.order_by(Order.order_date.desc()).limit(5).all()]
-        return jsonify(user=user_data, success=True), 200
-    except Exception as e:
-        current_app.logger.error(f"Error fetching admin user detail for ID {user_id}: {e}", exc_info=True)
-        return jsonify(message="Failed to fetch user details. Please try again later.", success=False), 500
+def get_user_admin_detail(user_id):
+    user_model = User.query.get_or_404(user_id)
+    user_data = user_model.to_dict() # Base data
+    # Add professional documents to the user data if they are B2B
+    if user_model.role == UserRoleEnum.B2B_PROFESSIONAL:
+        user_data['professional_documents'] = []
+        for doc in user_model.professional_documents:
+            doc_download_url = None
+            if doc.file_path:
+                try: doc_download_url = url_for('admin_api_bp.serve_asset', asset_relative_path=doc.file_path, _external=True)
+                except Exception as e_doc_url: current_app.logger.warning(f"Could not generate URL for prof. doc {doc.file_path}: {e_doc_url}")
+            user_data['professional_documents'].append({
+                "id": doc.id, "document_type": doc.document_type, 
+                "upload_date": format_datetime_for_display(doc.upload_date),
+                "status": doc.status.value if doc.status else None,
+                "download_url": doc_download_url,
+                "notes": doc.notes
+            })
+    return jsonify(user=user_data, success=True), 200
 
 @admin_api_bp.route('/users/<int:user_id>', methods=['PUT'])
 @admin_required
-def update_user_admin(user_id): # Renamed
+def update_user_admin(user_id):
     current_admin_id = get_jwt_identity()
     audit_logger = current_app.audit_log_service
     data = request.json
     if not data: return jsonify(message="No data provided for update.", success=False), 400
 
-    user = User.query.get(user_id)
-    if not user: return jsonify(message="User not found.", success=False), 404
-
-    allowed_fields = ['first_name', 'last_name', 'role', 'is_active', 'is_verified', 
-                      'company_name', 'vat_number', 'siret_number', 'professional_status']
+    user = User.query.get_or_404(user_id)
+    
+    allowed_fields = ['first_name', 'last_name', 'role', 'is_active', 'is_verified',
+                      'company_name', 'vat_number', 'siret_number', 'professional_status',
+                      'b2b_tier', 'newsletter_b2c_opt_in', 'newsletter_b2b_opt_in'] # Added newsletter fields
     updated_fields_log = []
-    validation_errors = {}
 
     for field in allowed_fields:
         if field in data:
-            new_value_raw = data[field]
-            new_value_sanitized = sanitize_input(str(new_value_raw) if new_value_raw is not None else None) # Basic sanitize
-
+            new_value = data[field]
             current_value = getattr(user, field)
-            # Handle Enum conversions and boolean conversions
+            
             try:
-                if field == 'role' and new_value_sanitized:
-                    new_value_processed = UserRoleEnum(new_value_sanitized)
-                elif field == 'professional_status' and new_value_sanitized:
-                    new_value_processed = ProfessionalStatusEnum(new_value_sanitized)
-                elif field in ['is_active', 'is_verified']:
-                    new_value_processed = str(new_value_sanitized).lower() == 'true'
-                else:
-                    new_value_processed = new_value_sanitized
-            except ValueError as e_enum: # Invalid enum value
-                validation_errors[field] = f"Invalid value for {field}: {new_value_sanitized}"
-                continue # Skip this field
+                if field == 'role' and new_value: new_value_processed = UserRoleEnum(new_value)
+                elif field == 'professional_status' and new_value: new_value_processed = ProfessionalStatusEnum(new_value)
+                elif field == 'b2b_tier' and new_value: new_value_processed = B2BPricingTierEnum(new_value)
+                elif field in ['is_active', 'is_verified', 'newsletter_b2c_opt_in', 'newsletter_b2b_opt_in']:
+                    new_value_processed = bool(new_value) # Handles True, False, "true", "false"
+                else: new_value_processed = new_value # Assume string or already correct type
+            except ValueError as e_enum:
+                return jsonify(message=f"Invalid value for {field}: {new_value}. Error: {str(e_enum)}", success=False), 400
 
             if new_value_processed != current_value:
                 setattr(user, field, new_value_processed)
                 updated_fields_log.append(field)
     
-    if validation_errors:
-        return jsonify(message="Validation errors occurred.", errors=validation_errors, success=False), 400
-    if not updated_fields_log: 
-        return jsonify(message="No changes detected or no updatable fields provided.", success=True), 200 # Not an error
+    if not updated_fields_log:
+        return jsonify(message="No changes detected.", success=True), 200
 
     try:
         user.updated_at = datetime.now(timezone.utc)
         db.session.commit()
-        audit_logger.log_action(user_id=current_admin_id, action='update_user_admin_success', target_type='user', target_id=user_id, details=f"User {user_id} updated. Fields: {', '.join(updated_fields_log)}", status='success', ip_address=request.remote_addr)
+        audit_logger.log_action(user_id=current_admin_id, action='update_user_admin_success', target_type='user', target_id=user_id, details=f"Fields updated: {', '.join(updated_fields_log)}", status='success', ip_address=request.remote_addr)
         return jsonify(message="User updated successfully.", user=user.to_dict(), success=True), 200
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Failed to update user ID {user_id}: {e}", exc_info=True)
+        current_app.logger.error(f"Failed to update user {user_id}: {e}", exc_info=True)
         audit_logger.log_action(user_id=current_admin_id, action='update_user_admin_fail', target_type='user', target_id=user_id, details=str(e), status='failure', ip_address=request.remote_addr)
-        return jsonify(message="Failed to update user due to a server error.", success=False), 500
-
+        return jsonify(message="Failed to update user.", error=str(e), success=False), 500
 
 # backend/admin_api/routes.py (Continued - Order Management)
 from ..models import Order, OrderItem, User, OrderStatusEnum # Ensure Enums imported
