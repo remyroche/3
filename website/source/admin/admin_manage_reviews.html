@@ -4,72 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gérer les Avis - Maison Trüvra Admin</title>
-    <link rel="stylesheet" href="css/admin_style.css"> 
+    <link rel="stylesheet" href="css/admin_style.css"> <!-- Standardized path -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body id="page-admin-manage-reviews">
-    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
-                    <i class="fas fa-arrow-left mr-2"></i>
-                    Retour au Tableau de Bord
-                </a>
-                <div id="admin-header-title-area">
-                     <h1 class="text-xl font-semibold text-gray-700">Maison Trüvra - Admin</h1>
-                </div>
-            </div>
-            <div class="flex items-center space-x-4">
-                <span id="admin-user-greeting" class="text-gray-700 text-sm mr-2"></span>
-                <button id="admin-logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-sm flex items-center">
-                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
-                </button>
-            </div>
-        </div>
-    </header>
+<body class="admin-body" id="page-admin-manage-reviews">
 
-    <nav class="bg-gray-800 text-white shadow-md">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-start h-12 space-x-1 overflow-x-auto">
-                <a href="admin_dashboard.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Tableau de Bord</a>
-                <a href="admin_manage_products.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Produits</a>
-                <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Inventaire</a>
-                <a href="admin_view_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voir Inventaire</a>
-                <a href="admin_manage_orders.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Commandes</a>
-                <a href="admin_manage_users.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Utilisateurs</a>
-                <a href="admin_manage_categories.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Catégories</a>
-                <a href="admin_invoices.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Factures</a>
-                <a href="admin_manage_reviews.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 active">Avis</a>
-            </div>
+    <div id="admin-header-placeholder"></div> <!-- Placeholder for the common header -->
+
+    <main class="admin-main-container">
+        <div class="admin-page-header">
+            <h1 class="admin-page-title">Gestion des Avis Clients</h1>
         </div>
-    </nav>
-    <main class="admin-content-area container mx-auto p-6 space-y-6">
-        <h1 class="text-3xl font-semibold text-gray-800 mb-6">Gestion des Avis Clients</h1>
-        <section class="admin-form-container">
-            <h2 class="admin-form-title">Filtrer les Avis</h2>
-            <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label for="filter-review-status" class="form-label">Statut:</label>
-                    <select id="filter-review-status" class="form-input-admin mt-1">
-                        <option value="">Tous</option>
-                        <option value="pending">En attente d'approbation</option>
-                        <option value="approved">Approuvé</option>
-                    </select>
+
+        <section class="admin-form-container content-card">
+            <h2 class="section-heading">Filtrer les Avis</h2>
+            <form id="review-filters-form" class="admin-form"> <!-- Added ID -->
+                <div class="grid md:grid-cols-3 gap-4 mb-4">
+                    <div class="form-group">
+                        <label for="filter-review-status" class="form-label">Statut:</label>
+                        <select id="filter-review-status" class="form-input-admin">
+                            <option value="">Tous</option>
+                            <option value="pending">En attente d'approbation</option>
+                            <option value="approved">Approuvé</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-review-product" class="form-label">Produit (ID, Nom ou Code):</label>
+                        <input type="text" id="filter-review-product" placeholder="ID, Nom ou Code du produit..." class="form-input-admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-review-user" class="form-label">Utilisateur (Email ou ID):</label>
+                        <input type="text" id="filter-review-user" placeholder="Email ou ID utilisateur..." class="form-input-admin">
+                    </div>
                 </div>
-                <div>
-                    <label for="filter-review-product" class="form-label">Produit (ID, Nom ou Code):</label>
-                    <input type="text" id="filter-review-product" placeholder="ID, Nom ou Code du produit..." class="form-input-admin mt-1">
-                </div>
-                <div>
-                    <label for="filter-review-user" class="form-label">Utilisateur (Email ou ID):</label>
-                    <input type="text" id="filter-review-user" placeholder="Email ou ID utilisateur..." class="form-input-admin mt-1">
-                </div>
-            </div>
-             <button id="apply-review-filters-button" class="btn btn-admin-primary">Appliquer Filtres</button>
+                 <button type="button" id="apply-review-filters-button" class="btn btn-admin-primary"><i class="fas fa-filter mr-2"></i>Appliquer Filtres</button>
+            </form>
         </section>
 
-        <section class="admin-table-container">
-            <h2 class="admin-table-title">Liste des Avis</h2>
+        <section class="admin-table-container content-card">
+            <h2 class="section-heading">Liste des Avis</h2>
             <div class="overflow-x-auto">
                 <table class="admin-table min-w-full">
                     <thead>
@@ -81,7 +54,7 @@
                             <th>Commentaire</th>
                             <th>Date</th>
                             <th>Statut</th>
-                            <th>Actions</th>
+                            <th class="text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="reviews-table-body">
@@ -92,7 +65,7 @@
         </section>
     </main>
     
-    <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
+    <footer class="admin-footer">
         <p>&copy; <span id="currentYearManageReviews"></span> Maison Trüvra - Admin Panel</p>
     </footer>
 
@@ -102,13 +75,10 @@
     <script src="js/admin_ui.js"></script>
     <script src="js/admin_api.js"></script>
     <script src="js/admin_auth.js"></script>
-    <script src="js/admin_main.js"></script> 
+    <script src="js/admin_main.js"></script> <!-- This will load the common header -->
     <script src="js/admin_reviews.js"></script>
     <script>
-        const currentYearSpanManageReviews = document.getElementById('currentYearManageReviews');
-        if (currentYearSpanManageReviews) {
-            currentYearSpanManageReviews.textContent = new Date().getFullYear();
-        }
+        document.getElementById('currentYearManageReviews').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
