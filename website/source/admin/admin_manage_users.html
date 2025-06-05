@@ -3,110 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voir Inventaire Détaillé - Maison Trüvra Admin</title>
-    <link rel="stylesheet" href="css/admin_style.css"> <!-- Standardized path -->
+    <title>Gérer les Utilisateurs - Admin - Maison Trüvra</title>
+    <link rel="stylesheet" href="css/admin_style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body class="admin-body" id="page-admin-view-inventory">
+<body class="admin-body" id="page-admin-manage-users">
 
-    <div id="admin-header-placeholder"></div> <!-- Placeholder for the common header -->
+    <div id="admin-header-placeholder"></div>
 
     <main class="admin-main-container">
         <div class="admin-page-header">
-            <h1 class="admin-page-title">Inventaire Détaillé des Articles Sérialisés</h1>
+            <h1 class="admin-page-title">Gestion des Utilisateurs</h1>
         </div>
-        
+
         <section class="admin-form-container content-card">
-            <h2 class="section-heading">Filtres de l'Inventaire Détaillé</h2>
-            <form id="view-inventory-filters-form" class="admin-form"> <!-- Added ID -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <h2 class="section-heading">Filtrer les Utilisateurs</h2>
+            <form id="user-filters-form" class="admin-form">
+                <div class="grid md:grid-cols-4 gap-4 mb-4">
                     <div class="form-group">
-                        <label for="filter-view-product-name" class="form-label">Nom du Produit:</label>
-                        <input type="text" id="filter-view-product-name" placeholder="Filtrer par nom de produit..." class="form-input-admin">
-                    </div>
-                     <div class="form-group">
-                        <label for="filter-view-product-code" class="form-label">Code Produit:</label>
-                        <input type="text" id="filter-view-product-code" placeholder="Filtrer par code produit..." class="form-input-admin">
-                    </div>
-                    <div class="form-group">
-                        <label for="filter-view-item-status" class="form-label">Statut de l'Article:</label>
-                        <select id="filter-view-item-status" class="form-input-admin">
-                            <option value="">Tous les statuts</option>
-                            <option value="available">Disponible</option>
-                            <option value="allocated">Alloué</option>
-                            <option value="sold">Vendu</option>
-                            <option value="damaged">Endommagé</option>
-                            <option value="returned">Retourné</option>
-                            <option value="recalled">Rappelé</option>
-                            <option value="reserved_internal">Réservé (Interne)</option>
-                            <option value="missing">Manquant</option>
+                        <label for="filter-user-role" class="form-label">Rôle :</label>
+                        <select id="filter-user-role" class="form-input-admin">
+                            <option value="" data-translate-key="admin.users.filter.role_all">Tous</option>
+                            <option value="b2c_customer" data-translate-key="admin.users.filter.role_b2c">Client B2C</option>
+                            <option value="b2b_professional" data-translate-key="admin.users.filter.role_b2b">Professionnel B2B</option>
+                            <option value="staff" data-translate-key="admin.users.filter.role_staff">Staff</option>
+                            <option value="admin" data-translate-key="admin.users.filter.role_admin">Administrateur</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="search-view-item-uid" class="form-label">Rechercher par UID Article:</label>
-                        <input type="text" id="search-view-item-uid" placeholder="Entrer UID..." class="form-input-admin">
+                        <label for="filter-user-is-active" class="form-label">Statut Actif :</label>
+                        <select id="filter-user-is-active" class="form-input-admin">
+                            <option value="" data-translate-key="admin.users.filter.active_all">Tous</option>
+                            <option value="true" data-translate-key="admin.users.filter.active_true">Actif</option>
+                            <option value="false" data-translate-key="admin.users.filter.active_false">Inactif</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-user-professional-status" class="form-label">Statut Professionnel B2B :</label>
+                        <select id="filter-user-professional-status" class="form-input-admin">
+                            <option value="">Tous</option>
+                            <option value="pending_review">En attente d'examen</option>
+                            <option value="pending_documents">Documents en attente</option>
+                            <option value="approved">Approuvé</option>
+                            <option value="rejected">Rejeté</option>
+                            <option value="on_hold">En pause</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="search-user-email" class="form-label">Rechercher (Email, Nom, ID) :</label>
+                        <input type="search" id="search-user-email" placeholder="Email, nom, ID..." class="form-input-admin" data-translate-placeholder="admin.users.filter.search_email_placeholder">
                     </div>
                 </div>
+                <button type="button" id="apply-user-filters-button" class="btn btn-admin-primary"><i class="fas fa-filter mr-2"></i>Appliquer Filtres</button>
+                 <button type="button" id="reset-user-filters-button" class="btn btn-admin-secondary ml-2"><i class="fas fa-undo mr-2"></i>Réinitialiser</button>
             </form>
-            <div class="mt-4 d-flex flex-wrap gap-4 align-items-center">
-                 <button id="export-inventory-csv-button" class="btn btn-admin-secondary">
-                    <i class="fas fa-file-csv mr-2"></i>Exporter en CSV
-                </button>
-                <form id="import-inventory-form" class="d-flex align-items-center gap-2"> <!-- Wrapped in a form for potential future submit behavior -->
-                    <label for="import-inventory-csv-file" class="form-label sr-only">Importer CSV</label>
-                    <input type="file" id="import-inventory-csv-file" accept=".csv" class="form-input-admin text-sm" style="padding: 0.375rem 0.75rem; border-radius: var(--border-radius-sm);">
-                    <button type="button" id="import-inventory-csv-button" class="btn btn-admin-primary"> <!-- Changed to type=button to prevent form submission -->
-                        <i class="fas fa-file-upload mr-2"></i>Importer
-                    </button>
-                </form>
-            </div>
         </section>
 
         <section class="admin-table-container content-card">
-            <h2 class="section-heading">Liste des Articles en Stock (Sérialisés)</h2>
+            <h2 class="section-heading">Liste des Utilisateurs</h2>
             <div class="overflow-x-auto">
-                <table class="admin-table min-w-full">
+                <table class="admin-table min-w-full" id="users-table">
                     <thead>
                         <tr>
-                            <th>Produit</th>
-                            <th>Variante</th>
-                            <th>Code Produit</th>
-                            <th>UID Article</th>
-                            <th>Statut</th>
-                            <th>Lot</th>
-                            <th>Date Prod.</th>
-                            <th>Date Exp.</th>
-                            <th>Reçu le</th>
+                            <th>ID</th>
+                            <th>Email</th>
+                            <th>Nom</th>
+                            <th>Rôle</th>
+                            <th>Tier B2B</th> <!-- New Column -->
+                            <th>Actif</th>
+                            <th>Vérifié</th>
+                            <th>Statut B2B</th>
+                            <th class="text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="detailed-inventory-table-body">
-                        <tr><td colspan="9" class="text-center p-4">Chargement de l'inventaire détaillé...</td></tr>
+                    <tbody id="users-table-body">
+                        <tr><td colspan="9" class="text-center p-4" data-translate-key="admin.users.loading">Chargement des utilisateurs...</td></tr>
                     </tbody>
                 </table>
             </div>
+            <nav aria-label="Pagination des utilisateurs" class="mt-4 d-flex justify-content-center" id="user-pagination-controls">
+                <!-- Pagination controls will be inserted here by JS -->
+            </nav>
         </section>
+
+        <!-- User Edit Modal -->
+        <div id="user-edit-modal" class="admin-modal-overlay">
+            <div class="admin-modal-content sm-max-w-2xl">
+                <form id="user-edit-form" class="admin-form">
+                    <div class="admin-modal-header">
+                        <h3 id="user-edit-modal-title" class="admin-form-title" data-translate-key="admin.users.modal.title">Modifier Utilisateur</h3>
+                        <button type="button" class="admin-modal-close" id="close-user-edit-modal-button" aria-label="Close">&times;</button>
+                    </div>
+                    <div class="admin-modal-body space-y-4">
+                        <input type="hidden" id="edit-user-id" name="user_id">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label for="edit-user-first-name" class="form-label" data-translate-key="admin.users.modal.first_name">Prénom :</label>
+                                <input type="text" id="edit-user-first-name" name="first_name" class="form-input-admin">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-user-last-name" class="form-label" data-translate-key="admin.users.modal.last_name">Nom :</label>
+                                <input type="text" id="edit-user-last-name" name="last_name" class="form-input-admin">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-user-email" class="form-label" data-translate-key="admin.users.modal.email">Email :</label>
+                            <input type="email" id="edit-user-email" name="email" class="form-input-admin" readonly>
+                            <small class="form-text">L'adresse email ne peut pas être modifiée.</small>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label for="edit-user-role" class="form-label" data-translate-key="admin.users.modal.role">Rôle :</label>
+                                <select id="edit-user-role" name="role" class="form-input-admin">
+                                    <option value="b2c_customer" data-translate-key="admin.users.modal.role_b2c">Client B2C</option>
+                                    <option value="b2b_professional" data-translate-key="admin.users.modal.role_b2b">Professionnel B2B</option>
+                                    <option value="staff" data-translate-key="admin.users.filter.role_staff">Staff</option>
+                                    <option value="admin" data-translate-key="admin.users.modal.role_admin">Administrateur</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-user-is-active" class="form-label" data-translate-key="admin.users.modal.active_account">Compte Actif :</label>
+                                <select id="edit-user-is-active" name="is_active" class="form-input-admin">
+                                    <option value="true" data-translate-key="admin.users.modal.active_yes">Oui</option>
+                                    <option value="false" data-translate-key="admin.users.modal.active_no">Non</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                             <label for="edit-user-is-verified" class="form-label" data-translate-key="admin.users.modal.verified_email">Email Vérifié :</label>
+                             <select id="edit-user-is-verified" name="is_verified" class="form-input-admin">
+                                <option value="true" data-translate-key="admin.users.modal.active_yes">Oui</option>
+                                <option value="false" data-translate-key="admin.users.modal.active_no">Non</option>
+                            </select>
+                        </div>
+
+                        <!-- B2B Specific Fields -->
+                        <div class="b2b-fields border-t border-mt-warm-taupe pt-4 mt-4 space-y-4 hidden">
+                            <h4 class="text-md font-semibold text-mt-near-black">Informations Professionnel B2B</h4>
+                            <div class="form-group">
+                                <label for="edit-user-company-name" class="form-label" data-translate-key="admin.users.modal.company_name">Nom Entreprise :</label>
+                                <input type="text" id="edit-user-company-name" name="company_name" class="form-input-admin">
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-group">
+                                    <label for="edit-user-vat-number" class="form-label" data-translate-key="admin.users.modal.vat_number">N° TVA :</label>
+                                    <input type="text" id="edit-user-vat-number" name="vat_number" class="form-input-admin">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-user-siret-number" class="form-label" data-translate-key="admin.users.modal.siret_number">N° SIRET :</label>
+                                    <input type="text" id="edit-user-siret-number" name="siret_number" class="form-input-admin">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-group">
+                                    <label for="edit-user-professional-status" class="form-label" data-translate-key="admin.users.modal.professional_status">Statut Professionnel :</label>
+                                    <select id="edit-user-professional-status" name="professional_status" class="form-input-admin">
+                                        <option value="pending_review" data-translate-key="admin.users.modal.status_pending_review">En attente d'examen</option>
+                                        <option value="pending_documents" data-translate-key="admin.users.modal.status_pending_documents">Documents en attente</option>
+                                        <option value="approved" data-translate-key="admin.users.modal.status_approved">Approuvé</option>
+                                        <option value="rejected" data-translate-key="admin.users.modal.status_rejected">Rejeté</option>
+                                        <option value="on_hold" data-translate-key="admin.users.modal.status_on_hold">En pause</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-user-b2b-tier" class="form-label">Tier Tarifaire B2B :</label>
+                                    <select id="edit-user-b2b-tier" name="b2b_tier" class="form-input-admin">
+                                        <option value="standard">Standard</option>
+                                        <option value="gold">Gold</option>
+                                        <option value="platinum">Platinum</option>
+                                        <!-- Add more tiers as defined in B2BPricingTierEnum -->
+                                    </select>
+                                </div>
+                            </div>
+                             <div class="form-group">
+                                <h5 class="text-sm font-medium text-mt-near-black mb-2">Documents Professionnels Soumis</h5>
+                                <div id="user-documents-list" class="text-xs space-y-1">
+                                    <!-- Documents listed here by JS -->
+                                    <p class="italic text-mt-warm-taupe">Aucun document soumis ou en attente d'affichage.</p>
+                                </div>
+                                <!-- TODO: UI for admin to approve/reject individual documents if needed -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="admin-modal-actions">
+                        <button type="submit" id="save-user-changes-button" class="btn btn-admin-primary" data-translate-key="admin.users.modal.save_btn">Enregistrer</button>
+                        <button type="button" id="cancel-user-edit-button" class="btn btn-admin-secondary" data-translate-key="common.cancel">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </main>
-    
+
     <footer class="admin-footer">
-        <p>&copy; <span id="currentYearViewInv"></span> Maison Trüvra - Admin Panel</p>
+        <p>&copy; <span id="currentYearManageUsers"></span> Maison Trüvra - Admin Panel</p>
     </footer>
-
     <div id="admin-toast-container"></div>
-
-    <div id="product-overview-tooltip" 
-         class="hidden absolute z-[1060] p-3 text-white text-sm rounded-md shadow-lg pointer-events-none max-w-xs"
-         role="tooltip" style="background-color: var(--mt-near-black); border-radius: var(--border-radius-md); border: 1px solid var(--mt-gold);">
-        <!-- Content populated by JS -->
-    </div>
 
     <script src="js/admin_config.js"></script>
     <script src="js/admin_ui.js"></script>
     <script src="js/admin_api.js"></script>
     <script src="js/admin_auth.js"></script>
-    <script src="js/admin_main.js"></script> <!-- This will load the common header -->
-    <script src="js/admin_view_inventory.js"></script>
+    <script src="js/admin_main.js"></script>
+    <script src="js/admin_users.js"></script>
     <script>
-        document.getElementById('currentYearViewInv').textContent = new Date().getFullYear();
+        document.getElementById('currentYearManageUsers').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
