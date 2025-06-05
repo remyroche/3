@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gérer les Bons de Commande B2B - Admin - Maison Trüvra</title>
+    <link rel="stylesheet" href="css/admin_style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
+<body class="admin-body" id="page-admin-manage-pos">
+
+    <div id="admin-header-placeholder"></div>
+
+    <main class="admin-main-container">
+        <div class="admin-page-header">
+            <h1 class="admin-page-title">Gestion des Bons de Commande (PO) B2B</h1>
+        </div>
+
+        <section class="admin-form-container content-card">
+            <h2 class="section-heading">Filtrer les Bons de Commande</h2>
+            <form id="po-filters-form" class="admin-form">
+                <div class="grid md:grid-cols-3 gap-4 mb-4">
+                    <div class="form-group">
+                        <label for="filter-po-status" class="form-label">Statut Commande Associée :</label>
+                        <select id="filter-po-status" class="form-input-admin">
+                            <option value="">Tous</option>
+                            <option value="pending_po_review">En attente d'examen PO</option>
+                            <option value="processing">En traitement (PO Approuvé)</option>
+                            <!-- Add other relevant order statuses -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-po-customer" class="form-label">Client (Email, Nom, Société) :</label>
+                        <input type="search" id="filter-po-customer" placeholder="Email, nom, société..." class="form-input-admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-po-date" class="form-label">Date de Soumission PO :</label>
+                        <input type="date" id="filter-po-date" class="form-input-admin">
+                    </div>
+                </div>
+                <button type="button" id="apply-po-filters-button" class="btn btn-admin-primary"><i class="fas fa-filter mr-2"></i>Appliquer</button>
+                 <button type="button" id="reset-po-filters-button" class="btn btn-admin-secondary ml-2"><i class="fas fa-undo mr-2"></i>Réinitialiser</button>
+            </form>
+        </section>
+
+        <section class="admin-table-container content-card">
+            <h2 class="section-heading">Bons de Commande Soumis</h2>
+            <div class="overflow-x-auto">
+                <table class="admin-table min-w-full" id="pos-table">
+                    <thead>
+                        <tr>
+                            <th>ID Commande (Interne)</th>
+                            <th>Client (Société / Contact)</th>
+                            <th>Référence PO Client</th>
+                            <th>Date Soumission</th>
+                            <th>Total Estimé (HT)</th>
+                            <th>Statut Commande</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pos-table-body">
+                        <tr><td colspan="7" class="text-center p-4">Chargement des bons de commande...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+             <nav aria-label="Pagination des POs" class="mt-4 d-flex justify-content-center" id="po-pagination-controls">
+                <!-- Pagination -->
+            </nav>
+        </section>
+
+        <!-- PO Detail Modal -->
+        <div id="po-detail-modal" class="admin-modal-overlay">
+            <div class="admin-modal-content sm-max-w-3xl">
+                 <form id="po-update-form" class="admin-form">
+                    <div class="admin-modal-header">
+                        <h3 id="po-detail-modal-title" class="admin-form-title">Détails Bon de Commande (Order #<span id="modal-po-order-id"></span>)</h3>
+                        <button type="button" class="admin-modal-close" id="close-po-detail-modal-button" aria-label="Close">&times;</button>
+                    </div>
+                    <div class="admin-modal-body space-y-4">
+                        <input type="hidden" id="modal-po-order-id-hidden" name="order_id_for_po_update">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                            <div>
+                                <h4 class="subsection-heading mb-1">Informations Client</h4>
+                                <p><strong>Client:</strong> <span id="modal-po-customer-name"></span> (<span id="modal-po-customer-email"></span>)</p>
+                                <p><strong>Société:</strong> <span id="modal-po-customer-company"></span></p>
+                            </div>
+                            <div>
+                                 <h4 class="subsection-heading mb-1">Informations Commande</h4>
+                                <p><strong>Date Soumission PO:</strong> <span id="modal-po-submission-date"></span></p>
+                                <p><strong>Statut Actuel Commande:</strong> <span id="modal-po-current-status" class="font-weight-semibold"></span></p>
+                                <p><strong>Référence PO Client:</strong> <span id="modal-po-client-ref"></span></p>
+                                <p><strong>Fichier PO:</strong> <a id="modal-po-download-link" href="#" target="_blank" class="text-indigo-600 hover:underline">Télécharger PO</a></p>
+                            </div>
+                        </div>
+
+                        <h4 class="subsection-heading">Articles Demandés (basé sur le panier lors de la soumission du PO)</h4>
+                        <div class="overflow-x-auto admin-table-container max-h-60">
+                            <table class="admin-table w-full text-xs">
+                                <thead>
+                                    <tr>
+                                        <th>Produit (Réf.)</th>
+                                        <th>Variante</th>
+                                        <th class="text-center">Qté</th>
+                                        <th class="text-right">Prix Unitaire (HT) Demandé</th>
+                                        <th class="text-right">Total (HT) Demandé</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modal-po-items-table-body"></tbody>
+                            </table>
+                        </div>
+                        <p class="text-right font-bold">Total Commande Estimé (HT): <span id="modal-po-total-ht-estimate">€0.00</span></p>
+                        
+                        <div class="border-t pt-4">
+                            <h4 class="subsection-heading">Actions Administrateur</h4>
+                             <div class="form-group">
+                                <label for="modal-po-new-order-status" class="form-label">Mettre à Jour Statut Commande :</label>
+                                <select id="modal-po-new-order-status" name="new_order_status" class="form-input-admin">
+                                    <option value="pending_po_review">En attente d'examen PO</option>
+                                    <option value="processing">Traitement (PO Approuvé)</option>
+                                    <option value="awaiting_shipment">En attente d'expédition</option>
+                                    <option value="on_hold">En Pause (Ex: Vérification)</option>
+                                    <option value="cancelled">Annulée (PO Rejeté)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="modal-po-admin-notes" class="form-label">Notes Internes Administrateur :</label>
+                                <textarea id="modal-po-admin-notes" name="admin_notes_po" rows="2" class="form-input-admin"></textarea>
+                            </div>
+                            <!-- Potentiellement, champs pour ajuster les quantités/prix si le PO diffère du panier -->
+                        </div>
+                    </div>
+                    <div class="admin-modal-actions">
+                        <button type="submit" id="update-po-order-status-button" class="btn btn-admin-primary">Mettre à Jour Commande</button>
+                        <!-- Option to generate a formal B2B invoice once PO is approved and order is set to processing/awaiting shipment -->
+                        <button type="button" id="generate-b2b-invoice-from-po-button" class="btn btn-admin-success ml-2 hidden">Générer Facture B2B</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="admin-footer">
+        <p>&copy; <span id="currentYearManagePOs"></span> Maison Trüvra - Admin Panel</p>
+    </footer>
+    <div id="admin-toast-container"></div>
+
+    <script src="js/admin_config.js"></script>
+    <script src="js/admin_ui.js"></script>
+    <script src="js/admin_api.js"></script>
+    <script src="js/admin_auth.js"></script>
+    <script src="js/admin_main.js"></script>
+    <script src="js/admin_manage_pos.js"></script> <!-- New JS file -->
+    <script>
+        document.getElementById('currentYearManagePOs').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
