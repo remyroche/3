@@ -4,367 +4,187 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Créer une Facture - Admin - Maison Trüvra</title>
-    <!-- Google Fonts: Inter (sans-serif) and Lora (serif) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;700&display=swap" rel="stylesheet">
-    
-    <!-- Link to your admin_style.css. Adjust path if necessary. -->
-    <link rel="stylesheet" href="css/admin_style.css">
-    <!-- Tailwind CSS (if you are using it) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Maison Trüvra Branding Palette */
-        :root {
-            --mt-cream: #F5EEDE;
-            --mt-near-black: #11120D;
-            --mt-gold: #D4AF37;
-            --mt-warm-taupe: #A28C6A;
-            --mt-earth-brown: #7D6A4F;
-            --mt-slate-blue-grey: #6E7582;
-            --mt-deep-sage-green: #4B5A59;
-            --mt-truffle-burgundy: #8A3E3E;
-
-            --font-sans: 'Inter', sans-serif;
-            --font-serif: 'Lora', serif;
-        }
-
-        body {
-            font-family: var(--font-sans);
-            color: var(--mt-near-black);
-            background-color: var(--mt-cream); /* Page background */
-            margin: 0;
-            padding: 20px;
-        }
-        .invoice-container {
-            max-width: 800px; /* A4-like width */
-            margin: 20px auto;
-            padding: 40px; /* Increased padding for a more spacious feel */
-            background-color: #fff; /* Invoice sheet background */
-            border: 1px solid var(--mt-warm-taupe); /* Subtle border */
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Softer shadow */
-        }
-        .invoice-header {
-            padding-bottom: 20px;
-            margin-bottom: 30px; /* Increased margin */
-            border-bottom: 2px solid var(--mt-gold); /* Gold accent */
-        }
-        .invoice-footer {
-            border-top: 2px solid var(--mt-gold); /* Gold accent */
-            border-bottom: none;
-            margin-top: 40px; /* Increased margin */
-            padding-top: 20px;
-            font-size: 0.85em; /* Slightly larger footer text */
-            text-align: center;
-            color: var(--mt-earth-brown); /* Softer footer text color */
-        }
-        .company-details p, .customer-details p, .invoice-info p {
-            margin: 3px 0; /* Slightly increased margin */
-            line-height: 1.5;
-        }
-        .company-details .company-brand-name {
-            font-family: var(--font-serif);
-            font-size: 1.5em; /* Larger company name */
-            font-weight: 700;
-            color: var(--mt-near-black);
-            margin-bottom: 2px;
-        }
-        .company-details .company-tagline {
-            font-family: var(--font-sans);
-            font-size: 0.9em;
-            font-style: italic;
-            color: var(--mt-earth-brown);
-            margin-bottom: 10px;
-        }
-        .invoice-title { /* For "FACTURE" */
-            font-family: var(--font-serif);
-            font-size: 2.8em; /* Larger, more prominent */
-            font-weight: 700;
-            color: var(--mt-truffle-burgundy); /* Burgundy accent */
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .section-title {
-            font-family: var(--font-serif); /* Serif for section titles */
-            font-size: 1.3em;
-            font-weight: 500; /* Medium weight */
-            color: var(--mt-near-black);
-            margin-top: 25px;
-            margin-bottom: 15px;
-            border-bottom: 1px solid var(--mt-warm-taupe); /* Subtle underline */
-            padding-bottom: 5px;
-        }
-        .line-items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        .line-items-table th, .line-items-table td {
-            border: 1px solid var(--mt-warm-taupe); /* Softer border */
-            padding: 10px; /* Increased padding */
-            text-align: left;
-            vertical-align: top; /* Align content to top */
-        }
-        .line-items-table th {
-            background-color: #fdfaf6; /* Very light cream, almost white */
-            font-weight: 600; /* Semi-bold */
-            font-family: var(--font-sans);
-            color: var(--mt-near-black);
-        }
-        .line-items-table td input[type="text"], 
-        .line-items-table td input[type="number"],
-        .line-items-table td select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid var(--mt-warm-taupe);
-            border-radius: 4px;
-            box-sizing: border-box;
-            background-color: #fff; /* Ensure inputs are white */
-            color: var(--mt-near-black);
-            font-family: var(--font-sans);
-        }
-        .totals-section {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px dashed var(--mt-warm-taupe); /* Softer dashed line */
-        }
-        .totals-section div {
-            display: grid; 
-            grid-template-columns: 1fr auto; 
-            gap: 10px; 
-            padding: 6px 0; /* Adjusted padding */
-            align-items: center; 
-        }
-        .totals-section div span:first-child { 
-            text-align: left;
-            font-weight: 500;
-        }
-        .totals-section div span:last-child { 
-            text-align: right;
-            min-width: 120px; /* Increased min-width for values */
-            font-weight: 500;
-        }
-        .totals-section div.grand-total span:first-child,
-        .totals-section div.grand-total span:last-child {
-            font-family: var(--font-sans); /* Sans-serif for totals */
-            font-weight: 700; /* Bold */
-            font-size: 1.2em;
-            color: var(--mt-truffle-burgundy); /* Burgundy for grand total */
-        }
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group label { display: block; margin-bottom: .5rem; font-weight: 600; color: var(--mt-near-black); }
-        .form-group select, .form-group input, .form-group textarea {
-            width: 100%;
-            padding: .75rem; /* Increased padding */
-            border: 1px solid var(--mt-warm-taupe);
-            border-radius: .25rem;
-            font-family: var(--font-sans);
-            background-color: #fff;
-        }
-        .btn {
-            padding: 12px 24px; /* Larger buttons */
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 600; /* Bolder button text */
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            font-family: var(--font-sans);
-            letter-spacing: 0.5px;
-        }
-        .btn:active {
-            transform: translateY(1px);
-        }
-        .btn-primary {
-            background-color: var(--mt-truffle-burgundy); 
-            color: var(--mt-cream);
-        }
-        .btn-primary:hover {
-            background-color: #733333; /* Darker burgundy */
-        }
-        .btn-secondary {
-            background-color: var(--mt-warm-taupe); 
-            color: var(--mt-near-black);
-        }
-        .btn-secondary:hover {
-            background-color: #8f795c; /* Darker taupe */
-        }
-        .btn-danger {
-            background-color: #c94040; /* Softer red */
-            color: white;
-        }
-        .btn-danger:hover {
-            background-color: #b53737;
-        }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        .font-bold { font-weight: 700; } /* Standard bold */
-        .mt-4 { margin-top: 1rem; }
-        .mb-4 { margin-bottom: 1rem; }
-        .grid { display: grid; }
-        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .gap-6 { gap: 1.5rem; } /* Increased gap */
-        .w-auto { width: auto; }
-         /* For readonly fields */
-        .readonly-field {
-            background-color: #f8f6f2; /* Lighter cream for readonly */
-            padding: 0.75rem;
-            border: 1px solid var(--mt-warm-taupe);
-            border-radius: 0.25rem;
-            min-height: calc(1.5em + 1.5rem + 2px); /* Match input height (approx) */
-            display: flex;
-            align-items: center;
-            color: var(--mt-earth-brown);
-        }
-        /* Tailwind custom config (if needed, or apply these classes directly) */
-        /*
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'mt-cream': '#F5EEDE',
-                        'mt-near-black': '#11120D',
-                        'mt-gold': '#D4AF37',
-                        'mt-warm-taupe': '#A28C6A',
-                        'mt-earth-brown': '#7D6A4F',
-                        'mt-truffle-burgundy': '#8A3E3E',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        serif: ['Lora', 'serif'],
-                    }
-                }
-            }
-        }
-        */
-    </style>
+    <link rel="stylesheet" href="css/admin_style.css"> <!-- Assuming CSS is in admin/css/ -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body>
-    <div class="admin-container p-6"> <!-- Increased padding for overall admin area -->
-        <header class="mb-8"> <!-- Increased margin -->
-            <h1 class="text-3xl font-bold" style="font-family: var(--font-serif); color: var(--mt-near-black);">Créer une Nouvelle Facture</h1>
+<body class="admin-body" id="page-admin-create-invoice">
+
+    <header class="admin-page-header-bar">
+        <div class="container">
+            <div class="flex items-center space-x-4">
+                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="btn btn-admin-secondary btn-sm flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Retour au Tableau de Bord
+                </a>
+                <div id="admin-header-title-area">
+                     <h1 class="text-xl font-semibold">Maison Trüvra - Admin</h1>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="admin-user-greeting" class="text-sm mr-2"></span>
+                <button id="admin-logout-button" class="btn btn-admin-danger btn-sm flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <nav class="admin-main-nav">
+        <div class="container">
+            <div class="nav-links-container">
+                <a href="admin_dashboard.html" class="admin-nav-link">Tableau de Bord</a>
+                <a href="admin_manage_products.html" class="admin-nav-link">Produits</a>
+                <a href="admin_manage_inventory.html" class="admin-nav-link">Inventaire</a>
+                <a href="admin_view_inventory.html" class="admin-nav-link">Voir Inventaire</a>
+                <a href="admin_manage_orders.html" class="admin-nav-link">Commandes</a>
+                <a href="admin_manage_users.html" class="admin-nav-link">Utilisateurs</a>
+                <a href="admin_manage_categories.html" class="admin-nav-link">Catégories</a>
+                <a href="admin_invoices.html" class="admin-nav-link active">Factures</a>
+                <a href="admin_manage_reviews.html" class="admin-nav-link">Avis</a>
+                <a href="admin_profile.html" class="admin-nav-link">Mon Profil</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-main-container invoice-page-container">
+        <header class="invoice-page-header">
+            <h1>Créer une Nouvelle Facture Manuelle</h1>
         </header>
 
-        <div class="form-group">
-            <label for="professional-user-select">Client Professionnel :</label>
-            <select id="professional-user-select" name="professional_user_id" class="form-control">
-                <option value="">Sélectionnez un client</option>
-                <!-- Options will be populated by JavaScript -->
-            </select>
+        <div class="invoice-layout">
+            <!-- Invoice Form Section -->
+            <section class="admin-form-container invoice-form-section">
+                <form id="create-invoice-form" class="admin-form">
+                    <div class="form-group">
+                        <label for="professional-user-select" class="form-label">Client Professionnel :</label>
+                        <select id="professional-user-select" name="b2b_user_id" class="form-input-admin">
+                            <option value="">Sélectionnez un client</option>
+                            <!-- Options populated by JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="admin-invoice-notes" class="form-label">Notes / Informations complémentaires (pour la facture) :</label>
+                        <textarea id="admin-invoice-notes" name="notes" class="form-input-admin" rows="3" placeholder="Ex: Conditions spécifiques, références..."></textarea>
+                    </div>
+                     <div class="form-group">
+                        <button type="submit" class="btn btn-admin-primary flex items-center">
+                            <i class="fas fa-file-invoice mr-2"></i>Générer & Enregistrer la Facture
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Invoice Preview Section -->
+            <section class="invoice-preview-container">
+                <div class="invoice-preview-header">
+                    <div>
+                        <img src="../images/maison_truvra_invoice_logo.png" alt="Maison Trüvra Logo" class="company-logo">
+                        <div id="company-info-display" class="company-details">
+                            <p class="company-brand-name" id="company-name">Maison Trüvra SARL</p>
+                            <p class="company-tagline">Propriétaire récoltant</p>
+                            <p id="company-address1">1 Rue de la Truffe</p>
+                            <p id="company-city-postal-country">75001 Paris, France</p>
+                            <p>SIRET: <span id="company-siret">FRXX123456789</span></p>
+                            <p>TVA: <span id="company-vat">FRXX123456789</span></p>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="invoice-title">Facture</h2>
+                        <div class="invoice-info">
+                            <p><strong>Facture N°:</strong> <span id="invoice-number-display" class="readonly-field d-inline-block" style="min-width: 200px;">En attente</span></p>
+                            <p><strong>Date:</strong> <input type="date" id="invoice-date" class="form-input-admin d-inline-block" style="width:auto; padding: 5px;"></p>
+                            <p><strong>Date d'échéance:</strong> <input type="date" id="invoice-due-date" class="form-input-admin d-inline-block" style="width:auto; padding: 5px;"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="invoice-customer-info-grid">
+                    <div>
+                        <h3 class="section-title">Facturé à :</h3>
+                        <div id="customer-billing-info" class="customer-details">
+                            <p class="font-weight-bold" id="customer-company-name">Nom de l'Entreprise Cliente</p>
+                            <p id="customer-contact-name">Prénom Nom (Contact)</p>
+                            <div id="customer-billing-address" class="readonly-field" style="min-height: 70px;">Adresse de facturation</div>
+                            <p class="mt-2">SIRET: <span id="customer-siret-display" class="readonly-field"></span></p>
+                            <p>N° TVA Intra.: <span id="customer-vat-display" class="readonly-field"></span></p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="section-title">Livré à :</h3>
+                        <div id="customer-delivery-info" class="customer-details">
+                            <p class="font-weight-bold" id="delivery-company-name">Nom de l'Entreprise Cliente (Livraison)</p>
+                             <div id="customer-delivery-address" class="readonly-field" style="min-height: 70px;">Adresse de livraison</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 class="section-title">Détails de la facture :</h3>
+                <div class="overflow-x-auto">
+                    <table class="line-items-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th style="width: 10%;">Qté</th>
+                                <th style="width: 15%;">Prix Unit. HT (€)</th>
+                                <th style="width: 10%;">TVA (%)</th>
+                                <th style="width: 15%;">Total HT (€)</th>
+                                <th style="width: 15%;">Total TTC (€)</th>
+                                <th style="width: 5%;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoice-items-tbody">
+                            <!-- Line items will be added here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" id="add-invoice-item-btn" class="btn btn-admin-secondary mt-4 btn-sm">
+                    <i class="fas fa-plus mr-1"></i> Ajouter une ligne
+                </button>
+
+                <div class="invoice-totals-section"> 
+                    <div><span>Sous-Total HT :</span> <span id="subtotal-ht">0.00 €</span></div>
+                    <div id="vat-summary-container">
+                        <!-- VAT per rate will be populated here, e.g. <div><span>TVA (20%):</span> <span>0.00 €</span></div> -->
+                    </div>
+                    <div><span>Total TVA :</span> <span id="total-vat">0.00 €</span></div>
+                    <div class="grand-total"><span>TOTAL TTC :</span> <span id="grand-total-ttc">0.00 €</span></div>
+                    <div class="grand-total mt-2"><span>NET À PAYER :</span> <span id="net-to-pay">0.00 €</span></div>
+                </div>
+
+                <div class="invoice-payment-info">
+                    <h3 class="section-title">Conditions de paiement :</h3>
+                    <p>Paiement à réception de facture, au plus tard sous <span id="payment-due-days">30</span> jours.</p>
+                    <p>Mode de paiement : Virement bancaire</p>
+                    <p><strong>IBAN :</strong> <span id="company-iban">FRXX XXXX XXXX XXXX XXXX XXX</span></p>
+                    <p><strong>BIC/SWIFT :</strong> <span id="company-swift">XXXXXXX</span></p>
+                    <p class="text-xs mt-3">En cas de retard de paiement, une pénalité égale à 3 fois le taux d'intérêt légal sera appliquée (Décret 2009-138 du 9 février 2009). Pas d'escompte pour paiement anticipé.</p>
+                </div>
+
+                <div class="invoice-preview-footer">
+                    <p class="font-weight-bold">Maison Trüvra</p>
+                    <p>« L’avenir de la truffe, cultivé avec art. »</p>
+                    <p class="mt-2">Maison Trüvra SARL - Capital Social : XXXXX € - RCS Paris : XXXXXXXXX - NAF : XXXXX</p>
+                    <p>1 Rue de la Truffe, 75001 Paris, France - Tél : +33 X XX XX XX XX - Email : contact@maisontruvra.com</p>
+                    <p class="footer-highlight">Merci de votre confiance !</p>
+                </div>
+            </section>
+        </div>
+        
+        <div class="mt-10 text-center admin-form-container">
+            <button type="button" id="preview-invoice-pdf-btn" class="btn btn-admin-secondary">
+                <i class="fas fa-eye mr-2"></i>Aperçu PDF (Bientôt)
+            </button>
         </div>
 
-        <div class="invoice-container">
-            <!-- Invoice Header -->
-            <div class="invoice-header grid grid-cols-2 gap-6 items-start">
-                <div>
-                    <img src="/static/logos/maison_truvra_invoice_logo.png" alt="Maison Trüvra Logo" style="max-width: 180px; height: auto; margin-bottom: 15px;">
-                    <div id="company-info-display" class="company-details">
-                        <p class="company-brand-name" id="company-name">Maison Trüvra SARL</p>
-                        <p class="company-tagline">Propriétaire récoltant</p>
-                        <p id="company-address1">1 Rue de la Truffe</p>
-                        <p id="company-address2"></p> <!-- Optional second address line -->
-                        <p id="company-city-postal-country">75001 Paris, France</p>
-                        <p>SIRET: <span id="company-siret">FRXX123456789</span></p>
-                        <p>TVA: <span id="company-vat">FRXX123456789</span></p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <h2 class="invoice-title">Facture</h2>
-                    <div class="invoice-info mt-4">
-                        <p><strong>Facture N°:</strong> <span id="invoice-number-display">En attente</span></p>
-                        <p><strong>Date:</strong> <input type="date" id="invoice-date" class="form-control mt-1 inline-block w-auto"></p>
-                        <p><strong>Date d'échéance:</strong> <input type="date" id="invoice-due-date" class="form-control mt-1 inline-block w-auto"></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Customer Details -->
-            <div class="grid grid-cols-2 gap-6 mt-8 mb-8 pb-8 border-b-2" style="border-color: var(--mt-warm-taupe);">
-                <div>
-                    <h3 class="section-title">Facturé à :</h3>
-                    <div id="customer-billing-info" class="customer-details">
-                        <p class="font-bold" id="customer-company-name" style="color: var(--mt-near-black);">Nom de l'Entreprise Cliente</p>
-                        <p id="customer-contact-name">Prénom Nom (Contact)</p>
-                        <div id="customer-billing-address" class="readonly-field min-h-[70px]">Adresse de facturation</div>
-                        <p class="mt-2">SIRET: <span id="customer-siret-display" class="readonly-field"></span></p>
-                        <p>N° TVA Intra.: <span id="customer-vat-display" class="readonly-field"></span></p>
-                    </div>
-                </div>
-                <div>
-                    <h3 class="section-title">Livré à :</h3>
-                    <div id="customer-delivery-info" class="customer-details">
-                        <p class="font-bold" id="delivery-company-name" style="color: var(--mt-near-black);">Nom de l'Entreprise Cliente (Livraison)</p>
-                         <div id="customer-delivery-address" class="readonly-field min-h-[70px]">Adresse de livraison</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Line Items -->
-            <h3 class="section-title">Détails de la facture :</h3>
-            <table class="line-items-table w-full">
-                <thead>
-                    <tr>
-                        <th>Description</th>
-                        <th style="width: 10%;">Qté</th>
-                        <th style="width: 15%;">Prix Unit. HT</th>
-                        <th style="width: 10%;">TVA (%)</th>
-                        <th style="width: 15%;">Total HT</th>
-                        <th style="width: 15%;">Total TTC</th>
-                        <th style="width: 5%;">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="invoice-items-tbody">
-                    <!-- Line items will be added here by JavaScript -->
-                </tbody>
-            </table>
-            <button type="button" id="add-invoice-item-btn" class="btn btn-secondary mt-4">+ Ajouter une ligne</button>
-
-            <!-- Totals -->
-            <div class="totals-section mt-8"> 
-                <div><span>Sous-Total HT :</span> <span id="subtotal-ht">0.00 €</span></div>
-                <div id="vat-summary-container">
-                    <!-- VAT per rate will be populated here -->
-                </div>
-                <div><span>Total TVA :</span> <span id="total-vat">0.00 €</span></div>
-                <div class="grand-total"><span>TOTAL TTC :</span> <span id="grand-total-ttc">0.00 €</span></div>
-                <div class="grand-total mt-2"><span>NET À PAYER :</span> <span id="net-to-pay">0.00 €</span></div>
-            </div>
-
-            <!-- Payment Information -->
-            <div class="mt-8 pt-8 border-t-2" style="border-color: var(--mt-warm-taupe);">
-                <h3 class="section-title">Conditions de paiement :</h3>
-                <p>Paiement à réception de facture, au plus tard sous <span id="payment-due-days">30</span> jours.</p>
-                <p>Mode de paiement : Virement bancaire</p>
-                <p><strong>IBAN :</strong> <span id="company-iban">FRXX XXXX XXXX XXXX XXXX XXX</span></p>
-                <p><strong>BIC/SWIFT :</strong> <span id="company-swift">XXXXXXX</span></p>
-                <p class="text-xs mt-3" style="color: var(--mt-earth-brown);">En cas de retard de paiement, une pénalité égale à 3 fois le taux d'intérêt légal sera appliquée (Décret 2009-138 du 9 février 2009). Pas d'escompte pour paiement anticipé.</p>
-            </div>
-
-            <!-- Invoice Footer -->
-            <div class="invoice-footer mt-10">
-                <p class="font-bold" style="font-family: var(--font-serif); color: var(--mt-near-black); margin-bottom: 5px;">Maison Trüvra</p>
-                <p>« L’avenir de la truffe, cultivé avec art. »</p>
-                <p class="mt-2">Maison Trüvra SARL - Capital Social : XXXXX € - RCS Paris : XXXXXXXXX - NAF : XXXXX</p>
-                <p>1 Rue de la Truffe, 75001 Paris, France - Tél : +33 X XX XX XX XX - Email : contact@maisontruvra.com</p>
-                <p class="mt-3 font-bold" style="color: var(--mt-truffle-burgundy);">Merci de votre confiance !</p>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="mt-10 text-center">
-                <button type="button" id="save-invoice-btn" class="btn btn-primary mr-2">Enregistrer la Facture</button>
-                <button type="button" id="preview-invoice-btn" class="btn btn-secondary">Aperçu PDF</button>
-            </div>
-        </div>
     </div>
 
-    <!-- Template for invoice item row -->
     <template id="invoice-item-template">
         <tr>
-            <td><input type="text" name="item_description[]" class="item-description" placeholder="Description du produit/service"></td>
-            <td><input type="number" name="item_quantity[]" class="item-quantity" value="1" min="0.1" step="0.1"></td>
-            <td><input type="number" name="item_unit_price_ht[]" class="item-unit-price-ht" value="0.00" min="0" step="0.01"></td>
+            <td><input type="text" name="item_description[]" class="item-description form-input-admin" placeholder="Description du produit/service"></td>
+            <td><input type="number" name="item_quantity[]" class="item-quantity form-input-admin" value="1" min="0.01" step="0.01"></td>
+            <td><input type="number" name="item_unit_price_ht[]" class="item-unit-price-ht form-input-admin" value="0.00" min="0" step="0.01"></td>
             <td>
-                <select name="item_vat_rate[]" class="item-vat-rate">
+                <select name="item_vat_rate[]" class="item-vat-rate form-input-admin">
                     <option value="20">20%</option>
                     <option value="10">10%</option>
                     <option value="5.5">5.5%</option>
@@ -374,12 +194,29 @@
             </td>
             <td><span class="item-total-ht">0.00</span> €</td>
             <td><span class="item-total-ttc">0.00</span> €</td>
-            <td><button type="button" class="remove-item-btn btn btn-danger btn-sm" style="padding: 5px 10px; font-size: 0.8em;">X</button></td>
+            <td><button type="button" class="remove-item-btn btn btn-admin-danger btn-sm"><i class="fas fa-times"></i></button></td>
         </tr>
     </template>
 
-    <!-- Include the JavaScript file for this page -->
-    <script src="js/admin_api.js"></script> 
+    <footer class="admin-footer">
+        <p>&copy; <span id="currentYearCreateInvoice"></span> Maison Trüvra - Admin Panel</p>
+    </footer>
+    <div id="admin-toast-container"></div>
+
+    <script src="js/admin_config.js"></script>
+    <script src="js/admin_ui.js"></script>
+    <script src="js/admin_api.js"></script>
+    <script src="js/admin_auth.js"></script>
+    <script src="js/admin_main.js"></script>
     <script src="js/admin_create_invoice_js.js"></script>
+    <script>
+        document.getElementById('currentYearCreateInvoice').textContent = new Date().getFullYear();
+        // Ensure preview button ID matches JS if it's 'preview-invoice-btn'
+        const previewPdfBtn = document.getElementById('preview-invoice-pdf-btn');
+        if (previewPdfBtn && typeof handlePreviewInvoice === 'function') { // Assuming handlePreviewInvoice is in admin_create_invoice_js.js
+             previewPdfBtn.addEventListener('click', handlePreviewInvoice);
+        }
+        // The main submit button is part of the form, its handler is in admin_create_invoice_js.js
+    </script>
 </body>
 </html>
