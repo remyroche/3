@@ -1,49 +1,279 @@
-# backend/admin_api/routes.py
-
-# Standard Library Imports
+# backend/b2b/routes.py
+from flask import Blueprint, request, jsonify, current_app, url_for
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from werkzeug.utils import secure_filename
 import os
 import uuid
-import secrets
-from datetime import datetime, timezone, timedelta
-from urllib.parse import urlencode
+import json # For parsing cart_items from form data
 
-# Third-Party Library Imports
-import pyotp 
-import requests 
-from flask import (
-    request, jsonify, current_app, url_for, 
-    redirect, session, abort as flask_abort, send_from_directory
-)
-from flask_jwt_extended import (
-    create_access_token, jwt_required, get_jwt_identity, 
-    get_jwt, set_access_cookies, unset_jwt_cookies # Import unset_jwt_cookies
-)
-from sqlalchemy import func, or_, and_ 
-from werkzeug.utils import secure_filename
+from .. import db
+from ..models import (User, Product, Category, ProductWeightOption, ProductB2BTierPrice,
+                    Order, OrderItem, QuoteRequest, QuoteRequestItem, GeneratedAsset,
+                    UserRoleEnum, ProfessionalStatusEnum, B2BPricingTierEnum,
+                    OrderStatusEnum, QuoteRequestStatusEnum, AssetTypeEnum, ProductTypeEnum) # Added ProductTypeEnum
+from ..utils import allowed_file, get_file_extension, sanitize_input # Add other utils as needed
+from ..services.email_service import EmailService # Assuming you have an email service
 
-# Local Application/Library Specific Imports
-from .. import db, jwt # Import jwt for blocklist
-from ..models import ( 
-    User, Category, Product, ProductImage, ProductWeightOption,
-    Order, OrderItem, Review, Setting, SerializedInventoryItem,
-    StockMovement, Invoice, InvoiceItem, ProfessionalDocument,
-    ProductLocalization, CategoryLocalization, GeneratedAsset, TokenBlocklist, # Added TokenBlocklist
-    UserRoleEnum, ProfessionalStatusEnum, ProductTypeEnum, PreservationTypeEnum, 
-    OrderStatusEnum, SerializedInventoryItemStatusEnum, StockMovementTypeEnum, 
-    InvoiceStatusEnum, AuditLogStatusEnum, AssetTypeEnum 
-)
-from ..utils import (
-    admin_required, staff_or_admin_required, 
-    format_datetime_for_display, parse_datetime_from_iso,
-    generate_slug, allowed_file, get_file_extension, 
-    format_datetime_for_storage, generate_static_json_files,
-    sanitize_input 
-)
-from ..services.invoice_service import InvoiceService 
-from ..database import record_stock_movement 
+b2b_bp = Blueprint('b2b_bp', __name__, url_prefix='/api/b2b')
 
-from . import admin_api_bp 
-from ..limiter_config import limiter # Assuming limiter is configured in limiter_config.py or __init__.py
+@b2b_bp.route('/products', methods=['GET'])
+@jwt_required()
+def get_b2b_products():
+    """
+    Fetches products with B2B tiered pricing for the authenticated professional user.
+    """
+    current_user_id = get_jwt_identity()
+    b2b_user = User.query.get(current_user_id)
+    audit_logger = current_app.audit_log_service # Get audit logger
+
+    if not b2b_user or b2b_user.role != UserRoleEnum.B2B_PROFESSIONAL or b2b_user.professional_status != ProfessionalStatusEnum.APPROVED:
+        audit_logger.log_action(user_id=current_user_id, action='get_b2b_products_fail_auth', details="B2B Professional account approved required.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Access denied. Approved B2B professional account required.", success=False), 403
+
+    user_tier = b2b_user.b2b_tier
+
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 12, type=int)
+    category_slug_filter = request.args.get('category_slug')
+    search_term_filter = request.args.get('search')
+    sort_by_filter = request.args.get('sort', 'name_asc')
+
+
+    query = Product.query.join(Category, Product.category_id == Category.id)\
+                         .filter(Product.is_active == True, Category.is_active == True)
+
+
+    if category_slug_filter:
+        query = query.filter(Category.slug == category_slug_filter)
+    if search_term_filter:
+        term_like = f"%{search_term_filter.lower()}%"
+        query = query.filter(Product.name.ilike(term_like)) # Simplified search on product name
+
+    # Sorting logic (add more options as needed)
+    if sort_by_filter == 'price_asc':
+        # Sorting by price for B2B is complex due to tiers.
+        # This might require a more complex query or sorting after fetching if performance allows.
+        # For simplicity, let's sort by base_price for now, assuming tier prices follow a similar trend.
+        query = query.order_by(Product.base_price.asc())
+    elif sort_by_filter == 'price_desc':
+        query = query.order_by(Product.base_price.desc())
+    elif sort_by_filter == 'name_desc':
+        query = query.order_by(Product.name.desc())
+    else: # default name_asc
+        query = query.order_by(Product.name.asc())
+
+
+    paginated_products = query.paginate(page=page, per_page=per_page, error_out=False)
+    products_data = []
+
+    for product in paginated_products.items:
+        # Determine B2B price for the main product (if simple) or as a "starting from" price
+        b2b_price_display = product.base_price # Default to B2C retail / base price
+
+        if product.type == ProductTypeEnum.SIMPLE:
+            tier_price_entry = ProductB2BTierPrice.query.filter_by(
+                product_id=product.id,
+                variant_id=None,
+                b2b_tier=user_tier
+            ).first()
+            if tier_price_entry:
+                b2b_price_display = tier_price_entry.price
+        
+        product_dict = product.to_dict() # Use your existing to_dict which should be mostly B2C info
+        product_dict['b2b_price'] = b2b_price_display # This is the price specific to this B2B user's tier
+        product_dict['retail_price'] = product.base_price # RRP for comparison
+
+        if product.type == ProductTypeEnum.VARIABLE_WEIGHT:
+            options_list_b2b = []
+            active_options = product.weight_options.filter_by(is_active=True).order_by(ProductWeightOption.weight_grams).all()
+            
+            min_b2b_variant_price = float('inf')
+
+            for option in active_options:
+                option_b2b_price = option.price # Default to variant's B2C retail price
+                option_tier_price_entry = ProductB2BTierPrice.query.filter_by(
+                    variant_id=option.id, # Tier pricing is per variant
+                    b2b_tier=user_tier
+                ).first()
+                if option_tier_price_entry:
+                    option_b2b_price = option_tier_price_entry.price
+                
+                if option_b2b_price < min_b2b_variant_price:
+                    min_b2b_variant_price = option_b2b_price
+
+                options_list_b2b.append({
+                    "option_id": option.id,
+                    "weight_grams": option.weight_grams,
+                    "sku_suffix": option.sku_suffix,
+                    "b2b_price": option_b2b_price, # Tiered price for this variant
+                    "retail_price": option.price,    # B2C retail price for this variant
+                    "aggregate_stock_quantity": option.aggregate_stock_quantity # Current stock
+                })
+            product_dict['weight_options_b2b'] = options_list_b2b
+            if min_b2b_variant_price != float('inf'):
+                product_dict['b2b_price'] = min_b2b_variant_price # "Starting from" B2B price for variable products
+
+        products_data.append(product_dict)
+    
+    audit_logger.log_action(user_id=current_user_id, action='get_b2b_products_success', status='success', ip_address=request.remote_addr)
+    return jsonify({
+        "products": products_data,
+        "page": paginated_products.page,
+        "per_page": paginated_products.per_page,
+        "total_products": paginated_products.total,
+        "total_pages": paginated_products.pages,
+        "success": True
+    }), 200
+
+
+@b2b_bp.route('/quote-requests', methods=['POST'])
+@jwt_required()
+def create_quote_request():
+    current_user_id = get_jwt_identity()
+    b2b_user = User.query.get(current_user_id)
+    audit_logger = current_app.audit_log_service
+
+    if not b2b_user or b2b_user.role != UserRoleEnum.B2B_PROFESSIONAL:
+        audit_logger.log_action(user_id=current_user_id, action='create_quote_fail_auth', details="B2B Professional account required.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="B2B professional account required.", success=False), 403
+
+    data = request.json
+    items_data = data.get('items')
+    notes = sanitize_input(data.get('notes'))
+    contact_person = sanitize_input(data.get('contact_person', f"{b2b_user.first_name or ''} {b2b_user.last_name or ''}".strip()))
+    contact_phone = sanitize_input(data.get('contact_phone'))
+
+    if not items_data or not isinstance(items_data, list) or len(items_data) == 0:
+        audit_logger.log_action(user_id=current_user_id, action='create_quote_fail_validation', details="Empty item list for quote.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="At least one item is required for a quote request.", success=False), 400
+
+    try:
+        new_quote = QuoteRequest(
+            user_id=current_user_id,
+            notes=notes,
+            contact_person=contact_person,
+            contact_phone=contact_phone,
+            status=QuoteRequestStatusEnum.PENDING
+        )
+        db.session.add(new_quote)
+        db.session.flush() # To get new_quote.id
+
+        for item_data in items_data:
+            product_id = item_data.get('product_id')
+            variant_id = item_data.get('variant_id')
+            quantity = item_data.get('quantity')
+            price_at_request = item_data.get('price_at_request') # This is the B2B price shown to user
+
+            if not product_id or not quantity or price_at_request is None:
+                 audit_logger.log_action(user_id=current_user_id, action='create_quote_fail_item_validation', details=f"Invalid item data: {item_data}", status='failure', ip_address=request.remote_addr)
+                 db.session.rollback()
+                 return jsonify(message=f"Invalid data for item {product_id}.", success=False), 400
+            
+            # Basic validation: Does product exist?
+            product = Product.query.get(product_id)
+            if not product:
+                db.session.rollback()
+                return jsonify(message=f"Product ID {product_id} not found.", success=False), 404
+
+            quote_item = QuoteRequestItem(
+                quote_request_id=new_quote.id,
+                product_id=product_id,
+                variant_id=variant_id,
+                quantity=int(quantity),
+                requested_price_ht=float(price_at_request)
+            )
+            db.session.add(quote_item)
+        
+        db.session.commit()
+        
+        # Notify Admin
+        email_service = EmailService(current_app)
+        admin_email = current_app.config.get('ADMIN_EMAIL', 'admin@example.com')
+        subject = f"Nouvelle Demande de Devis B2B #{new_quote.id} de {b2b_user.company_name or b2b_user.email}"
+        body = f"""
+        Une nouvelle demande de devis a été soumise :
+        ID Devis: {new_quote.id}
+        Client: {b2b_user.company_name or b2b_user.email} (ID: {current_user_id})
+        Contact: {contact_person} {f'({contact_phone})' if contact_phone else ''}
+        Notes: {notes or 'Aucune'}
+        Consultez le panneau d'administration pour plus de détails.
+        """
+        email_service.send_email(admin_email, subject, body)
+        current_app.logger.info(f"Admin notification sent for new B2B Quote Request {new_quote.id}.")
+        audit_logger.log_action(user_id=current_user_id, action='create_quote_success', target_type='quote_request', target_id=new_quote.id, status='success', ip_address=request.remote_addr)
+        
+        return jsonify(message="Quote request submitted successfully.", quote_id=new_quote.id, success=True), 201
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error creating quote request for user {current_user_id}: {e}", exc_info=True)
+        audit_logger.log_action(user_id=current_user_id, action='create_quote_fail_exception', details=str(e), status='failure', ip_address=request.remote_addr)
+        return jsonify(message="Failed to submit quote request due to a server error.", error=str(e), success=False), 500
+
+
+@b2b_bp.route('/purchase-orders', methods=['POST'])
+@jwt_required()
+def upload_purchase_order():
+    current_user_id = get_jwt_identity()
+    b2b_user = User.query.get(current_user_id)
+    audit_logger = current_app.audit_log_service
+
+    if not b2b_user or b2b_user.role != UserRoleEnum.B2B_PROFESSIONAL:
+        audit_logger.log_action(user_id=current_user_id, action='upload_po_fail_auth', details="B2B Professional account required.", status='failure', ip_address=request.remote_addr)
+        return jsonify(message="B2B professional account required.", success=False), 403
+
+    if 'purchase_order_file' not in request.files:
+        return jsonify(message="No purchase order file provided.", success=False), 400
+    
+    po_file = request.files['purchase_order_file']
+    cart_items_json = request.form.get('cart_items')
+
+    if po_file.filename == '':
+        return jsonify(message="No selected file for purchase order.", success=False), 400
+    if not cart_items_json:
+        return jsonify(message="Cart items data is required with PO submission.", success=False), 400
+
+    try:
+        cart_items = json.loads(cart_items_json)
+        if not isinstance(cart_items, list) or len(cart_items) == 0:
+            raise ValueError("Invalid cart items format or empty cart for PO.")
+    except (json.JSONDecodeError, ValueError) as e:
+        audit_logger.log_action(user_id=current_user_id, action='upload_po_fail_cart_format', details=str(e), status='failure', ip_address=request.remote_addr)
+        return jsonify(message=f"Invalid cart items data: {str(e)}", success=False), 400
+
+    # Securely save the PO file
+    upload_folder_pos = current_app.config['PROFESSIONAL_DOCS_UPLOAD_PATH'] # Or a dedicated PO folder
+    os.makedirs(upload_folder_pos, exist_ok=True)
+
+    if po_file and allowed_file(po_file.filename, 'ALLOWED_DOCUMENT_EXTENSIONS'):
+        filename_base = secure_filename(f"user_{current_user_id}_po_{uuid.uuid4().hex[:8]}")
+        extension = get_file_extension(po_file.filename)
+        filename = f"{filename_base}.{extension}"
+        file_path_full = os.path.join(upload_folder_pos, filename)
+        # Storing path relative to a base asset/upload directory
+        file_path_relative_for_db = os.path.join('professional_documents', filename) # Adjust subfolder if needed
+
+        try:
+            po_file.save(file_path_full)
+
+            # Create an Order with status PENDING_PO_REVIEW
+            calculated_total = 0
+            order_items_to_create = []
+            customer_shipping_address = { # Fetch from b2b_user profile or allow override
+                'line1': b2b_user.shipping_address_line1 or b2b_user.company_address_line1 or 'N/A',
+                'city': b2b_user.shipping_city or b2b_user.company_city or 'N/A',
+                'postal_code': b2b_user.shipping_postal_code or b2b_user.company_postal_code or 'N/A',
+                'country': b2b_user.shipping_country or b2b_user.company_country or 'N/A',
+            }
+
+            for item_data in cart_items:
+                product_id = item_data.get('product_id')
+                variant_id = item_data.get('variant_id')
+                quantity = item_data.get('quantity')
+                price_at_request = item_data.get('price_at_request')
+
+                if not product_id or not quantity or price_at_request is None:
+                    if os.path.exists(file_path_full): os.remove(file_path_full)
+                    audit_logger.
 
 # --- Helper: Update or Create Product Localization ---
 def _update_or_create_product_localization(product_id, lang_code, data_dict):
