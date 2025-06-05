@@ -3,172 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maison Trüvra - Producteur de Truffes d'Exception</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'brand-cream': '#F5EEDE',
-                        'brand-near-black': '#11120D',
-                        'brand-classic-gold': '#D4AF37',
-                        'brand-warm-taupe': '#A28C6A',
-                        'brand-earth-brown': '#7D6A4F',
-                        'brand-slate-blue-grey': '#6E7582',
-                        'brand-deep-sage-green': '#4B5A59',
-                        'brand-truffle-burgundy': '#8A3E3E',
-                    }
-                }
+    <title data-translate-key="home.title">Maison Trüvra - Accueil</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Specific styles for hero or unique index elements can go into a separate index.css if needed -->
+    <style>
+        /* Example: Hero section specific styles for impact */
+        .hero-section {
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url('https://placehold.co/1920x1080/A28C6A/F5EEDE?text=Terroir+de+Trufficulture') no-repeat center center/cover;
+            color: var(--mt-cream);
+            /* min-height: calc(100vh - var(--header-height)); If header is fixed and part of viewport height */
+            min-height: 80vh; /* Or a fixed large height */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: var(--spacing-xl) var(--spacing-md);
+        }
+        .hero-section .hero-title {
+            font-family: var(--font-secondary); /* Baskervville */
+            font-size: 3rem; /* Large */
+            font-weight: bold;
+            margin-bottom: var(--spacing-md);
+            line-height: 1.2;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+        @media (min-width: 768px) {
+            .hero-section .hero-title {
+                font-size: 4.5rem;
             }
         }
-    </script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #F5EEDE;
-            color: #7D6A4F;
+        .hero-section .hero-subtitle {
+            font-family: var(--font-primary); /* Raleway */
+            font-size: 1.25rem;
+            margin-bottom: var(--spacing-lg);
+            max-width: 700px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
         }
-        h1, h2, h3, .font-serif {
-            font-family: 'Playfair Display', serif;
+        .featured-products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-lg);
         }
-        /* .nav-link.active est géré par JS après chargement du header */
-        .hero-image-container { 
-            position: relative; /* Needed to position the video absolutely within this container */
-            overflow: hidden; /* Ensures the video doesn't spill outside the container */
-            background-image: url('https://placehold.co/1920x600/A28C6A/F5EEDE?text=Loading+Video...'); /* Fallback background */
-            background-size: cover;
-            background-position: center;
-            height: 70vh; 
-            max-height: 600px; 
-        }
-        .hero-image-container video {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* Ensures the video covers the container, cropping if necessary, similar to background-size: cover */
-            z-index: -1; /* Puts the video behind other content in the container */
-
-        }
-        /* Optional: Style for content overlaid on the hero video, if you add any */
-        .hero-content-overlay {
-            position: relative; /* To sit on top of the video */
-            z-index: 2; /* Ensures it's above the video (if video had z-index:1 or was default) */
-            /* Add padding, text alignment, etc. for your hero text/buttons here */
-        }
-        .btn-primary {
-            background-color: #7D6A4F; color: #F5EEDE; padding: 0.85rem 1.75rem; 
-            border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease;
-            font-weight: 500; letter-spacing: 0.025em; display: inline-block;
-        }
-        .btn-primary:hover { background-color: #11120D; transform: translateY(-2px); }
-        .btn-secondary { 
-            background-color: #A28C6A; color: #F5EEDE; padding: 0.75rem 1.5rem;
-            border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease;
-            font-weight: 500; display: inline-block; cursor: pointer;
-        }
-        .btn-secondary:hover { background-color: #7D6A4F; transform: translateY(-1px); }
-        .btn-gold { 
-            background-color: #D4AF37; color: #11120D; padding: 0.85rem 1.75rem;
-            border-radius: 0.375rem; transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.2s ease;
-            font-weight: 600; display: inline-block; cursor: pointer;
-        }
-        .btn-gold:hover { background-color: #D4AF37; opacity: 0.85; transform: translateY(-2px); }
-        .section-title { @apply text-3xl md:text-4xl lg:text-5xl font-serif text-brand-earth-brown mb-12 text-center; }
-        .styled-subtitle { @apply font-serif italic text-brand-earth-brown mb-8 text-center; } /* Taille gérée inline si besoin spécifique */
-        .card { @apply bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden; }
-        /* Styles pour .footer-bg, .footer-text etc. sont dans footer.html via le chargement JS */
-        .pattern-background-story { background-color: #F5EEDE; }
-        /* Styles pour #newsletter-confirmation, .form-input sont dans footer.html via le chargement JS */
-        .modal-message { @apply fixed bottom-5 right-5 bg-brand-deep-sage-green text-brand-cream p-4 rounded-lg shadow-xl z-[100] transition-all duration-500 ease-out opacity-0 translate-y-10; }
-        .modal-message.show { @apply opacity-100 translate-y-0; }
-        .modal-overlay { @apply fixed inset-0 bg-brand-near-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 pointer-events-none; }
-        .modal-overlay.active { @apply opacity-100 pointer-events-auto; }
-        .modal-content { @apply bg-brand-cream p-6 sm:p-8 rounded-lg shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300; }
-        .modal-overlay.active .modal-content { @apply scale-100; }
     </style>
 </head>
-<body id="page-index" class="antialiased">
+<body>
+    <div id="main-header-placeholder"></div>
 
-    <div id="header-placeholder"></div>
-
-    <main>
-        <div class="hero-image-container">
-            <video autoplay loop muted playsinline poster="https://placehold.co/1920x600/A28C6A/F5EEDE?text=Maison+Trüvra+Hero">
-                <!-- Make sure this path is correct relative to your index.html -->
-                <!-- It's good practice to place videos in a 'videos' folder -->
-                <video autoplay loop muted playsinline poster="..." aria-hidden="true">
-                    <source src="videos/hero-video.mp4" type="video/mp4">
-                    Your browser does not support the video tag. Please upgrade your browser.
-                </video>
-                Your browser does not support the video tag. Please upgrade your browser.
-            </video>
-            <!-- If you want to add text or buttons over the video, you can add them here, perhaps wrapped in a div with .hero-content-overlay -->
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container mx-auto">
+            <h1 class="hero-title" data-translate-key="home.hero_title">Maison Trüvra</h1>
+            <p class="hero-subtitle" data-translate-key="home.hero_subtitle">Le luxe cultivé. L’avenir de la truffe, façonné avec art et passion.</p>
+            <a href="nos-produits.html" class="btn btn-primary py-3 px-8 text-lg" data-translate-key="home.hero_cta">Découvrir Nos Trésors</a>
         </div>
-        <section class="py-16 bg-brand-cream">
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h1 class="text-4xl sm:text-5xl font-bold font-serif mb-6 leading-tight text-brand-near-black">Maison Trüvra</h1>
-                <p class="text-xl sm:text-2xl font-serif italic text-brand-earth-brown mb-8">Producteur - récolteur de truffes de qualité</p>
-                <p class="text-md sm:text-lg mb-10 max-w-3xl mx-auto text-brand-earth-brown leading-relaxed">
-                    Entrez dans un monde où le luxe rencontre le trésor le plus exquis de la nature. Chez Maison Trüvra, nous nous engageons à vous offrir l'arôme incomparable et la saveur sublime des truffes les plus fines, méticuleusement obtenues et cultivées à partir de notre écrin de culture situé en Île-de-France. Nous nous engageons à produire des truffes d'une intensité aromatique inégalée afin que chaque truffe offre un voyage sensoriel inoubliable.
-                </p>
-                <a href="notre-histoire.html" class="btn-primary text-lg">Découvrez Notre Histoire</a>
+    </section>
+
+    <main class="container mx-auto px-4 py-8 md:py-12">
+        <!-- Featured Products Section -->
+        <section id="featured-products" class="py-10 md:py-16">
+            <h2 class="section-title text-center mb-10" data-translate-key="home.featured_products_title">Nos Produits d'Exception</h2>
+            <div id="featured-products-container" class="featured-products-grid">
+                <!-- Product cards will be dynamically inserted here by products.js or directly if static -->
+                <!-- Example structure for one card (to be repeated or generated) -->
+                <div class="product-card bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl relative flex flex-col">
+                    <a href="produit-detail.html?slug=truffe-noire-extra" class="block group">
+                        <div class="aspect-square overflow-hidden">
+                            <img src="https://placehold.co/300x300/7D6A4F/F5EEDE?text=Truffe+Noire+Extra" alt="Truffe Noire Extra" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out">
+                        </div>
+                    </a>
+                    <div class="p-4 flex flex-col flex-grow">
+                        <h3 class="card-title text-lg font-semibold text-mt-near-black mb-1 truncate" title="Truffe Noire Extra (Tuber Melanosporum)">
+                            <a href="produit-detail.html?slug=truffe-noire-extra" class="hover:text-mt-truffle-burgundy">Truffe Noire Extra</a>
+                        </h3>
+                        <p class="text-xs text-mt-warm-taupe mb-2 truncate">Truffes Fraîches</p>
+                        <p class="text-sm text-mt-earth-brown mb-3 text-ellipsis overflow-hidden line-clamp-2" style="min-height: 2.5em;">
+                            L'or noir de la gastronomie, notre Tuber Melanosporum fraîchement récoltée.
+                        </p>
+                        <div class="mt-auto">
+                            <p class="text-xl font-bold text-mt-truffle-burgundy mb-3">
+                                À partir de €75.00
+                            </p>
+                            <a href="produit-detail.html?slug=truffe-noire-extra" class="btn btn-primary w-full">
+                                <i class="fas fa-eye mr-2"></i> Voir les Détails
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Example Card -->
             </div>
         </section>
 
-        <section class="py-20 bg-white"> 
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                <p class="text-3xl sm:text-4xl font-serif italic text-brand-earth-brown mb-8 text-center">Découvrez nos produits</p> 
-                <p class="text-center text-brand-earth-brown mb-16 max-w-3xl mx-auto text-lg leading-relaxed">Découvrez l'apothéose de la fraîcheur avec des truffes sélectionnées à la main pour leur parfum intense et leur texture parfaite, préparées le jour même de leur récolte.</p>
-                <div class="grid md:grid-cols-2 gap-10">
-                    <div class="card">
-                        <img src="https://placehold.co/600x400/7D6A4F/F5EEDE?text=Truffe+Noire+du+Périgord" alt="Image de Truffe noire du Périgord" class="w-full h-72 object-cover rounded-t-lg mb-6" onerror="this.onerror=null;this.src='https://placehold.co/600x400/EEE/CCC?text=Image+Error';">
-                        <h3 class="text-2xl font-serif font-semibold text-brand-near-black mb-3 px-2">Truffe Noire du Périgord (Tuber melanosporum)</h3>
-                        <p class="text-brand-earth-brown mb-2 px-2"><strong class="text-brand-near-black">Arôme :</strong> Intensément terreux avec des notes de sol forestier humide, de cacao et de fruits secs.</p>
-                        <p class="text-brand-earth-brown px-2"><strong class="text-brand-near-black">Saveur :</strong> Riche, complexe et profonde, parfaite pour rehausser les plats classiques.</p>
-                    </div>
-                    <div class="card">
-                        <img src="https://placehold.co/600x400/D4AF37/11120D?text=Truffe+Blanche+d'Alba" alt="Image de Truffe blanche d'Alba" class="w-full h-72 object-cover rounded-t-lg mb-6" onerror="this.onerror=null;this.src='https://placehold.co/600x400/EEE/CCC?text=Image+Error';">
-                        <h3 class="text-2xl font-serif font-semibold text-brand-near-black mb-3 px-2">Truffe Blanche d'Alba (Tuber magnatum pico)</h3>
-                        <p class="text-brand-earth-brown mb-2 px-2"><strong class="text-brand-near-black">Arôme :</strong> Piquant incomparable avec des notes d'ail, de miel et de foin.</p>
-                        <p class="text-brand-earth-brown px-2"><strong class="text-brand-near-black">Saveur :</strong> Exquise, délicate et très aromatique, elle se déguste de préférence râpée à l'état frais.</p>
-                    </div>
+        <!-- About Us Snippet -->
+        <section id="about-snippet" class="py-10 md:py-16 bg-mt-earth-brown text-mt-cream rounded-lg my-10 md:my-16 px-6 md:px-10">
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div>
+                    <h2 class="section-title mb-4" data-translate-key="home.about_title">Notre Savoir-Faire</h2>
+                    <p class="mb-6 text-lg leading-relaxed" data-translate-key="home.about_text">Chez Maison Trüvra, chaque truffe est le fruit d'une tradition ancestrale et d'une innovation constante. Nous cultivons l'excellence pour vous offrir des produits d'une qualité inégalée, directement de notre terroir à votre table.</p>
+                    <a href="notre-histoire.html" class="btn btn-secondary" data-translate-key="home.learn_more">En Savoir Plus</a>
                 </div>
-                 <div class="text-center mt-16">
-                    <a href="nos-produits.html" class="btn-primary">Voir tous nos produits</a>
+                <div class="rounded-lg overflow-hidden shadow-xl">
+                    <img src="https://placehold.co/600x400/A28C6A/11120D?text=Passion+Trufficole" alt="Culture de truffes Maison Trüvra" class="w-full h-auto object-cover">
                 </div>
             </div>
         </section>
 
-        <section class="py-20 pattern-background-story"> 
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <p class="text-3xl sm:text-4xl font-serif italic text-brand-earth-brown mb-8 text-center">Notre histoire : passion, innovation et sensorialité</p> 
-                <p class="text-lg text-brand-earth-brown max-w-3xl mx-auto mb-10 leading-relaxed">
-                    Chez Maison Trüvra, nous redéfinissons l'art de la culture de la truffe. Tout en honorant l'attrait intemporel de ce joyau culinaire, nous sommes fiers de produire nos truffes en utilisant des techniques hydroponiques développées par nos soins. Cette approche innovante nous permet de gérer avec précision chaque élément, de l'apport en nutriments aux conditions atmosphériques en passant par l'écosystème microbien, afin de garantir une pureté inégalée, une qualité constante et un caractère exceptionnel pour chaque truffe. Nous sommes des pionniers de l'avenir de la production de truffes.
-                </p>
-            </div>
+        <!-- Call to Action / Newsletter -->
+        <section id="newsletter-cta" class="py-10 md:py-16 text-center">
+            <h2 class="section-title mb-4" data-translate-key="home.newsletter_title">Restez Connecté</h2>
+            <p class="max-w-2xl mx-auto mb-8 text-mt-earth-brown" data-translate-key="home.newsletter_subtitle">Abonnez-vous à notre newsletter pour recevoir nos dernières actualités, recettes exclusives et offres spéciales.</p>
+            <form id="newsletter-form-homepage" class="max-w-lg mx-auto flex flex-col sm:flex-row gap-3">
+                <label for="email-newsletter-homepage" class="sr-only" data-translate-key="newsletter.email_label">Votre email</label>
+                <input type="email" id="email-newsletter-homepage" name="email" placeholder="Votre adresse e-mail" required class="flex-grow p-3 border border-mt-warm-taupe rounded-md focus:ring-2 focus:ring-mt-classic-gold focus:border-mt-classic-gold">
+                <button type="submit" class="btn btn-primary py-3 px-6" data-translate-key="newsletter.subscribe_btn">S'abonner</button>
+            </form>
+            <div id="newsletter-message-homepage" class="mt-4 text-sm"></div>
         </section>
     </main>
 
-    <div id="footer-placeholder"></div>
+    <div id="main-footer-placeholder"></div>
+    <div id="cart-toast-placeholder" class="fixed bottom-5 right-5 z-50"></div>
+    <div id="global-message-container" class="fixed top-20 right-5 z-[1000] w-auto max-w-sm"></div>
 
-    <div id="global-message-toast" class="modal-message" style="display:none;">
-        <p id="global-message-text"></p>
-    </div>
 
-    <script src="js/config.js"></script>
-    <script src="js/ui.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/cart.js"></script>
-    <script src="js/products.js"></script>
-    <script src="js/checkout.js"></script>
-    <script src="js/newsletter.js"></script>
+    <script src="js/ui.js"></script>
     <script src="js/main.js"></script> 
+    <script src="js/products.js"></script> <!-- For featured products, if dynamic -->
+    <script src="js/newsletter.js"></script>
+    <script>
+        // Initialize specific elements for homepage if needed
+        document.addEventListener('DOMContentLoaded', () => {
+            // Example: Load featured products dynamically
+            // For now, they are static in HTML, but products.js could populate #featured-products-container
+            // if (typeof productsModule !== 'undefined' && typeof productsModule.displayFeaturedProducts === 'function') {
+            //     productsModule.displayFeaturedProducts('featured-products-container', 3); // Display 3 featured products
+            // }
+
+            // Newsletter form for homepage
+            const newsletterFormHome = document.getElementById('newsletter-form-homepage');
+            const newsletterMessageHome = document.getElementById('newsletter-message-homepage');
+            if (newsletterFormHome && newsletterMessageHome && typeof NewsletterSubscription !== 'undefined') {
+                const homeNewsletter = new NewsletterSubscription(newsletterFormHome, newsletterMessageHome, api);
+            }
+        });
+    </script>
 </body>
 </html>
