@@ -1,0 +1,24 @@
+<!-- website/source/pro/pro_header.html -->
+<header class="pro-header">
+    <div class="container">
+        <div class="pro-header-logo">
+            <a href="marchedespros.html" title="Maison Trüvra - Espace Professionnel">
+                <!-- You can use your actual logo image here -->
+                <img src="../images/logo-maison-truvra-gold-on-black-small.png" alt="Maison Trüvra Pro Logo"
+                     onerror="this.onerror=null;this.src='https://placehold.co/150x40/11120D/F5EEDE?text=Maison+Trüvra+Pro';">
+            </a>
+        </div>
+        <nav class="pro-nav">
+            <ul>
+                <li><a href="marchedespros.html" class="nav-link-pro" data-nav-id="pro-catalog">{{public.nav.b2b_catalog | default: 'Catalogue Pro'}}</a></li>
+                <li><a href="invoices-pro.html" class="nav-link-pro" data-nav-id="pro-invoices">{{public.nav.b2b_invoices | default: 'Mes Factures'}}</a></li>
+                <!-- Add other B2B specific links here -->
+                <li><a href="compte.html?pro=true" class="nav-link-pro" data-nav-id="pro-account">{{public.nav.b2b_account | default: 'Mon Compte Pro'}}</a></li>
+            </ul>
+        </nav>
+        <div class="pro-user-actions">
+            <span id="pro-user-greeting" class="user-greeting text-sm"></span>
+            <button id="pro-logout-button" class="btn-pro-secondary btn-sm">{{global.logout | default: 'Déconnexion'}}</button>
+        </div>
+    </div>
+</header>
