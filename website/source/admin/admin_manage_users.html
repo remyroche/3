@@ -4,77 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gérer les Utilisateurs - Maison Trüvra Admin</title>
-    <link rel="stylesheet" href="css/admin_style.css"> 
+    <link rel="stylesheet" href="css/admin_style.css"> <!-- Standardized path -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body id="page-admin-manage-users">
-    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
-                    <i class="fas fa-arrow-left mr-2"></i>
-                    Retour au Tableau de Bord
-                </a>
-                <div id="admin-header-title-area">
-                     <h1 class="text-xl font-semibold text-gray-700">Maison Trüvra - Admin</h1>
-                </div>
-            </div>
-            <div class="flex items-center space-x-4">
-                <span id="admin-user-greeting" class="text-gray-700 text-sm mr-2"></span>
-                <button id="admin-logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-sm flex items-center">
-                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
-                </button>
-            </div>
-        </div>
-    </header>
+<body class="admin-body" id="page-admin-manage-users">
 
-    <nav class="bg-gray-800 text-white shadow-md">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-start h-12 space-x-1 overflow-x-auto">
-                <a href="admin_dashboard.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Tableau de Bord</a>
-                <a href="admin_manage_products.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Produits</a>
-                <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Inventaire</a>
-                <a href="admin_view_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voir Inventaire</a>
-                <a href="admin_manage_orders.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Commandes</a>
-                <a href="admin_manage_users.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 active">Utilisateurs</a>
-                <a href="admin_manage_categories.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Catégories</a>
-                <a href="admin_invoices.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Factures</a>
-                <a href="admin_manage_reviews.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Avis</a>
-            </div>
+    <div id="admin-header-placeholder"></div> <!-- Placeholder for the common header -->
+
+    <main class="admin-main-container">
+        <div class="admin-page-header">
+            <h1 class="admin-page-title">Gestion des Utilisateurs</h1>
         </div>
-    </nav>
-    <main class="admin-content-area container mx-auto p-6 space-y-6">
-        <h1 class="text-3xl font-semibold text-gray-800 mb-6">Gestion des Utilisateurs</h1>
-        <section class="admin-form-container">
-            <h2 class="admin-form-title">Filtres Utilisateurs</h2>
-            <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label for="filter-user-role" class="form-label">Rôle:</label>
-                    <select id="filter-user-role" class="form-input-admin mt-1">
-                        <option value="">Tous</option>
-                        <option value="b2c_customer">Client B2C</option>
-                        <option value="b2b_professional">Professionnel B2B</option>
-                        <option value="admin">Administrateur</option>
-                    </select>
+
+        <section class="admin-form-container content-card">
+            <h2 class="section-heading">Filtrer les Utilisateurs</h2>
+            <form id="user-filters-form" class="admin-form"> <!-- Added ID -->
+                <div class="grid md:grid-cols-3 gap-4 mb-4">
+                    <div class="form-group">
+                        <label for="filter-user-role" class="form-label">Rôle:</label>
+                        <select id="filter-user-role" class="form-input-admin">
+                            <option value="">Tous</option>
+                            <option value="b2c_customer">Client B2C</option>
+                            <option value="b2b_professional">Professionnel B2B</option>
+                            <option value="admin">Administrateur</option>
+                            <option value="staff">Staff</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-user-is-active" class="form-label">Statut Actif:</label>
+                        <select id="filter-user-is-active" class="form-input-admin">
+                            <option value="">Tous</option>
+                            <option value="true">Actif</option>
+                            <option value="false">Inactif</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="search-user-email" class="form-label">Rechercher (Email, Nom, ID, Entreprise):</label>
+                        <input type="text" id="search-user-email" placeholder="Email, Nom, ID..." class="form-input-admin">
+                    </div>
                 </div>
-                <div>
-                    <label for="filter-user-is-active" class="form-label">Statut Actif:</label>
-                    <select id="filter-user-is-active" class="form-input-admin mt-1">
-                        <option value="">Tous</option>
-                        <option value="true">Actif</option>
-                        <option value="false">Inactif</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="search-user-email" class="form-label">Rechercher (Email, Nom, ID, Entreprise):</label>
-                    <input type="text" id="search-user-email" placeholder="Email, Nom, ID..." class="form-input-admin mt-1">
-                </div>
-            </div>
-             <button id="apply-user-filters-button" class="btn btn-admin-primary">Appliquer Filtres</button>
+                 <button type="button" id="apply-user-filters-button" class="btn btn-admin-primary"><i class="fas fa-filter mr-2"></i>Appliquer Filtres</button>
+            </form>
         </section>
 
-        <section class="admin-table-container">
-            <h2 class="admin-table-title">Liste des Utilisateurs</h2>
+        <section class="admin-table-container content-card">
+            <h2 class="section-heading">Liste des Utilisateurs</h2>
             <div class="overflow-x-auto">
                 <table class="admin-table min-w-full">
                     <thead>
@@ -86,7 +60,7 @@
                             <th>Actif</th>
                             <th>Vérifié</th>
                             <th>Statut B2B</th>
-                            <th>Actions</th>
+                            <th class="text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="users-table-body">
@@ -95,95 +69,98 @@
                 </table>
             </div>
         </section>
-    </main>
 
-    <div id="user-edit-modal" class="admin-modal-overlay">
-        <div class="admin-modal-content sm-max-w-lg">
-            <form id="user-edit-form" class="admin-form">
-                <div class="admin-modal-header">
-                    <h3 id="user-edit-modal-title" class="admin-form-title">Modifier Utilisateur</h3>
-                    <button type="button" class="admin-modal-close" id="close-user-edit-modal-button" aria-label="Close">&times;</button>
-                </div>
-                <div class="admin-modal-body space-y-4">
-                    <input type="hidden" id="edit-user-id" name="user_id">
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label for="edit-user-first-name" class="form-label">Prénom</label>
-                            <input type="text" id="edit-user-first-name" name="first_name" class="form-input-admin">
-                        </div>
-                        <div>
-                            <label for="edit-user-last-name" class="form-label">Nom</label>
-                            <input type="text" id="edit-user-last-name" name="last_name" class="form-input-admin">
-                        </div>
+        <!-- User Edit Modal -->
+        <div id="user-edit-modal" class="admin-modal-overlay">
+            <div class="admin-modal-content sm-max-w-lg">
+                <form id="user-edit-form" class="admin-form">
+                    <div class="admin-modal-header">
+                        <h3 id="user-edit-modal-title" class="admin-form-title">Modifier Utilisateur</h3>
+                        <button type="button" class="admin-modal-close" id="close-user-edit-modal-button" aria-label="Close">&times;</button>
                     </div>
-                    <div>
-                        <label for="edit-user-email" class="form-label">Email</label>
-                        <input type="email" id="edit-user-email" name="email" readonly class="form-input-admin bg-gray-100 cursor-not-allowed">
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label for="edit-user-role" class="form-label">Rôle</label>
-                            <select id="edit-user-role" name="role" class="form-input-admin">
-                                <option value="b2c_customer">Client B2C</option>
-                                <option value="b2b_professional">Professionnel B2B</option>
-                                <option value="admin">Administrateur</option>
-                            </select>
+                    <div class="admin-modal-body space-y-4">
+                        <input type="hidden" id="edit-user-id" name="user_id">
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label for="edit-user-first-name" class="form-label">Prénom</label>
+                                <input type="text" id="edit-user-first-name" name="first_name" class="form-input-admin">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-user-last-name" class="form-label">Nom</label>
+                                <input type="text" id="edit-user-last-name" name="last_name" class="form-input-admin">
+                            </div>
                         </div>
-                         <div>
-                            <label for="edit-user-is-active" class="form-label">Compte Actif</label>
-                            <select id="edit-user-is-active" name="is_active" class="form-input-admin">
+                        <div class="form-group">
+                            <label for="edit-user-email" class="form-label">Email</label>
+                            <input type="email" id="edit-user-email" name="email" readonly class="form-input-admin readonly-field">
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label for="edit-user-role" class="form-label">Rôle</label>
+                                <select id="edit-user-role" name="role" class="form-input-admin">
+                                    <option value="b2c_customer">Client B2C</option>
+                                    <option value="b2b_professional">Professionnel B2B</option>
+                                    <option value="admin">Administrateur</option>
+                                    <option value="staff">Staff</option>
+                                </select>
+                            </div>
+                             <div class="form-group">
+                                <label for="edit-user-is-active" class="form-label">Compte Actif</label>
+                                <select id="edit-user-is-active" name="is_active" class="form-input-admin">
+                                    <option value="true">Oui</option>
+                                    <option value="false">Non</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-user-is-verified" class="form-label">Email Vérifié</label>
+                             <select id="edit-user-is-verified" name="is_verified" class="form-input-admin">
                                 <option value="true">Oui</option>
                                 <option value="false">Non</option>
                             </select>
                         </div>
-                    </div>
-                    <div>
-                        <label for="edit-user-is-verified" class="form-label">Email Vérifié</label>
-                         <select id="edit-user-is-verified" name="is_verified" class="form-input-admin">
-                            <option value="true">Oui</option>
-                            <option value="false">Non</option>
-                        </select>
-                    </div>
-                    <div class="b2b-fields hidden space-y-4 pt-4 border-t border-gray-200">
-                         <h4 class="text-md font-medium text-gray-700">Informations Professionnelles (B2B)</h4>
-                        <div>
-                            <label for="edit-user-company-name" class="form-label">Nom Entreprise</label>
-                            <input type="text" id="edit-user-company-name" name="company_name" class="form-input-admin">
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label for="edit-user-vat-number" class="form-label">N° TVA</label>
-                                <input type="text" id="edit-user-vat-number" name="vat_number" class="form-input-admin">
+                        <div class="b2b-fields hidden space-y-4 pt-4 border-t border-gray-200"> <!-- Ensure border class from global styles -->
+                             <h4 class="subsection-heading">Informations Professionnelles (B2B)</h4>
+                            <div class="form-group">
+                                <label for="edit-user-company-name" class="form-label">Nom Entreprise</label>
+                                <input type="text" id="edit-user-company-name" name="company_name" class="form-input-admin">
                             </div>
-                            <div>
-                                <label for="edit-user-siret-number" class="form-label">N° SIRET</label>
-                                <input type="text" id="edit-user-siret-number" name="siret_number" class="form-input-admin">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="form-group">
+                                    <label for="edit-user-vat-number" class="form-label">N° TVA</label>
+                                    <input type="text" id="edit-user-vat-number" name="vat_number" class="form-input-admin">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-user-siret-number" class="form-label">N° SIRET</label>
+                                    <input type="text" id="edit-user-siret-number" name="siret_number" class="form-input-admin">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-user-professional-status" class="form-label">Statut Professionnel</label>
+                                <select id="edit-user-professional-status" name="professional_status" class="form-input-admin">
+                                    <option value="pending">En attente</option>
+                                    <option value="approved">Approuvé</option>
+                                    <option value="rejected">Rejeté</option>
+                                    <option value="pending_review">En attente de vérification</option>
+                                </select>
                             </div>
                         </div>
-                        <div>
-                            <label for="edit-user-professional-status" class="form-label">Statut Professionnel</label>
-                            <select id="edit-user-professional-status" name="professional_status" class="form-input-admin">
-                                <option value="pending">En attente</option>
-                                <option value="approved">Approuvé</option>
-                                <option value="rejected">Rejeté</option>
-                            </select>
-                        </div>
                     </div>
-                </div>
-                <div class="admin-modal-actions">
-                    <button type="submit" id="save-user-changes-button" class="btn btn-admin-primary">
-                        Enregistrer Modifications
-                    </button>
-                    <button type="button" id="cancel-user-edit-button" class="btn btn-admin-secondary">
-                        Annuler
-                    </button>
-                </div>
-            </form>
+                    <div class="admin-modal-actions">
+                        <button type="submit" id="save-user-changes-button" class="btn btn-admin-primary">
+                            Enregistrer Modifications
+                        </button>
+                        <button type="button" id="cancel-user-edit-button" class="btn btn-admin-secondary">
+                            Annuler
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
+    </main>
     
-    <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
+    <footer class="admin-footer">
         <p>&copy; <span id="currentYearManageUsers"></span> Maison Trüvra - Admin Panel</p>
     </footer>
 
@@ -193,13 +170,10 @@
     <script src="js/admin_ui.js"></script>     
     <script src="js/admin_api.js"></script>
     <script src="js/admin_auth.js"></script>
-    <script src="js/admin_main.js"></script>    
+    <script src="js/admin_main.js"></script> <!-- This will load the common header -->
     <script src="js/admin_users.js"></script>   
     <script>
-        const currentYearSpanManageUsers = document.getElementById('currentYearManageUsers');
-        if (currentYearSpanManageUsers) {
-            currentYearSpanManageUsers.textContent = new Date().getFullYear();
-        }
+        document.getElementById('currentYearManageUsers').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
