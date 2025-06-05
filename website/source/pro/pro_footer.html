@@ -1,0 +1,18 @@
+<!-- website/source/pro/pro_footer.html -->
+<footer class="pro-footer">
+    <div class="container">
+        <p>&copy; <span id="current-year-pro"></span> Maison Trüvra. {{public.footer.b2b_rights_reserved | default: 'Tous droits réservés aux professionnels.'}}</p>
+        <p>
+            <a href="politique-confidentialite.html">{{public.footer.privacy_policy | default: 'Politique de Confidentialité'}}</a> |
+            <a href="cgv-pro.html">{{public.footer.b2b_terms | default: 'Conditions Générales de Vente Professionnels'}}</a>
+            <!-- Add other B2B specific footer links -->
+        </p>
+    </div>
+</footer>
+<script>
+    // Small script to set the year, can be part of a common pro_main.js
+    const proFooterYear = document.getElementById('current-year-pro');
+    if (proFooterYear) {
+        proFooterYear.textContent = new Date().getFullYear();
+    }
+</script>
