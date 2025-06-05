@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="{{ lang_code or 'fr' }}">
+<head>
+    <meta charset="UTF-8">
+    <title>Facture {{ invoice.invoice_number }} - {{ company.name }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Baskervville:ital@0;1&family=Raleway:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --mt-cream: #F5EEDE;
+            --mt-near-black: #11120D;
+            --mt-classic-gold: #D4AF37;
+            --mt-warm-taupe: #A28C6A;
+            --mt-earth-brown: #7D6A4F;
+            --mt-slate-blue-grey: #6E7582;
+            --mt-deep-sage-green: #4B5A59;
+            --mt-truffle-burgundy: #8A3E3E;
+            --font-primary: 'Raleway', sans-serif;
+            --font-secondary: 'Baskervville', serif;
+        }
+        @page {
+            size: A4;
+            margin: 18mm 15mm; /* Marges standard A4 */
+            @bottom-center {
+                content: element(footer_content);
+                vertical-align: top;
+                padding-top: 8mm;
+            }
+        }
+        body {
+            font-family: var(--font-primary);
+            color: var(--mt-near-black);
+            font-size: 9pt; /* Taille standard pour factures */
+            line-height: 1.4;
+        }
+        .invoice-container { width: 100%; margin: 0 auto; }
+
+        .header-section {
+            display: -weasy-table; /* Utiliser table pour colonnes */
+            width: 100%;
+            margin-bottom: 10mm;
+            padding-bottom: 7mm;
+            border-bottom: 2px solid var(--mt-classic-gold);
+        }
+        .company-info-block, .invoice-title-block {
+            display: -weasy-table-cell;
+            vertical-align: top;
+        }
+        .company-info-block { width: 55%; }
+        .invoice-title-block { width: 45%; text-align: right; }
+
+        .company-logo { max-width: 160px; max-height: 50px; margin-bottom: 3mm;}
+        .company-name-text { font-family: var(--font-secondary); font-size: 18pt; font-weight: bold; color: var(--mt-near-black); margin: 0 0 1mm 0; }
+        .company-tagline { font-size: 8pt; color: var(--mt-earth-brown); margin:0 0 3mm 0;}
+        .company-details p { margin: 1mm 0; font-size: 8pt; }
+
+        .invoice-title-block h1 {
+            font-family: var(--font-secondary); font-size: 26pt; color: var(--mt-truffle-burgundy);
+            margin: 0 0 3mm 0; text-transform: uppercase; letter-spacing: 0.5pt;
+        }
+        .invoice-details p { margin: 1mm 0; font-size: 9pt;}
+        .invoice-details strong { font-weight: 600; }
+
+        .customer-info-grid {
+            display: -weasy-table;
+            width: 100%;
+            margin-bottom: 8mm;
+            padding-bottom: 8mm;
+            border-bottom: 1px solid var(--mt-warm-taupe);
+        }
+        .customer-billing-block, .customer-delivery-block {
+            display: -weasy-table-cell;
+            width: 48%; /* Laisse un peu d'espace entre les deux */
+            vertical-align: top;
+        }
+        .customer-billing-block { padding-right: 4%; }
+
+        .customer-info-grid h2 {
+            font-family: var(--font-secondary); font-size: 11pt; font-weight: bold;
+            color: var(--mt-near-black); margin: 0 0 3mm 0; padding-bottom: 1.5mm;
+            border-bottom: 0.5pt solid var(--mt-warm-taupe);
+        }
+        .customer-details p { margin: 1mm 0; font-size: 9pt; }
+
+        .line-items-table { width: 100%; border-collapse: collapse; margin-bottom: 8mm; font-size: 9pt; }
+        .line-items-table th, .line-items-table td {
+            border: 0.5pt solid var(--mt-warm-taupe);
+            padding: 2.5mm 2mm; /* padding confortable */
+            text-align: left;
+            vertical-align: top;
+        }
+        .line-items-table th {
+            background-color: var(--mt-cream);
+            font-weight: 600;
+            font-family: var(--font-primary);
+            color: var(--mt-near-black);
+        }
+        .line-items-table td.description { width: 45%; }
+        .line-items-table td.quantity { text-align: center; width: 10%;}
+        .line-items-table td.unit-price, .line-items-table td.vat-rate, .line-items-table td.total-ht, .line-items-table td.total-ttc { text-align: right; width: 10%; }
+        .line-items-table td.vat-rate { text-align: center; }
+
+
+        .totals-section { margin-top: 8mm; width: 45%; margin-left: auto; /* Aligner à droite */ }
+        .totals-section table { width: 100%; font-size: 9pt; }
+        .totals-section td { padding: 1.5mm 1mm; }
+        .totals-section .label { font-weight: 600; text-align: left; }
+        .totals-section .amount { text-align: right; }
+        .totals-section .grand-total .label, .totals-section .grand-total .amount {
+            font-weight: bold; font-size: 11pt; color: var(--mt-truffle-burgundy);
+            padding-top: 2.5mm; border-top: 1pt solid var(--mt-near-black);
+        }
+
+        .invoice-notes-section { margin-top: 8mm; padding-top: 5mm; border-top: 0.5pt dashed var(--mt-warm-taupe); font-size: 8pt; }
+        .invoice-notes-section h3 { font-family: var(--font-secondary); font-size: 10pt; margin-bottom: 2mm; }
+        .invoice-notes-section p { white-space: pre-wrap; } /* Pour respecter les retours à la ligne des notes */
+
+        .payment-terms-section { margin-top: 8mm; padding-top: 5mm; border-top: 0.5pt dashed var(--mt-warm-taupe); font-size: 8pt;}
+        .payment-terms-section h3 { font-family: var(--font-secondary); font-size: 10pt; margin-bottom: 2mm;}
+        .payment-terms-section p { margin: 1mm 0; }
+
+        .footer-content-container {
+            running: footer_content; /* Nom pour l'élément de pied de page */
+            text-align: center;
+            font-size: 7pt; /* Plus petit pour le pied de page */
+            color: var(--mt-earth-brown);
+        }
+        .footer-content-container .brand-name { font-family: var(--font-secondary); font-weight: bold; color: var(--mt-near-black); font-size: 8pt; }
+        .footer-content-container .tagline { font-style: italic; margin-bottom: 1mm; }
+        .footer-content-container .highlight { color: var(--mt-truffle-burgundy); font-weight: bold; margin-top: 1.5mm; }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="header-section">
+            <div class="company-info-block">
+                {% if company.logo_path %}
+                    <img src="{{ company.logo_path }}" alt="{{ company.name }} Logo" class="company-logo">
+                {% endif %}
+                <p class="company-name-text">{{ company.name }}</p>
+                <p class="company-tagline">{{ company.tagline or 'Propriétaire récoltant' }}</p>
+                <div class="company-details">
+                    <p>{{ company.address_line1 }}</p>
+                    {% if company.address_line2 %}<p>{{ company.address_line2 }}</p>{% endif %}
+                    <p>{{ company.city_postal_country }}</p>
+                    <p>SIRET : {{ company.siret }}</p>
+                    <p>TVA : {{ company.vat_number }}</p>
+                </div>
+            </div>
+            <div class="invoice-title-block">
+                <h1>Facture</h1>
+                <div class="invoice-details">
+                    <p><strong>Facture N° :</strong> {{ invoice.invoice_number }}</p>
+                    <p><strong>Date d'émission :</strong> {{ invoice.issue_date.strftime('%d/%m/%Y') }}</p>
+                    <p><strong>Date d'échéance :</strong> {{ invoice.due_date.strftime('%d/%m/%Y') }}</p>
+                    {% if invoice.order_id_display %}
+                        <p><strong>Référence Commande :</strong> {{ invoice.order_id_display }}</p>
+                    {% endif %}
+                    {% if invoice.po_reference %}
+                         <p><strong>Référence Bon de Commande Client :</strong> {{ invoice.po_reference }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="customer-info-grid">
+            <div class="customer-billing-block">
+                <h2>Facturé à :</h2>
+                <div class="customer-details">
+                    <p><strong>{{ client.company_name or (client.first_name ~ ' ' ~ client.last_name) }}</strong></p>
+                    {% if client.contact_name and client.contact_name != (client.first_name ~ ' ' ~ client.last_name) %}
+                        <p>A l'attention de : {{ client.contact_name }}</p>
+                    {% endif %}
+                    <p>{{ client.billing_address.line1 }}</p>
+                    {% if client.billing_address.line2 %}<p>{{ client.billing_address.line2 }}</p>{% endif %}
+                    <p>{{ client.billing_address.city }} {{ client.billing_address.postal_code }}</p>
+                    <p>{{ client.billing_address.country }}</p>
+                    {% if client.siret_number %}<p>SIRET : {{ client.siret_number }}</p>{% endif %}
+                    {% if client.vat_number %}<p>N° TVA Intracommunautaire : {{ client.vat_number }}</p>{% endif %}
+                </div>
+            </div>
+            <div class="customer-delivery-block">
+                <h2>Livré à :</h2>
+                <div class="customer-details">
+                    <p><strong>{{ client.delivery_company_name or client.company_name or (client.first_name ~ ' ' ~ client.last_name) }}</strong></p>
+                     {% if client.delivery_address.line1 %}
+                        <p>{{ client.delivery_address.line1 }}</p>
+                        {% if client.delivery_address.line2 %}<p>{{ client.delivery_address.line2 }}</p>{% endif %}
+                        <p>{{ client.delivery_address.city }} {{ client.delivery_address.postal_code }}</p>
+                        <p>{{ client.delivery_address.country }}</p>
+                    {% else %}
+                        <p>(Identique à l'adresse de facturation)</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <h2 style="font-family: var(--font-secondary); font-size: 11pt; margin-bottom:3mm;">Détail de la Facture :</h2>
+        <table class="line-items-table">
+            <thead>
+                <tr>
+                    <th class="description">Description</th>
+                    <th class="quantity">Qté</th>
+                    <th class="unit-price">Prix Unit. HT</th>
+                    <th class="vat-rate">TVA (%)</th>
+                    <th class="total-ht">Total HT</th>
+                    <th class="total-ttc">Total TTC</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice_items %}
+                <tr>
+                    <td class="description">{{ item.description }}</td>
+                    <td class="quantity">{{ item.quantity }}</td>
+                    <td class="unit-price">{{ "%.2f"|format(item.unit_price|float) }} {{ invoice.currency }}</td>
+                    <td class="vat-rate">{{ item.vat_rate|default(20.0, true) }}%</td>
+                    <td class="total-ht">{{ "%.2f"|format(item.total_price_ht|float) }} {{ invoice.currency }}</td>
+                    <td class="total-ttc">{{ "%.2f"|format(item.total_price_ttc|float) }} {{ invoice.currency }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="text-align:center; padding: 5mm;">Aucun article.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totals-section">
+            <table>
+                <tr>
+                    <td class="label">Total HT :</td>
+                    <td class="amount">{{ "%.2f"|format(invoice.subtotal_ht|float) }} {{ invoice.currency }}</td>
+                </tr>
+                {% for rate, amount in invoice.vat_summary.items() %}
+                    <tr>
+                        <td class="label">TVA ({{ rate }}%) :</td>
+                        <td class="amount">{{ "%.2f"|format(amount|float) }} {{ invoice.currency }}</td>
+                    </tr>
+                {% endfor %}
+                 <tr>
+                    <td class="label">Total TVA :</td>
+                    <td class="amount">{{ "%.2f"|format(invoice.total_vat_amount|float) }} {{ invoice.currency }}</td>
+                </tr>
+                <tr class="grand-total">
+                    <td class="label">TOTAL TTC :</td>
+                    <td class="amount">{{ "%.2f"|format(invoice.grand_total_ttc|float) }} {{ invoice.currency }}</td>
+                </tr>
+                <!-- Add lines for advance payments, discounts if applicable -->
+                <tr class="grand-total" style="margin-top: 2mm;">
+                    <td class="label">NET À PAYER :</td>
+                    <td class="amount">{{ "%.2f"|format(invoice.net_to_pay|float) }} {{ invoice.currency }}</td>
+                </tr>
+            </table>
+        </div>
+
+        {% if invoice.notes %}
+        <div class="invoice-notes-section">
+            <h3>Notes :</h3>
+            <p>{{ invoice.notes }}</p>
+        </div>
+        {% endif %}
+
+        <div class="payment-terms-section">
+            <h3>Conditions de paiement :</h3>
+            <p>Paiement à {{ company.payment_due_days or 30 }} jours date de facture, sauf accord contraire.</p>
+            <p>Mode de paiement privilégié : Virement bancaire.</p>
+            <p><strong>IBAN :</strong> {{ company.iban }}</p>
+            <p><strong>BIC/SWIFT :</strong> {{ company.swift }}</p>
+            <p style="font-size: 7pt; margin-top: 3mm;">En cas de retard de paiement, une pénalité égale à 3 fois le taux d'intérêt légal sera appliquée (Décret 2009-138 du 9 février 2009).<br>Indemnité forfaitaire pour frais de recouvrement en cas de retard de paiement : 40€ (Code de Commerce Art L441-6 / D441-5). Pas d'escompte pour paiement anticipé.</p>
+        </div>
+
+        <div class="footer-content-container">
+            <p class="brand-name">{{ company.name }}</p>
+            <p class="tagline">« L’avenir de la truffe, cultivé avec art. »</p>
+            <p>{{ company.address_line1 }}{% if company.address_line2 %}, {{ company.address_line2 }}{% endif %} - {{ company.city_postal_country }}</p>
+            <p>SIRET : {{ company.siret }} - NAF : {{ company.naf_code or 'XXXXX' }} - TVA Intracom. : {{ company.vat_number }}</p>
+            <p>Tél : {{ company.phone or '+33 X XX XX XX XX' }} - Email : {{ company.email or 'contact@maisontruvra.com' }} - Site : {{ company.website_url or 'www.maisontruvra.com' }}</p>
+            <p class="highlight">Merci de votre confiance !</p>
+        </div>
+    </div>
+</body>
+</html>
