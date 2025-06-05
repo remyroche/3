@@ -794,29 +794,26 @@ class QuoteRequestItem(db.Model):
 
 
 
-
 @b2b_bp.route('/products', methods=['GET'])
 @jwt_required()
 def get_b2b_products():
-    """
-    Fetches products with B2B tiered pricing for the authenticated professional user.
-    """
-    current_user_id = get_jwt_identity()
-    b2b_user = User.query.get(current_user_id)
+    b2b_user = get_b2b_user_from_identity()
     audit_logger = current_app.audit_log_service
+    ip_address = request.remote_addr
 
-    if not b2b_user or b2b_user.role != UserRoleEnum.B2B_PROFESSIONAL or b2b_user.professional_status != ProfessionalStatusEnum.APPROVED:
-        audit_logger.log_action(user_id=current_user_id, action='get_b2b_products_fail_auth', details="B2B Professional account approved required.", status='failure', ip_address=request.remote_addr)
+    if not b2b_user:
+        audit_logger.log_action(user_id=get_jwt_identity(), action='get_b2b_products_fail_auth', details="B2B Professional account approved required.", status='failure', ip_address=ip_address)
         return jsonify(message="Access denied. Approved B2B professional account required.", success=False), 403
 
-    user_tier = b2b_user.b2b_tier # This should be an Enum member, e.g., B2BPricingTierEnum.GOLD
+    user_tier_enum = b2b_user.b2b_tier
 
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 12, type=int)
     category_slug_filter = request.args.get('category_slug')
     search_term_filter = request.args.get('search')
-    sort_by_filter = request.args.get('sort', 'name_asc')
+    sort_by_filter = request.args.get('sort', 'name_asc') # Default sort
 
+    # 1. Initial Query Construction (without price sort or pagination yet)
     query = Product.query.join(Category, Product.category_id == Category.id)\
                          .filter(Product.is_active == True, Category.is_active == True)
 
@@ -824,83 +821,160 @@ def get_b2b_products():
         query = query.filter(Category.slug == category_slug_filter)
     if search_term_filter:
         term_like = f"%{search_term_filter.lower()}%"
-        # Adjust search to include localized names if Product model has them or via joins
-        query = query.filter(Product.name.ilike(term_like))
+        # Consider joining with ProductLocalization and searching localized names too if applicable
+        query = query.filter(Product.name.ilike(term_like)) # Basic name search
 
-    # Sorting logic - Note: Sorting by dynamic B2B price is complex at DB level.
-    # Consider sorting in Python if performance allows for smaller datasets, or by a default price.
-    if sort_by_filter == 'price_asc':
-        query = query.order_by(Product.base_price.asc()) # Placeholder: sort by base B2C price
-    elif sort_by_filter == 'price_desc':
-        query = query.order_by(Product.base_price.desc()) # Placeholder
-    elif sort_by_filter == 'name_desc':
-        query = query.order_by(Product.name.desc())
-    else: # default name_asc
-        query = query.order_by(Product.name.asc())
+    # Fetch all products matching filters
+    all_filtered_products = query.all()
 
-    paginated_products = query.paginate(page=page, per_page=per_page, error_out=False)
-    products_data = []
+    # 2. Efficiently Pre-fetch Pricing Data
+    all_product_ids = [p.id for p in all_filtered_products]
 
-    for product in paginated_products.items:
-        product_dict = product.to_dict() # Use existing to_dict, which should give B2C/base info
-        
-        # Override price with B2B tiered price
-        b2b_price_to_display = product.base_price # Fallback to B2C price
+    # Pre-fetch active weight options for all variable products
+    active_options_query = ProductWeightOption.query.filter(
+        ProductWeightOption.product_id.in_(all_product_ids),
+        ProductWeightOption.is_active == True
+    )
+    options_by_product_id_map = {}
+    all_active_variant_ids = []
+    for opt in active_options_query.all():
+        if opt.product_id not in options_by_product_id_map:
+            options_by_product_id_map[opt.product_id] = []
+        options_by_product_id_map[opt.product_id].append(opt)
+        all_active_variant_ids.append(opt.id)
+
+    # Pre-fetch B2B tier prices for simple products
+    tier_prices_for_products_query = ProductB2BTierPrice.query.filter(
+        ProductB2BTierPrice.product_id.in_(all_product_ids),
+        ProductB2BTierPrice.variant_id == None, # Simple products
+        ProductB2BTierPrice.b2b_tier == user_tier_enum
+    )
+    product_tier_price_map = {tp.product_id: tp.price for tp in tier_prices_for_products_query.all()}
+
+    # Pre-fetch B2B tier prices for variants
+    tier_prices_for_variants_query = ProductB2BTierPrice.query.filter(
+        ProductB2BTierPrice.variant_id.in_(all_active_variant_ids),
+        ProductB2BTierPrice.b2b_tier == user_tier_enum
+    )
+    variant_tier_price_map = {tp.variant_id: tp.price for tp in tier_prices_for_variants_query.all()}
+
+    # 3. Calculate Actual B2B Price for Sorting & Augment Product Info
+    temp_products_for_sorting = []
+    for product in all_filtered_products:
+        actual_b2b_price_for_sort = None # Default to None if not determinable
 
         if product.type == ProductTypeEnum.SIMPLE:
-            tier_price_simple = ProductB2BTierPrice.query.filter_by(
-                product_id=product.id, variant_id=None, b2b_tier=user_tier
-            ).first()
-            if tier_price_simple:
-                b2b_price_to_display = tier_price_simple.price
+            actual_b2b_price_for_sort = product_tier_price_map.get(product.id, product.base_price)
         
-        product_dict['b2b_price'] = b2b_price_to_display # This is the price for this B2B user
+        elif product.type == ProductTypeEnum.VARIABLE_WEIGHT:
+            current_product_options = options_by_product_id_map.get(product.id, [])
+            if current_product_options:
+                min_variant_price = float('inf')
+                has_any_option_price = False
+                for option in current_product_options:
+                    variant_b2b_price = variant_tier_price_map.get(option.id, option.price)
+                    if variant_b2b_price is not None: # Ensure price is not None before comparison
+                        min_variant_price = min(min_variant_price, variant_b2b_price)
+                        has_any_option_price = True
+                
+                if has_any_option_price and min_variant_price != float('inf'):
+                    actual_b2b_price_for_sort = min_variant_price
+                elif not has_any_option_price and current_product_options: # Options exist but no prices
+                     actual_b2b_price_for_sort = current_product_options[0].price # Fallback to first option's B2C if no B2B price found for any
+                # If no options, actual_b2b_price_for_sort remains None or product.base_price could be a fallback
+            else: # No active options
+                 actual_b2b_price_for_sort = product.base_price # Fallback for variable products with no active options
+
+
+        # Define sortable_price to handle Nones for sorting
+        sortable_value = actual_b2b_price_for_sort
+        if sort_by_filter == 'price_asc':
+            sortable_value = actual_b2b_price_for_sort if actual_b2b_price_for_sort is not None else float('inf')
+        elif sort_by_filter == 'price_desc':
+            sortable_value = actual_b2b_price_for_sort if actual_b2b_price_for_sort is not None else float('-inf')
+            
+        temp_products_for_sorting.append({
+            "product_obj": product, # Store the actual product object
+            "sort_key_price": sortable_value,
+            "sort_key_name": product.name.lower() # For case-insensitive name sort
+        })
+
+    # 4. Sort in Python
+    if sort_by_filter == 'price_asc':
+        temp_products_for_sorting.sort(key=lambda x: x['sort_key_price'])
+    elif sort_by_filter == 'price_desc':
+        temp_products_for_sorting.sort(key=lambda x: x['sort_key_price'], reverse=True)
+    elif sort_by_filter == 'name_desc':
+        temp_products_for_sorting.sort(key=lambda x: x['sort_key_name'], reverse=True)
+    else: # Default 'name_asc'
+        temp_products_for_sorting.sort(key=lambda x: x['sort_key_name'])
+
+    # 5. Manual Pagination
+    total_products_count = len(temp_products_for_sorting)
+    start_index = (page - 1) * per_page
+    end_index = start_index + per_page
+    paginated_entries = temp_products_for_sorting[start_index:end_index]
+    total_pages_count = (total_products_count + per_page - 1) // per_page if per_page > 0 else 0
+
+
+    # 6. Prepare Response Data (using the sorted and paginated product objects)
+    products_data = []
+    for entry in paginated_entries:
+        product = entry['product_obj'] # Get the original Product object
+        product_dict = product.to_dict() # Use existing to_dict for base structure
+
+        # Populate 'b2b_price' and 'weight_options_b2b' accurately for display
+        # This re-uses the pre-fetched price maps for efficiency
+        
+        display_b2b_price = product.base_price # Fallback to B2C price
+        if product.type == ProductTypeEnum.SIMPLE:
+            display_b2b_price = product_tier_price_map.get(product.id, product.base_price)
+        
+        product_dict['b2b_price'] = display_b2b_price
         product_dict['retail_price'] = product.base_price # RRP is the B2C price
 
         if product.type == ProductTypeEnum.VARIABLE_WEIGHT:
-            options_list_b2b = []
-            active_options = product.weight_options.filter_by(is_active=True).order_by(ProductWeightOption.weight_grams).all()
+            options_list_b2b_display = []
+            # Use sorted options from map to maintain order
+            current_product_options_display = sorted(options_by_product_id_map.get(product.id, []), key=lambda o: o.weight_grams)
             
-            min_b2b_variant_price = float('inf') if active_options else None
+            min_b2b_variant_price_display = float('inf') if current_product_options_display else None
 
-            for option in active_options:
-                option_b2b_price = option.price # Fallback to variant's B2C price
-                option_tier_price_entry = ProductB2BTierPrice.query.filter_by(
-                    variant_id=option.id, # Tier pricing specific to this variant
-                    b2b_tier=user_tier
-                ).first()
-                if option_tier_price_entry:
-                    option_b2b_price = option_tier_price_entry.price
+            for option_display in current_product_options_display:
+                option_b2b_price = variant_tier_price_map.get(option_display.id, option_display.price)
                 
-                if option_b2b_price < min_b2b_variant_price:
-                    min_b2b_variant_price = option_b2b_price
+                if option_b2b_price is not None and (min_b2b_variant_price_display is None or option_b2b_price < min_b2b_variant_price_display):
+                     min_b2b_variant_price_display = option_b2b_price
 
-                options_list_b2b.append({
-                    "option_id": option.id,
-                    "weight_grams": option.weight_grams,
-                    "sku_suffix": option.sku_suffix,
-                    "b2b_price": option_b2b_price, # Tiered price for this variant
-                    "retail_price": option.price,    # B2C retail price for this variant
-                    "aggregate_stock_quantity": option.aggregate_stock_quantity
+                options_list_b2b_display.append({
+                    "option_id": option_display.id,
+                    "weight_grams": option_display.weight_grams,
+                    "sku_suffix": option_display.sku_suffix,
+                    "b2b_price": option_b2b_price, # Tiered price for this variant for display
+                    "retail_price": option_display.price, # B2C retail price for this variant
+                    "aggregate_stock_quantity": option_display.aggregate_stock_quantity # Ensure this is accurate
                 })
-            product_dict['weight_options_b2b'] = options_list_b2b
-            # If variable product, the main 'b2b_price' could be a "starting from" price
-            if min_b2b_variant_price is not None and min_b2b_variant_price != float('inf'):
-                product_dict['b2b_price'] = min_b2b_variant_price 
-            elif not active_options: # No active variants for this B2B user?
-                 product_dict['b2b_price'] = None # Or some indicator it's unavailable
+            product_dict['weight_options_b2b'] = options_list_b2b_display
+            
+            if min_b2b_variant_price_display is not None and min_b2b_variant_price_display != float('inf'):
+                product_dict['b2b_price'] = min_b2b_variant_price_display 
+            elif not current_product_options_display:
+                 product_dict['b2b_price'] = None # Or some indicator it's unavailable/no B2B price
+            # If min_b2b_variant_price_display is inf but options existed, it means no B2B tier price found, default to base or variant B2C price was used
+            # The product_dict['b2b_price'] might already be set to product.base_price if it fell through.
 
         products_data.append(product_dict)
     
-    audit_logger.log_action(user_id=current_user_id, action='get_b2b_products_success', status='success', ip_address=request.remote_addr)
+    audit_logger.log_action(user_id=b2b_user.id, action='get_b2b_products_success', details=f"Page: {page}, Filters: category_slug={category_slug_filter}, search={search_term_filter}, sort={sort_by_filter}", status='success', ip_address=ip_address)
     return jsonify({
         "products": products_data,
-        "page": paginated_products.page,
-        "per_page": paginated_products.per_page,
-        "total_products": paginated_products.total,
-        "total_pages": paginated_products.pages,
+        "page": page,
+        "per_page": per_page,
+        "total_products": total_products_count,
+        "total_pages": total_pages_count,
         "success": True
     }), 200
+
 
 def get_b2b_user_from_identity():
     """Helper to get the authenticated B2B user."""
