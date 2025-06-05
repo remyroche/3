@@ -45,6 +45,45 @@ from ..database import record_stock_movement
 from . import admin_api_bp 
 
 
+
+@admin_api_bp.route('/invoices/create', methods=['POST'])
+@admin_required 
+# @limiter.limit(...) # Add rate limit if desired
+def create_manual_invoice_admin():
+    current_admin_id = get_jwt_identity()
+    audit_logger = current_app.audit_log_service
+    data = request.json
+
+    b2b_user_id = data.get('b2b_user_id')
+    line_items_data = data.get('line_items', []) # Expects list of {'description', 'quantity', 'unit_price', 'vat_rate'}
+    notes = data.get('notes')
+    invoice_date_str = data.get('invoice_date') # From form
+    due_date_str = data.get('due_date') # From form
+    invoice_html_preview = data.get('invoice_html_preview') # New field: HTML string of the preview
+    user_currency = data.get('currency', 'EUR') # Or get from user profile
+
+    if not b2b_user_id or not line_items_data:
+        return jsonify(message="Client ID and at least one line item are required.", success=False), 400
+
+    invoice_service = InvoiceService()
+    try:
+        # Pass the raw HTML to the service method
+        inv_id, inv_num = invoice_service.create_manual_invoice(
+            b2b_user_id, user_currency, line_items_data, notes, 
+            issued_by_admin_id=current_admin_id,
+            raw_invoice_html=invoice_html_preview # Pass the HTML content
+        )
+        audit_logger.log_action(user_id=current_admin_id, action='create_manual_invoice_admin_success', target_type='invoice', target_id=inv_id, details=f"Invoice {inv_num} created for B2B user {b2b_user_id}.", status='success', ip_address=request.remote_addr)
+        return jsonify(message=f"Invoice {inv_num} created successfully!", invoice_id=inv_id, invoice_number=inv_num, success=True), 201
+    except ValueError as ve:
+        audit_logger.log_action(user_id=current_admin_id, action='create_manual_invoice_admin_fail_validation', details=str(ve), status='failure', ip_address=request.remote_addr)
+        return jsonify(message=str(ve), success=False), 400
+    except Exception as e:
+        current_app.logger.error(f"Failed to create manual invoice: {e}", exc_info=True)
+        audit_logger.log_action(user_id=current_admin_id, action='create_manual_invoice_admin_fail_exception', details=str(e), status='failure', ip_address=request.remote_addr)
+        return jsonify(message=f"Failed to create invoice: {str(e)}", success=False), 500
+        
+
 # --- Helper: Update or Create Product Localization ---
 def _update_or_create_product_localization(product_id, lang_code, data_dict):
     """
