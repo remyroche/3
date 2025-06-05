@@ -1,112 +1,81 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="{{global.charset}}">
-    <meta name="viewport" content="{{global.viewport}}">
-    <title>{{public.products_page.title}}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'brand-cream': '#F5EEDE',
-                        'brand-near-black': '#11120D',
-                        'brand-classic-gold': '#D4AF37',
-                        'brand-warm-taupe': '#A28C6A',
-                        'brand-earth-brown': '#7D6A4F',
-                        'brand-slate-blue-grey': '#6E7582',
-                        'brand-deep-sage-green': '#4B5A59',
-                        'brand-truffle-burgundy': '#8A3E3E',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #F5EEDE; 
-            color: #7D6A4F; 
-        }
-        h1, h2, h3, .font-serif {
-            font-family: 'Playfair Display', serif;
-        }
-        .btn-primary {
-            background-color: #7D6A4F; color: #F5EEDE; padding: 0.85rem 1.75rem; 
-            border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease;
-            font-weight: 500; letter-spacing: 0.025em; display: inline-block; cursor: pointer;
-        }
-        .btn-primary:hover { background-color: #11120D; transform: translateY(-2px); }
-        .btn-secondary {
-            background-color: #A28C6A; color: #F5EEDE; padding: 0.75rem 1.5rem;
-            border-radius: 0.375rem; transition: background-color 0.3s ease, transform 0.2s ease;
-            font-weight: 500; display: inline-block; cursor: pointer;
-        }
-        .btn-secondary:hover { background-color: #7D6A4F; transform: translateY(-1px); }
-        .btn-secondary.filter-active { 
-            background-color: #7D6A4F; 
-            color: #F5EEDE; 
-        }
-         .btn-gold {
-            background-color: #D4AF37; color: #11120D; padding: 0.85rem 1.75rem;
-            border-radius: 0.375rem; transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.2s ease;
-            font-weight: 600; display: inline-block; cursor: pointer;
-        }
-        .btn-gold:hover { background-color: #D4AF37; opacity: 0.85; transform: translateY(-2px); }
-        .product-card { @apply bg-white rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden flex flex-col; }
-        .product-card img { @apply w-full h-64 object-cover; }
-        .product-card-content { @apply p-6 flex flex-col flex-grow; }
-        .product-card-content h3 { @apply text-xl font-serif font-semibold text-brand-near-black mb-3; }
-        .product-card-content p { @apply text-brand-earth-brown text-sm mb-4; }
-        .product-card-footer { @apply mt-auto pt-4 border-t border-brand-cream; }
-        .page-header { @apply text-3xl md:text-4xl font-serif text-brand-near-black mb-8 text-center py-8 bg-white shadow-sm; }
-        .modal-overlay { @apply fixed inset-0 bg-brand-near-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 pointer-events-none; }
-        .modal-overlay.active { @apply opacity-100 pointer-events-auto; }
-        .modal-content { @apply bg-brand-cream p-6 sm:p-8 rounded-lg shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300; }
-        .modal-overlay.active .modal-content { @apply scale-100; }
-        .modal-message { @apply fixed bottom-5 right-5 bg-brand-deep-sage-green text-brand-cream p-4 rounded-lg shadow-xl z-[100] transition-all duration-500 ease-out opacity-0 translate-y-10; }
-        .modal-message.show { @apply opacity-100 translate-y-0; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-translate-key="products_page.title">Nos Produits - Maison Trüvra</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/nos-produits.css"> <!-- Specific styles for products page -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
-<body id="page-nos-produits" class="antialiased" data-page-title-key="public.products_page.title">
+<body id="page-nos-produits">
+    <div id="main-header-placeholder"></div>
 
-    <div id="header-placeholder"></div>
+    <main class="container mx-auto px-4 py-8 mt-20 md:mt-24 lg:mt-28">
+        <header class="page-header mb-8 md:mb-12 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold page-title" data-translate-key="products_page.main_title">Découvrez Nos Collections</h1>
+            <p class="text-lg text-mt-earth-brown mt-2 max-w-2xl mx-auto font-primary" data-translate-key="products_page.subtitle">L'essence de la truffe, capturée dans chaque création unique.</p>
+        </header>
 
-    <!-- Example Language Switcher -->
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 pt-4 text-right">
-        <button onclick="setLanguageAndReload('fr')" class="bg-brand-earth-brown hover:bg-brand-near-black text-brand-cream py-1 px-3 rounded-md text-sm mr-1">FR</button>
-        <button onclick="setLanguageAndReload('en')" class="bg-brand-deep-sage-green hover:bg-brand-near-black text-brand-cream py-1 px-3 rounded-md text-sm">EN</button>
-    </div>
-
-    <main class="bg-brand-cream">
-        <!-- This section will be the main container for product list or product details -->
-        <section id="nos-produits-main-container" class="py-12 bg-brand-cream">
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <p class="text-xl sm:text-2xl font-serif italic text-brand-earth-brown mb-8" data-translate="public.products_page.header">{{public.products_page.header}}</p>
-                <!-- Content (product list or product detail) will be dynamically inserted here by nos-produits.js -->
-                <p class="text-brand-earth-brown py-8">Chargement des produits...</p> 
+        <!-- Filters and Sorting Section -->
+        <section id="filters-section" class="mb-8 p-4 md:p-6 bg-white rounded-lg shadow">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label for="category-filter" class="block text-sm font-medium text-mt-earth-brown mb-1 font-primary" data-translate-key="products_page.filter.category">Catégorie :</label>
+                    <select id="category-filter" name="category" class="form-select w-full rounded-md border-mt-warm-taupe focus:ring-mt-classic-gold focus:border-mt-classic-gold">
+                        <option value="" data-translate-key="products_page.filter.all_categories">Toutes les catégories</option>
+                        <!-- Categories will be populated by JS -->
+                    </select>
+                </div>
+                <div>
+                    <label for="sort-filter" class="block text-sm font-medium text-mt-earth-brown mb-1 font-primary" data-translate-key="products_page.filter.sort_by">Trier par :</label>
+                    <select id="sort-filter" name="sort" class="form-select w-full rounded-md border-mt-warm-taupe focus:ring-mt-classic-gold focus:border-mt-classic-gold">
+                        <option value="default" data-translate-key="products_page.filter.sort.default">Défaut</option>
+                        <option value="price_asc" data-translate-key="products_page.filter.sort.price_asc">Prix : Croissant</option>
+                        <option value="price_desc" data-translate-key="products_page.filter.sort.price_desc">Prix : Décroissant</option>
+                        <option value="name_asc" data-translate-key="products_page.filter.sort.name_asc">Nom : A à Z</option>
+                        <option value="name_desc" data-translate-key="products_page.filter.sort.name_desc">Nom : Z à A</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="search-filter" class="block text-sm font-medium text-mt-earth-brown mb-1 font-primary" data-translate-key="products_page.filter.search">Rechercher :</label>
+                    <div class="relative">
+                        <input type="search" id="search-filter" name="search" placeholder="Nom du produit..." class="form-input w-full rounded-md border-mt-warm-taupe focus:ring-mt-classic-gold focus:border-mt-classic-gold pr-10" data-translate-placeholder="products_page.filter.search_placeholder">
+                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-mt-warm-taupe">
+                            <i class="fas fa-search"></i>
+                        </span>
+                    </div>
+                </div>
             </div>
         </section>
+        
+        <div id="loading-indicator" class="text-center py-10 hidden">
+            <i class="fas fa-spinner fa-spin text-3xl text-mt-classic-gold"></i>
+            <p class="text-mt-earth-brown mt-2 font-primary" data-translate-key="products_page.loading">Chargement des produits...</p>
+        </div>
+
+        <section id="product-grid">
+            <div id="product-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+                <!-- Product cards will be loaded here by JS (products.js -> displayProductCard or nos-produits.js) -->
+            </div>
+        </section>
+
+        <!-- Pagination -->
+        <nav id="pagination-container" aria-label="Product list navigation" class="mt-10 md:mt-16 flex justify-center">
+            <!-- Pagination links will be inserted here by JS -->
+        </nav>
     </main>
 
-    <div id="footer-placeholder"></div>
+    <div id="main-footer-placeholder"></div>
+    <div id="cart-toast-placeholder" class="fixed bottom-5 right-5 z-50"></div>
+    <div id="global-message-container" class="fixed top-20 right-5 z-[1000] w-auto max-w-sm"></div>
 
-    <div id="global-message-toast" class="modal-message">
-        <p id="global-message-text"></p>
-    </div>
-
-    <script src="js/config.js"></script>
-    <script src="js/utils.js"></script> <!-- Language utilities and data fetching -->
-    <script src="js/main.js"></script> <script src="js/ui.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/cart.js"></script>
-    <script src="js/nos-produits.js"></script> <!-- Updated script for this page -->
-    <script src="js/checkout.js"></script>
-    <script src="js/newsletter.js"></script>
-    </body>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/products.js"></script> <!-- Contains displayProductCard -->
+    <script src="js/nos-produits.js"></script> <!-- Specific JS for this page -->
+</body>
 </html>
