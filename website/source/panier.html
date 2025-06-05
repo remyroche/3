@@ -8,77 +8,69 @@
     <link rel="stylesheet" href="css/panier.css"> <!-- Specific styles for cart page -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
-<body id="page-panier">
+<body>
     <div id="main-header-placeholder"></div>
 
     <main class="container mx-auto px-4 py-8 mt-20 md:mt-24 lg:mt-28">
-        <header class="page-header mb-8 md:mb-12 text-center">
-            <h1 class="text-4xl md:text-5xl font-bold page-title" data-translate-key="cart_page.main_title">Votre Panier d'Achat</h1>
+        <header class="page-header text-center mb-8 md:mb-10">
+            <h1 class="page-title text-3xl md:text-4xl font-bold" data-translate-key="cart_page.main_title">Votre Panier d'Exception</h1>
         </header>
 
-        <div id="cart-content" class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+        <div id="cart-content-area">
             <div id="empty-cart-message" class="text-center py-10 hidden">
-                <i class="fas fa-shopping-cart text-6xl text-mt-warm-taupe mb-4"></i>
-                <h2 class="text-2xl mb-3 section-title" data-translate-key="cart_page.empty_cart_title">Votre panier est vide.</h2>
-                <p class="text-mt-earth-brown mb-6 font-primary" data-translate-key="cart_page.empty_cart_subtitle">Parcourez nos collections pour trouver des trésors truffés.</p>
-                <a href="nos-produits.html" class="btn btn-primary" data-translate-key="cart_page.continue_shopping">Continuer vos achats</a>
+                <i class="fas fa-shopping-bag fa-4x text-mt-warm-taupe mb-4"></i>
+                <p class="text-xl text-mt-earth-brown mb-4" data-translate-key="cart_page.empty_message">Votre panier est actuellement vide.</p>
+                <a href="nos-produits.html" class="btn btn-primary" data-translate-key="cart_page.cta_shop_now">Découvrir nos produits</a>
             </div>
 
-            <div id="cart-table-and-summary">
-                <div class="cart-table-container overflow-x-auto mb-8">
-                    <table class="cart-table w-full text-left">
-                        <thead class="font-primary">
-                            <tr class="border-b-2 border-mt-warm-taupe">
-                                <th class="py-3 px-2 md:px-4 font-semibold text-mt-near-black uppercase tracking-wider" data-translate-key="cart_page.table.product">Produit</th>
-                                <th class="py-3 px-2 md:px-4 font-semibold text-mt-near-black uppercase tracking-wider text-center" data-translate-key="cart_page.table.price">Prix</th>
-                                <th class="py-3 px-2 md:px-4 font-semibold text-mt-near-black uppercase tracking-wider text-center" data-translate-key="cart_page.table.quantity">Quantité</th>
-                                <th class="py-3 px-2 md:px-4 font-semibold text-mt-near-black uppercase tracking-wider text-right" data-translate-key="cart_page.table.total">Total</th>
-                                <th class="py-3 px-2 md:px-4 font-semibold text-mt-near-black uppercase tracking-wider text-right" data-translate-key="cart_page.table.actions">Actions</th>
+            <div id="cart-table-and-summary" class="hidden"> <!-- Initially hidden, shown by JS if cart has items -->
+                <div class="cart-table-container overflow-x-auto bg-white shadow-lg rounded-lg p-4 md:p-6 mb-8">
+                    <table class="cart-table w-full">
+                        <thead class="border-b-2 border-mt-classic-gold">
+                            <tr>
+                                <th class="py-3 px-2 md:px-4 text-left text-sm font-semibold uppercase text-mt-earth-brown tracking-wider" data-translate-key="cart_page.table_product">Produit</th>
+                                <th class="py-3 px-2 md:px-4 text-center text-sm font-semibold uppercase text-mt-earth-brown tracking-wider" data-translate-key="cart_page.table_price">Prix</th>
+                                <th class="py-3 px-2 md:px-4 text-center text-sm font-semibold uppercase text-mt-earth-brown tracking-wider" data-translate-key="cart_page.table_quantity">Quantité</th>
+                                <th class="py-3 px-2 md:px-4 text-right text-sm font-semibold uppercase text-mt-earth-brown tracking-wider" data-translate-key="cart_page.table_total">Total</th>
+                                <th class="py-3 px-2 md:px-4 text-right text-sm font-semibold uppercase text-mt-earth-brown tracking-wider" data-translate-key="cart_page.table_actions">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="cart-items-container" class="font-primary">
-                            <!-- Cart items will be populated here by js/cart.js -->
+                        <tbody id="cart-items-container">
+                            <!-- Cart items will be dynamically inserted here by cart.js -->
                         </tbody>
                     </table>
                 </div>
 
-                <div class="cart-summary-section grid md:grid-cols-2 gap-8 items-start">
-                    <div class="coupon-section">
-                        <h3 class="text-xl mb-3 font-serif" data-translate-key="cart_page.summary.coupon_code">Code de Réduction</h3>
-                        <form id="coupon-form" class="flex gap-2">
-                            <label for="coupon-code" class="sr-only" data-translate-key="cart_page.summary.coupon_label">Code Coupon</label>
-                            <input type="text" id="coupon-code" placeholder="Entrez votre code" class="form-input flex-grow" data-translate-placeholder="cart_page.summary.coupon_placeholder">
-                            <button type="submit" class="btn btn-secondary" data-translate-key="cart_page.summary.apply_coupon">Appliquer</button>
-                        </form>
-                        <p id="coupon-message" class="text-xs mt-2 font-primary"></p>
-                    </div>
-
-                    <div class="cart-totals bg-mt-cream p-6 rounded-md shadow">
-                        <h2 class="text-2xl mb-6 text-center section-title" data-translate-key="cart_page.summary.title">Récapitulatif</h2>
-                        <div class="space-y-3 font-primary">
-                            <div class="flex justify-between text-lg">
-                                <span data-translate-key="cart_page.summary.subtotal">Sous-total :</span>
-                                <span id="cart-summary-subtotal" class="font-semibold">€0.00</span>
-                            </div>
-                            <div class="flex justify-between text-lg">
-                                <span data-translate-key="cart_page.summary.shipping">Livraison :</span>
-                                <span id="cart-summary-shipping" class="font-semibold" data-translate-key="cart_page.summary.shipping_calculated">Calculée à la caisse</span>
-                            </div>
-                            <hr class="my-3 border-mt-warm-taupe">
-                            <div class="flex justify-between text-xl font-bold text-mt-near-black">
-                                <span data-translate-key="cart_page.summary.total_amount">Total :</span>
-                                <span id="cart-summary-total">€0.00</span>
-                            </div>
-                        </div>
-                        <a href="payment.html" id="checkout-button-cart-page" class="btn btn-primary w-full mt-6 py-3 text-lg" data-translate-key="cart_page.summary.proceed_to_checkout">
-                            Passer à la Caisse <i class="fas fa-arrow-right ml-2"></i>
+                <div class="cart-summary-section grid md:grid-cols-2 gap-8">
+                    <div class="additional-actions">
+                        <button id="clear-cart-btn" class="btn btn-outline text-mt-truffle-burgundy border-mt-truffle-burgundy hover:bg-mt-truffle-burgundy hover:text-mt-cream mb-4 md:mb-0" data-translate-key="cart_page.clear_cart_btn">
+                            <i class="fas fa-times-circle mr-2"></i>Vider le Panier
+                        </button>
+                        <a href="nos-produits.html" class="btn btn-secondary ml-0 md:ml-4" data-translate-key="cart_page.continue_shopping_btn">
+                           <i class="fas fa-arrow-left mr-2"></i>Continuer les Achats
                         </a>
                     </div>
-                </div>
-                 <div class="text-center mt-8">
-                    <button id="clear-cart-btn-page" class="btn btn-outline text-sm" data-translate-key="cart_page.clear_cart">
-                        <i class="fas fa-times-circle mr-2"></i> Vider le Panier
-                    </button>
+
+                    <div class="cart-totals bg-white shadow-lg rounded-lg p-6">
+                        <h2 class="section-title text-xl font-semibold mb-4" data-translate-key="cart_page.summary_title">Résumé du Panier</h2>
+                        <div class="flex justify-between items-center mb-2 pb-2 border-b border-mt-cream-dark">
+                            <span class="text-mt-earth-brown" data-translate-key="cart_page.summary_subtotal">Sous-total :</span>
+                            <span id="cart-summary-subtotal" class="font-semibold text-mt-near-black">€0.00</span>
+                        </div>
+                        <!-- Shipping can be added here if calculated -->
+                        <!-- <div class="flex justify-between items-center mb-4 pb-2 border-b border-mt-cream-dark">
+                            <span class="text-mt-earth-brown" data-translate-key="cart_page.summary_shipping">Livraison :</span>
+                            <span id="cart-summary-shipping" class="font-semibold text-mt-near-black">Calculé à la caisse</span>
+                        </div> -->
+                        <div class="flex justify-between items-center mt-4 pt-4 border-t-2 border-mt-classic-gold">
+                            <span class="text-xl font-bold text-mt-near-black" data-translate-key="cart_page.summary_total_label">Total :</span>
+                            <span id="cart-summary-total" class="text-xl font-bold text-mt-truffle-burgundy">€0.00</span>
+                        </div>
+                        <a href="payment.html" id="checkout-button-cart-page" class="btn btn-primary w-full mt-6 py-3 text-center" data-translate-key="cart_page.checkout_btn">
+                            Passer à la Caisse <i class="fas fa-credit-card ml-2"></i>
+                        </a>
+                        <p class="text-xs text-center mt-3 text-mt-warm-taupe" data-translate-key="cart_page.checkout_secure_note">Paiement sécurisé. Taxes incluses. Frais de port calculés à l'étape suivante.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -93,6 +85,6 @@
     <script src="js/cart.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/main.js"></script>
-    <!-- Specific JS for cart page if any, but most logic is in cart.js -->
+    <!-- No specific page JS needed for panier.html if cart.js handles its display -->
 </body>
 </html>
