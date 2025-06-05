@@ -4,113 +4,181 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mon Profil - Admin - Maison Trüvra</title>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;700&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS (if used) -->
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
-
-    <link rel="stylesheet" href="js/css/admin_style.css"> 
-    <link rel="stylesheet" href="js/css/admin_global_styles.css"> 
+    <link rel="stylesheet" href="css/admin_style.css"> <!-- Standardized path -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Specific QRCodeJS for TOTP QR generation - if you choose to use it -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
-<body class="admin-body">
-    <div class="admin-main-container">
-        <header class="admin-page-header">
-            <h1 class="admin-page-title">Mon Profil Administrateur</h1>
-        </header>
+<body class="admin-body" id="page-admin-profile">
 
-        <main>
-            <div class="grid md:grid-cols-3 gap-6">
-                <!-- Profile Information Section -->
-                <section class="admin-content-area md:col-span-2">
-                    <h2 class="section-heading">Informations Personnelles</h2>
-                    <form id="admin-profile-form">
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <div class="form-group">
-                                <label for="profile-first-name">Prénom</label>
-                                <input type="text" id="profile-first-name" name="first_name" value="Admin" placeholder="Votre prénom">
-                            </div>
-                            <div class="form-group">
-                                <label for="profile-last-name">Nom</label>
-                                <input type="text" id="profile-last-name" name="last_name" value="Trüvra" placeholder="Votre nom">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="profile-email">Adresse E-mail</label>
-                            <input type="email" id="profile-email" name="email" value="admin@maisontruvra.com" placeholder="votreadresse@example.com" readonly class="readonly-field-display">
-                             <small>L'adresse e-mail ne peut pas être modifiée ici.</small>
-                        </div>
-                        
-                        <div class="button-group mt-4">
-                            <button type="submit" class="btn btn-primary">Enregistrer les Modifications</button>
-                        </div>
-                    </form>
-                </section>
-
-                <!-- Security Section -->
-                <section class="admin-content-area md:col-span-1">
-                    <h2 class="section-heading">Sécurité</h2>
-                    <form id="admin-password-form">
-                        <div class="form-group">
-                            <label for="profile-current-password">Mot de Passe Actuel</label>
-                            <input type="password" id="profile-current-password" name="current_password" placeholder="Requis pour changer">
-                        </div>
-                        <div class="form-group">
-                            <label for="profile-new-password">Nouveau Mot de Passe</label>
-                            <input type="password" id="profile-new-password" name="new_password" placeholder="Laissez vide pour ne pas changer">
-                        </div>
-                        <div class="form-group">
-                            <label for="profile-confirm-password">Confirmer Nouveau Mot de Passe</label>
-                            <input type="password" id="profile-confirm-password" name="confirm_password" placeholder="Confirmez le nouveau mot de passe">
-                        </div>
-                        <div class="button-group mt-3">
-                            <button type="submit" class="btn btn-secondary">Changer le Mot de Passe</button>
-                        </div>
-                    </form>
-                    <hr class="my-6 border-mt-warm-taupe">
-                    <div>
-                        <h3 class="subsection-heading">Authentification à Deux Facteurs (TOTP)</h3>
-                        <div id="totp-status-display" class="mb-3">
-                            <!-- Status populated by JS: e.g., "TOTP est Activé" or "TOTP est Désactivé" -->
-                            <p class="text-small">Statut: <span class="font-weight-semibold" id="totp-current-status">Chargement...</span></p>
-                        </div>
-                        <button type="button" id="manage-totp-btn" class="btn btn-outline-gold w-full">
-                            Gérer TOTP
-                        </button>
-                        <!-- Modal or separate page for TOTP setup/disable would be triggered by admin_profile.js -->
-                    </div>
-                </section>
+    <header class="admin-page-header-bar">
+        <div class="container">
+            <div class="flex items-center space-x-4">
+                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="btn btn-admin-secondary btn-sm flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Retour au Tableau de Bord
+                </a>
+                <div id="admin-header-title-area">
+                     <h1>Maison Trüvra - Admin</h1>
+                </div>
             </div>
-        </main>
+            <div class="flex items-center space-x-4">
+                <span id="admin-user-greeting" class="text-sm mr-2"></span>
+                <button id="admin-logout-button" class="btn btn-admin-danger btn-sm flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                </button>
+            </div>
+        </div>
+    </header>
 
-        <footer class="text-center text-small mt-4 py-4 border-t border-mt-warm-taupe">
-            <p>&copy; <span id="current-year"></span> Maison Trüvra. Tous droits réservés.</p>
-        </footer>
-    </div>
+    <nav class="admin-main-nav">
+        <div class="container">
+            <div class="nav-links-container">
+                <a href="admin_dashboard.html" class="admin-nav-link">Tableau de Bord</a>
+                <a href="admin_manage_products.html" class="admin-nav-link">Produits</a>
+                <a href="admin_manage_inventory.html" class="admin-nav-link">Inventaire</a>
+                <a href="admin_view_inventory.html" class="admin-nav-link">Voir Inventaire</a>
+                <a href="admin_manage_orders.html" class="admin-nav-link">Commandes</a>
+                <a href="admin_manage_users.html" class="admin-nav-link">Utilisateurs</a>
+                <a href="admin_manage_categories.html" class="admin-nav-link">Catégories</a>
+                <a href="admin_invoices.html" class="admin-nav-link">Factures</a>
+                <a href="admin_manage_reviews.html" class="admin-nav-link">Avis</a>
+                <a href="admin_profile.html" class="admin-nav-link active">Mon Profil</a>
+            </div>
+        </div>
+    </nav>
 
-    <!-- Admin specific JS for profile interactions -->
+    <main class="admin-main-container">
+        <div class="admin-page-header">
+            <h1 class="admin-page-title">Mon Profil Administrateur</h1>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6">
+            <!-- Profile Information Section -->
+            <section class="admin-content-area md:col-span-2">
+                <h2 class="section-heading">Informations Personnelles</h2>
+                <form id="admin-profile-form" class="admin-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label for="profile-first-name" class="form-label">Prénom</label>
+                            <input type="text" id="profile-first-name" name="first_name" placeholder="Votre prénom" class="form-input-admin">
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-last-name" class="form-label">Nom</label>
+                            <input type="text" id="profile-last-name" name="last_name" placeholder="Votre nom" class="form-input-admin">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-email" class="form-label">Adresse E-mail</label>
+                        <input type="email" id="profile-email" name="email" placeholder="votreadresse@example.com" readonly class="form-input-admin readonly-field">
+                         <small class="form-text">L'adresse e-mail ne peut pas être modifiée ici.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-role" class="form-label">Rôle</label>
+                        <input type="text" id="profile-role" name="role" readonly class="form-input-admin readonly-field">
+                    </div>
+                    
+                    <div class="button-group mt-4">
+                        <button type="submit" class="btn btn-admin-primary">Enregistrer les Modifications</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Security Section -->
+            <section class="admin-content-area md:col-span-1">
+                <h2 class="section-heading">Sécurité</h2>
+                <form id="admin-password-form" class="admin-form">
+                    <div class="form-group">
+                        <label for="profile-current-password" class="form-label">Mot de Passe Actuel</label>
+                        <input type="password" id="profile-current-password" name="current_password" placeholder="Requis pour changer" class="form-input-admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-new-password" class="form-label">Nouveau Mot de Passe</label>
+                        <input type="password" id="profile-new-password" name="new_password" placeholder="Laissez vide pour ne pas changer" class="form-input-admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="profile-confirm-password" class="form-label">Confirmer Nouveau Mot de Passe</label>
+                        <input type="password" id="profile-confirm-password" name="confirm_password" placeholder="Confirmez le nouveau mot de passe" class="form-input-admin">
+                    </div>
+                    <div class="button-group mt-3">
+                        <button type="submit" class="btn btn-admin-secondary">Changer le Mot de Passe</button>
+                    </div>
+                </form>
+                <hr class="my-6 border-mt-warm-taupe"> <!-- Use var(--mt-warm-taupe) or a class -->
+                <div>
+                    <h3 class="subsection-heading">Authentification à Deux Facteurs (TOTP)</h3>
+                    <div id="totp-status-display" class="mb-3">
+                        <p class="text-small">Statut: <span class="font-weight-semibold" id="totp-current-status">Chargement...</span></p>
+                    </div>
+                    <button type="button" id="manage-totp-button" class="btn btn-admin-outline-gold w-full">
+                        Gérer TOTP
+                    </button>
+                    <div id="totp-message-area" class="text-sm mt-3"></div>
+
+                    <!-- Initiate TOTP Setup -->
+                    <div id="totp-initiate-section" class="mt-4 p-4 border rounded-md bg-gray-50 hidden">
+                        <h4 class="font-medium text-gray-700 mb-2">Vérifier le mot de passe pour activer 2FA</h4>
+                        <div class="form-group">
+                            <label for="current-password-for-totp" class="form-label">Mot de passe actuel :</label>
+                            <input type="password" id="current-password-for-totp" class="form-input-admin">
+                        </div>
+                        <div class="button-group">
+                            <button type="button" id="initiate-totp-setup-button" class="btn btn-admin-primary btn-sm">Continuer</button>
+                            <button type="button" id="cancel-totp-initiate-button" class="btn btn-admin-secondary btn-sm">Annuler</button>
+                        </div>
+                    </div>
+
+                    <!-- QR Code and Verification Section -->
+                    <div id="totp-qr-code-section" class="mt-4 p-4 border rounded-md bg-gray-50 hidden">
+                        <h4 class="font-medium text-gray-700 mb-2">Configurer l'application d'authentification</h4>
+                        <p class="text-xs text-gray-600 mb-2">Scannez ce QR code avec votre application (Google Authenticator, Authy, etc.).</p>
+                        <div id="totp-qr-code-container" class="flex justify-center my-3"></div>
+                        <p class="text-xs text-gray-600 mb-1">Ou entrez manuellement cette clé :</p>
+                        <p id="totp-manual-key" class="text-sm font-mono bg-gray-100 p-2 rounded break-all"></p>
+                        <div class="form-group mt-3">
+                            <label for="totp-verification-code" class="form-label">Code de vérification (6 chiffres) :</label>
+                            <input type="text" id="totp-verification-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" class="form-input-admin">
+                        </div>
+                        <div class="button-group">
+                            <button type="button" id="verify-enable-totp-button" class="btn btn-admin-primary btn-sm">Vérifier et Activer</button>
+                            <button type="button" id="cancel-totp-qr-button" class="btn btn-admin-secondary btn-sm">Annuler</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Disable TOTP Section -->
+                    <div id="totp-disable-section" class="mt-4 p-4 border rounded-md bg-gray-50 hidden">
+                        <h4 class="font-medium text-gray-700 mb-2">Désactiver l'Authentification à Deux Facteurs</h4>
+                         <div class="form-group">
+                            <label for="current-password-for-disable" class="form-label">Mot de passe actuel :</label>
+                            <input type="password" id="current-password-for-disable" class="form-input-admin">
+                        </div>
+                        <div class="form-group">
+                            <label for="current-totp-for-disable" class="form-label">Code TOTP actuel :</label>
+                            <input type="text" id="current-totp-for-disable" inputmode="numeric" pattern="[0-9]*" maxlength="6" class="form-input-admin">
+                        </div>
+                        <div class="button-group">
+                            <button type="button" id="disable-totp-button" class="btn btn-admin-danger btn-sm">Désactiver 2FA</button>
+                            <button type="button" id="cancel-totp-disable-button" class="btn btn-admin-secondary btn-sm">Annuler</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="admin-footer">
+        <p>&copy; <span id="currentYearProfile"></span> Maison Trüvra - Admin Panel</p>
+    </footer>
+    <div id="admin-toast-container"></div>
+    
+    <script src="js/admin_config.js"></script>
+    <script src="js/admin_ui.js"></script>
     <script src="js/admin_api.js"></script>
+    <script src="js/admin_auth.js"></script>
+    <script src="js/admin_main.js"></script>
     <script src="js/admin_profile.js"></script>
     <script>
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-        // Example: Populate TOTP status (admin_profile.js should handle this)
-        // fetchAPIData('/api/admin/profile/totp-status', {}, 'GET')
-        //   .then(data => {
-        //     const statusEl = document.getElementById('totp-current-status');
-        //     const manageBtn = document.getElementById('manage-totp-btn');
-        //     if (data.enabled) {
-        //       statusEl.textContent = 'Activé';
-        //       statusEl.style.color = 'var(--mt-deep-sage-green)';
-        //       manageBtn.textContent = 'Désactiver TOTP';
-        //     } else {
-        //       statusEl.textContent = 'Désactivé';
-        //       statusEl.style.color = 'var(--mt-earth-brown)';
-        //       manageBtn.textContent = 'Activer TOTP';
-        //     }
-        //   });
+        document.getElementById('currentYearProfile').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
