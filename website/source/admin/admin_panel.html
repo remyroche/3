@@ -1,150 +1,170 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr"> <!-- Changed lang to fr based on other admin pages -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Manage Products - Maison Trüvra</title>
-    <link rel="stylesheet" href="css/admin_style.css">
+    <title>Admin Panel - Produits - Maison Trüvra</title> <!-- Updated title -->
+    <link rel="stylesheet" href="css/admin_style.css"> <!-- Standardized path -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body id="page-admin-panel">
-    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
+<body class="admin-body" id="page-admin-panel"> <!-- Added .admin-body class -->
+
+    <header class="admin-page-header-bar">
+        <div class="container">
             <div class="flex items-center space-x-4">
-                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center hidden">
+                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="btn btn-admin-secondary btn-sm flex items-center">
                     <i class="fas fa-arrow-left mr-2"></i>
                     Retour au Tableau de Bord
                 </a>
                 <div id="admin-header-title-area">
-                     <h1 class="text-xl font-semibold text-gray-700">Maison Trüvra - Admin</h1>
+                     <h1>Maison Trüvra - Admin</h1>
                 </div>
             </div>
             <div class="flex items-center space-x-4">
-                <span id="admin-user-greeting" class="text-gray-700 text-sm mr-2"></span>
-                <button id="admin-logout-button" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-sm flex items-center">
+                <span id="admin-user-greeting" class="text-sm mr-2"></span>
+                <button id="admin-logout-button" class="btn btn-admin-danger btn-sm flex items-center">
                     <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
                 </button>
             </div>
         </div>
     </header>
 
-    <nav class="bg-gray-800 text-white shadow-md">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-start h-12 space-x-1 overflow-x-auto">
-                <a href="admin_dashboard.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Tableau de Bord</a>
-                <a href="admin_manage_products.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 active">Produits</a> 
-                <a href="admin_manage_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Inventaire</a>
-                <a href="admin_view_inventory.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Voir Inventaire</a>
-                <a href="admin_manage_orders.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Commandes</a>
-                <a href="admin_manage_users.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Utilisateurs</a>
-                <a href="admin_manage_categories.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Catégories</a>
-                <a href="admin_invoices.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Factures</a>
-                <a href="admin_manage_reviews.html" class="admin-nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700">Avis</a>
+    <nav class="admin-main-nav">
+        <div class="container">
+            <div class="nav-links-container">
+                <a href="admin_dashboard.html" class="admin-nav-link">Tableau de Bord</a>
+                <a href="admin_manage_products.html" class="admin-nav-link active">Produits</a>
+                <a href="admin_manage_inventory.html" class="admin-nav-link">Inventaire</a>
+                <a href="admin_view_inventory.html" class="admin-nav-link">Voir Inventaire</a>
+                <a href="admin_manage_orders.html" class="admin-nav-link">Commandes</a>
+                <a href="admin_manage_users.html" class="admin-nav-link">Utilisateurs</a>
+                <a href="admin_manage_categories.html" class="admin-nav-link">Catégories</a>
+                <a href="admin_invoices.html" class="admin-nav-link">Factures</a>
+                <a href="admin_manage_reviews.html" class="admin-nav-link">Avis</a>
+                <a href="admin_profile.html" class="admin-nav-link">Mon Profil</a>
             </div>
         </div>
     </nav>
 
-    <main class="admin-content-area container mx-auto p-6 space-y-6">
-        <h2 class="text-2xl font-semibold text-gray-800">Manage Products & Inventory</h2>
-        <p class="text-sm text-orange-600 bg-orange-100 p-3 rounded-md">Note: This page ('admin_panel.html') appears to be an older version for product management. Consider using <a href="admin_manage_products.html" class="font-semibold underline hover:text-orange-800">'Manage Products'</a> (which points to `admin_manage_products.html`) for the dedicated interface.</p>
+    <main class="admin-main-container">
+        <div class="admin-page-header">
+             <h1 class="admin-page-title">Gestion des Produits (Panneau Legacy)</h1>
+        </div>
+        <p class="alert alert-warning">Note: Cette page ('admin_panel.html') est une version potentiellement plus ancienne pour la gestion des produits. Pour l'interface dédiée et mise à jour, veuillez utiliser la page <a href="admin_manage_products.html" class="font-weight-semibold underline hover:text-orange-800">'Gestion des Produits'</a>.</p>
 
-        <div id="productFormContainer" class="admin-form-container">
-            <h3 class="admin-form-title"><span id="formTitle">Add New Product</span></h3>
+        <section id="productFormContainer" class="admin-form-container content-card">
+            <h2 class="section-heading"><span id="formTitle">Ajouter un Nouveau Produit</span></h2>
             <form id="productForm" class="admin-form">
-                <div>
-                    <label for="productCode" class="form-label">Product Code (SKU): <span class="required">*</span></label>
+                <div class="form-group">
+                    <label for="productCode" class="form-label">Code Produit (SKU): <span class="required">*</span></label>
                     <input type="text" id="productCode" name="product_code" required class="form-input-admin">
-                    <small class="form-text">Unique identifier for the product. Cannot be changed after creation if there are orders associated.</small>
+                    <small class="form-text">Identifiant unique. Ne peut être modifié après création si des commandes y sont associées.</small>
                 </div>
                 
-                <div>
-                    <label for="productName" class="form-label">Product Name: <span class="required">*</span></label>
+                <div class="form-group">
+                    <label for="productName" class="form-label">Nom du Produit: <span class="required">*</span></label>
                     <input type="text" id="productName" name="name" required class="form-input-admin">
                 </div>
 
-                <div>
-                    <label for="productCategory" class="form-label">Category: <span class="required">*</span></label>
+                <div class="form-group">
+                    <label for="productCategory" class="form-label">Catégorie: <span class="required">*</span></label>
                     <select id="productCategory" name="category_id" required class="form-input-admin">
-                        <option value="">Loading categories...</option>
+                        <option value="">Chargement des catégories...</option>
+                    </select>
+                </div>
+                 <div class="form-group">
+                    <label for="productType" class="form-label">Type de Produit: <span class="required">*</span></label>
+                    <select id="productType" name="type" required class="form-input-admin">
+                        <option value="simple">Simple</option>
+                        <option value="variable_weight">Poids Variable</option>
                     </select>
                 </div>
                 
-                <div>
-                    <label for="productPrice" class="form-label">Price (€): <span class="required">*</span></label>
-                    <input type="number" id="productPrice" name="price" step="0.01" min="0" required class="form-input-admin">
+                <div class="form-group">
+                    <label for="productPrice" class="form-label">Prix de Base (€) (pour produits simples):</label>
+                    <input type="number" id="productPrice" name="price" step="0.01" min="0" class="form-input-admin">
                 </div>
 
-                <div>
-                    <label for="productQuantity" class="form-label">Stock Quantity: <span class="required">*</span></label>
-                    <input type="number" id="productQuantity" name="quantity" min="0" required class="form-input-admin">
+                <div class="form-group">
+                    <label for="productQuantity" class="form-label">Quantité en Stock (pour produits simples):</label>
+                    <input type="number" id="productQuantity" name="quantity" min="0" class="form-input-admin">
                 </div>
 
-                <div>
-                    <label for="lowStockThreshold" class="form-label">Low Stock Threshold:</label>
+                <div class="form-group">
+                    <label for="lowStockThreshold" class="form-label">Seuil de Stock Bas:</label>
                     <input type="number" id="lowStockThreshold" name="low_stock_threshold" min="0" value="10" class="form-input-admin">
                 </div>
                 
-                <div>
+                <div class="form-group">
                     <label for="productDescription" class="form-label">Description:</label>
-                    <textarea id="productDescription" name="description" class="form-input-admin"></textarea>
+                    <textarea id="productDescription" name="description" class="form-input-admin" rows="3"></textarea>
                 </div>
 
-                <div>
-                    <label for="productImageUrl" class="form-label">Image URL:</label>
-                    <input type="url" id="productImageUrl" name="image_url" placeholder="https://example.com/image.jpg" class="form-input-admin">
+                <div class="form-group">
+                    <label for="productImageUrl" class="form-label">URL de l'Image Principale:</label>
+                    <input type="url" id="productImageUrl" name="image_url_text_main" placeholder="https://example.com/image.jpg" class="form-input-admin">
+                    <label for="productImageFileMain" class="form-label mt-2">Ou Télécharger l'Image Principale:</label>
+                    <input type="file" id="productImageFileMain" name="main_image_file" class="form-input-admin" accept="image/*">
+                     <div id="main-image-preview-container" class="mt-2"></div>
                 </div>
-
-                <div>
-                    <label for="supplierInfo" class="form-label">Supplier Info:</label>
+                
+                <div class="form-group">
+                    <label for="supplierInfo" class="form-label">Informations Fournisseur:</label>
                     <input type="text" id="supplierInfo" name="supplier_info" class="form-input-admin">
                 </div>
                 
-                <div class="form-checkbox-group">
+                <div class="form-group">
                     <input type="checkbox" id="productIsActive" name="is_active" checked class="form-checkbox-admin">
-                    <label for="productIsActive" class="form-label-inline">Is Active (visible on site)</label>
+                    <label for="productIsActive" class="form-label-inline">Actif (visible sur le site)</label>
                 </div>
-                <div class="form-checkbox-group">
+                <div class="form-group">
                     <input type="checkbox" id="productIsFeatured" name="is_featured" class="form-checkbox-admin">
-                    <label for="productIsFeatured" class="form-label-inline">Is Featured (highlighted on site)</label>
+                    <label for="productIsFeatured" class="form-label-inline">En Vedette (mis en avant)</label>
                 </div>
                 
-                <div class="form-actions">
-                    <button type="submit" id="saveProductButton" class="btn btn-admin-primary">Save Product</button>
-                    <button type="button" id="cancelEditButton" class="btn btn-admin-secondary" style="display:none;">Cancel Edit</button>
+                <div class="form-actions button-group">
+                    <button type="submit" id="saveProductButton" class="btn btn-admin-primary">Enregistrer Produit</button>
+                    <button type="button" id="cancelEditButton" class="btn btn-admin-secondary" style="display:none;">Annuler Modification</button>
                 </div>
             </form>
-        </div>
+        </section>
 
-        <div id="productsTableContainer" class="admin-table-container">
-            <h3 class="admin-table-title">Existing Products</h3>
-            <input type="text" id="productSearchInput" placeholder="Search products by name, code, category..." class="form-input-admin mb-4">
+        <section id="productsTableContainer" class="admin-table-container content-card">
+            <h2 class="section-heading">Produits Existants</h2>
+            <div class="form-group">
+                <input type="text" id="productSearchInput" placeholder="Rechercher par nom, code, catégorie..." class="form-input-admin mb-4">
+            </div>
             <div class="overflow-x-auto">
                 <table id="productsTable" class="admin-table">
                     <thead>
                         <tr>
                             <th>Code</th>
-                            <th>Name</th>
-                            <th>Category</th>
-                            <th>Price</th>
+                            <th>Nom</th>
+                            <th>Catégorie</th>
+                            <th>Prix</th>
                             <th>Stock</th>
-                            <th>Active</th>
-                            <th>Featured</th>
-                            <th>Actions</th>
+                            <th>Type</th>
+                            <th>Actif</th>
+                            <th>Vedette</th>
+                            <th class="text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="productsTableBody">
-                        <tr><td colspan="8" class="text-center py-4">Loading products...</td></tr>
+                        <tr><td colspan="9" class="text-center py-4">Chargement des produits...</td></tr>
                     </tbody>
                 </table>
             </div>
-        </div>
+        </section>
     </main>
 
-    <footer class="admin-footer text-center py-4 mt-auto bg-gray-200 text-sm text-gray-600">
+    <footer class="admin-footer">
         <p>&copy; <span id="currentYearAdminPanel"></span> Maison Trüvra - Admin Panel</p>
     </footer>
 
     <div id="admin-toast-container"></div>
+    <!-- Modal for Product Options/Variants -->
+    <div id="product-options-modal" class="admin-modal-overlay">
+        </div>
 
     <script src="js/admin_config.js"></script>
     <script src="js/admin_ui.js"></script> 
@@ -153,10 +173,7 @@
     <script src="js/admin_main.js"></script>
     <script src="js/admin_products.js"></script> 
      <script>
-        const currentYearSpanAdminPanel = document.getElementById('currentYearAdminPanel');
-        if (currentYearSpanAdminPanel) {
-            currentYearSpanAdminPanel.textContent = new Date().getFullYear();
-        }
+        document.getElementById('currentYearAdminPanel').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
