@@ -1,149 +1,177 @@
-// Maison Trüvra - Shopping Cart Management
-const CART_STORAGE_KEY = 'maisonTruvraCart';
+// website/source/js/cart.js
 
-function loadCart() {
-    const cartJson = localStorage.getItem(CART_STORAGE_KEY);
-    try {
-        return cartJson ? JSON.parse(cartJson) : [];
-    } catch (e) {
-        console.error("Error parsing cart from localStorage:", e); // Dev-facing
-        return [];
-    }
-}
-
-function saveCart(cartItems) {
-    try {
-        const cartJson = JSON.stringify(cartItems);
-        localStorage.setItem(CART_STORAGE_KEY, cartJson);
-    } catch (e) {
-        console.error("Error saving cart to localStorage:", e); // Dev-facing
-    }
-}
-
-function addToCart(product, quantity = 1, variantInfo = null) {
-    if (!product || !product.id || !product.name || (variantInfo ? typeof variantInfo.price !== 'number' : typeof product.base_price !== 'number')) {
-        showGlobalMessage(t('public.js.invalid_product_data'), "error"); // Key: public.js.invalid_product_data
+/**
+ * Adds an item to the cart or updates its quantity.
+ * @param {object} product - The product object from the API (should include id, name, price, main_image_url, aggregate_stock_quantity).
+ * @param {number} quantity - The quantity to add.
+ * @param {object} [variantInfo=null] - Optional variant information (e.g., { option_id, weight_grams, price, sku_suffix, aggregate_stock_quantity }).
+ */
+function addToCart(product, quantity, variantInfo = null) {
+    if (!product || !product.id || quantity <= 0) {
+        console.error("Invalid product or quantity for addToCart:", product, quantity);
+        if (typeof showGlobalMessage === 'function') showGlobalMessage(t('cart.error.invalid_product_data', 'Données produit invalides.'), 'error');
         return;
     }
 
-    const cart = loadCart();
-    const itemPrice = variantInfo ? variantInfo.price : product.base_price;
-    const itemName = variantInfo ? `${product.name} (${variantInfo.weight_grams}g)` : product.name;
-    const itemSkuSuffix = variantInfo ? variantInfo.sku_suffix : null;
-    const itemVariantId = variantInfo ? variantInfo.id : null; // Assuming variantInfo has an 'id' if it's a variant from DB
-    const itemMainImage = product.main_image_full_url || product.image_url_main || 'https://placehold.co/100x100/eee/ccc?text=Image';
+    let cart = getCartItems();
+    const cartItemId = variantInfo ? `${product.id}-${variantInfo.option_id}` : product.id.toString();
+    
+    const existingItemIndex = cart.findIndex(item => item.id === cartItemId);
+    
+    let itemName = (getCurrentLanguage() === 'en' && product.name_en) ? product.name_en : product.name_fr;
+    if (!itemName) itemName = product.name; // Fallback
+    if (variantInfo && variantInfo.weight_grams) {
+        itemName += ` (${variantInfo.weight_grams}g)`;
+    }
 
-    const existingItemIndex = cart.findIndex(item => 
-        item.id === product.id && 
-        (itemVariantId ? item.variantId === itemVariantId : !item.variantId)
-    );
+    // Determine available stock for this specific item/variant
+    const availableStock = variantInfo ? (variantInfo.aggregate_stock_quantity || 0) : (product.aggregate_stock_quantity || 0);
 
     if (existingItemIndex > -1) {
-        cart[existingItemIndex].quantity += quantity;
-        if (cart[existingItemIndex].quantity <= 0) {
-            cart.splice(existingItemIndex, 1);
+        // Item exists, check stock before updating quantity
+        const newQuantity = cart[existingItemIndex].quantity + quantity;
+        if (newQuantity > availableStock) {
+            if (typeof showGlobalMessage === 'function') {
+                showGlobalMessage(t('cart.error.stock_limit_exceeded_update', 'Stock insuffisant pour augmenter la quantité de {{itemName}}. Max: {{count}}.', { itemName: itemName, count: availableStock }), 'warning', 5000);
+            }
+            return; // Don't update if new quantity exceeds stock
         }
+        cart[existingItemIndex].quantity = newQuantity;
     } else {
-        if (quantity > 0) {
-            cart.push({
-                id: product.id,
-                variantId: itemVariantId,
-                name: itemName, // This name includes weight if applicable, used for display
-                price: parseFloat(itemPrice),
-                quantity: quantity,
-                skuPrefix: product.sku_prefix, // Or product.product_code after refactor
-                skuSuffix: itemSkuSuffix,
-                image: itemMainImage,
-                slug: product.slug
-            });
+        // New item, check stock before adding
+        if (quantity > availableStock) {
+            if (typeof showGlobalMessage === 'function') {
+                showGlobalMessage(t('cart.error.stock_limit_exceeded_add', 'Stock insuffisant pour {{itemName}}. Seulement {{count}} disponible(s).', { itemName: itemName, count: availableStock }), 'warning', 5000);
+            }
+            // Optionally, add only the available stock instead of none:
+            // if (availableStock > 0) {
+            //     quantity = availableStock; 
+            //     showGlobalMessage(t('cart.info.quantity_adjusted_to_stock', 'Quantité ajustée au stock disponible pour {{itemName}}.', { itemName: itemName }), 'info', 4000);
+            // } else {
+            //     return; // Don't add if completely out of stock
+            // }
+            return; // For now, strictly prevent adding if requested > available
         }
+        
+        const cartItem = {
+            id: cartItemId,
+            productId: product.id, // Store base product ID
+            name: itemName,
+            price: variantInfo ? variantInfo.price : product.base_price,
+            quantity: quantity,
+            image: product.main_image_full_url || product.main_image_url || 'https://placehold.co/100x100/F5EEDE/11120D?text=Item',
+            slug: product.slug, // For linking back to product page
+            variantId: variantInfo ? variantInfo.option_id : null, // Store ProductWeightOption.id if variant
+            variantLabel: variantInfo ? `${variantInfo.weight_grams}g` : null, // For display
+            skuSuffix: variantInfo ? variantInfo.sku_suffix : null, // For backend processing
+            availableStock: availableStock // Store current stock for reference (might get stale)
+        };
+        cart.push(cartItem);
     }
 
-    saveCart(cart);
-    updateCartDisplay();
+    saveCartItems(cart);
+    updateCartDisplay(); // Update mini-cart, cart count in header
+    if (typeof showCartToast === 'function') showCartToast(itemName, quantity); // Show "Added to cart" toast
     
-    showGlobalMessage(`${quantity} x ${itemName} ${t('public.js.added_to_cart_suffix')}`, "success"); 
-}
-
-function removeFromCart(productId, variantId = null) {
-    let cart = loadCart();
-    const initialLength = cart.length;
-    cart = cart.filter(item => 
-        !(item.id === productId && (variantId ? item.variantId === variantId : !item.variantId))
-    );
-
-    if (cart.length < initialLength) {
-        saveCart(cart);
-        updateCartDisplay();
-        showGlobalMessage(t('public.js.item_removed_from_cart'), "info"); // Key: public.js.item_removed_from_cart
+    // If on cart page, refresh the full cart display
+    if (document.body.id === 'page-panier') {
+        displayCartOnPage();
     }
 }
 
-function updateCartItemQuantity(productId, newQuantity, variantId = null) {
-    const cart = loadCart();
-    const itemIndex = cart.findIndex(item => 
-        item.id === productId && 
-        (variantId ? item.variantId === variantId : !item.variantId)
-    );
 
-    if (itemIndex > -1) {
-        if (newQuantity > 0) {
-            cart[itemIndex].quantity = newQuantity;
-        } else {
-            cart.splice(itemIndex, 1); // Remove if quantity is zero or less
-        }
-        saveCart(cart);
-        updateCartDisplay();
-    }
-}
+// --- Other Cart Functions (getCartItems, saveCartItems, updateCartDisplay, etc.) ---
 
+/**
+ * Retrieves cart items from localStorage.
+ * @returns {Array} The array of cart items.
+ */
 function getCartItems() {
-    return loadCart();
+    try {
+        const cartJson = localStorage.getItem('maisonTruvraCart');
+        return cartJson ? JSON.parse(cartJson) : [];
+    } catch (e) {
+        console.error("Error parsing cart from localStorage:", e);
+        return []; // Return empty cart on error
+    }
 }
 
-function getCartTotal() {
-    const cart = loadCart();
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+/**
+ * Saves cart items to localStorage.
+ * @param {Array} cartItems - The array of cart items to save.
+ */
+function saveCartItems(cartItems) {
+    try {
+        localStorage.setItem('maisonTruvraCart', JSON.stringify(cartItems));
+    } catch (e) {
+        console.error("Error saving cart to localStorage:", e);
+        if (typeof showGlobalMessage === 'function') {
+            showGlobalMessage(t('cart.error.saving_cart', 'Erreur lors de la sauvegarde du panier.'), 'error');
+        }
+    }
 }
 
-function getCartItemCount() {
-    const cart = loadCart();
-    return cart.reduce((count, item) => count + item.quantity, 0);
-}
-
-function clearCart() {
-    localStorage.removeItem(CART_STORAGE_KEY);
-    updateCartDisplay();
-    showGlobalMessage(t('public.js.cart_cleared'), "info"); // Key: public.js.cart_cleared
-}
-
+/**
+ * Updates the cart display (e.g., item count in header, mini-cart).
+ */
 function updateCartDisplay() {
-    if (typeof updateCartIcon === 'function') { // from ui.js
-        updateCartIcon(); 
+    const cart = getCartItems();
+    const cartItemCountElement = document.getElementById('cart-item-count');
+    const miniCartItemsContainer = document.getElementById('mini-cart-items');
+    const miniCartTotalElement = document.getElementById('mini-cart-total');
+    const miniCartEmptyMsg = document.getElementById('mini-cart-empty-msg');
+    const miniCartCheckoutBtn = document.getElementById('mini-cart-checkout-btn');
+
+
+    let totalItems = 0;
+    let totalPrice = 0;
+
+    cart.forEach(item => {
+        totalItems += item.quantity;
+        totalPrice += item.price * item.quantity;
+    });
+
+    if (cartItemCountElement) {
+        cartItemCountElement.textContent = totalItems;
+        cartItemCountElement.classList.toggle('hidden', totalItems === 0);
     }
-    if (document.body.id === 'page-panier' && typeof initCartPage === 'function') {
-        initCartPage();
+
+    if (miniCartItemsContainer && miniCartTotalElement && miniCartEmptyMsg && miniCartCheckoutBtn) {
+        miniCartItemsContainer.innerHTML = ''; // Clear existing items
+
+        if (cart.length === 0) {
+            miniCartEmptyMsg.style.display = 'block';
+            miniCartCheckoutBtn.classList.add('hidden');
+            miniCartTotalElement.parentElement.classList.add('hidden');
+
+        } else {
+            miniCartEmptyMsg.style.display = 'none';
+            miniCartCheckoutBtn.classList.remove('hidden');
+            miniCartTotalElement.parentElement.classList.remove('hidden');
+
+            cart.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'mini-cart-item flex items-center py-2 border-b border-mt-cream-dark';
+                itemElement.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-cover rounded mr-3">
+                    <div class="flex-grow">
+                        <p class="text-sm font-medium text-mt-near-black truncate">${item.name}</p>
+                        <p class="text-xs text-mt-earth-brown">${item.quantity} x €${parseFloat(item.price).toFixed(2)}</p>
+                    </div>
+                    <span class="text-sm font-semibold text-mt-near-black ml-2">€${(item.quantity * item.price).toFixed(2)}</span>
+                `;
+                miniCartItemsContainer.appendChild(itemElement);
+            });
+            miniCartTotalElement.textContent = `€${totalPrice.toFixed(2)}`;
+        }
     }
-    if (document.body.id === 'page-paiement' && typeof displayCheckoutSummary === 'function') { // from checkout.js
-        displayCheckoutSummary();
+     // Update full cart page if currently on it
+    if (document.body.id === 'page-panier') {
+        displayCartOnPage();
     }
 }
 
-function initCartPage() {
-    const cartLoginPrompt = document.getElementById('cart-login-prompt');
-    const cartContentWrapper = document.getElementById('cart-content-wrapper');
 
-    if (!cartLoginPrompt || !cartContentWrapper) return;
-
-    if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
-        cartLoginPrompt.style.display = 'none';
-        cartContentWrapper.style.display = 'block'; 
-        displayCartOnPage(); 
-    } else {
-        cartLoginPrompt.style.display = 'block';
-        cartContentWrapper.style.display = 'none';
-    }
-}
 
 function displayCartOnPage() {
     const cartItems = getCartItems();
