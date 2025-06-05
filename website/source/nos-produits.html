@@ -3,153 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-translate-key="product_detail.title">Détails du Produit - Maison Trüvra</title>
+    <title data-translate-key="products_page.title">Nos Produits - Maison Trüvra</title>
     <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/produit-detail.css">
+    <link rel="stylesheet" href="css/nos-produits.css"> <!-- Specific styles for this page -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
-<body id="page-produit-detail">
+<body>
     <div id="main-header-placeholder"></div>
 
     <main class="container mx-auto px-4 py-8 mt-20 md:mt-24 lg:mt-28">
-        <nav aria-label="breadcrumb" class="mb-6 text-sm text-mt-earth-brown font-primary"> {/* Ensure breadcrumbs use Raleway */}
-            <ol class="list-none p-0 inline-flex">
-                <li class="flex items-center">
-                    <a href="index.html" class="hover:text-mt-truffle-burgundy" data-translate-key="breadcrumb.home">Accueil</a>
-                    <i class="fas fa-chevron-right mx-2"></i>
-                </li>
-                <li class="flex items-center">
-                    <a href="nos-produits.html" class="hover:text-mt-truffle-burgundy" data-translate-key="breadcrumb.products">Nos Produits</a>
-                    <i class="fas fa-chevron-right mx-2"></i>
-                </li>
-                <li class="flex items-center">
-                    <span id="breadcrumb-product-name" class="text-gray-500" aria-current="page" data-translate-key="breadcrumb.current_product">Produit</span>
-                </li>
-            </ol>
+        <header class="page-header text-center mb-10 md:mb-12">
+            <h1 class="page-title text-3xl md:text-4xl lg:text-5xl font-bold" data-translate-key="products_page.main_title">Découvrez Nos Trésors Truffés</h1>
+            <p class="text-lg text-mt-earth-brown max-w-2xl mx-auto mt-4" data-translate-key="products_page.subtitle">Une sélection exquise de truffes fraîches et de produits fins, cultivés avec passion et savoir-faire.</p>
+        </header>
+
+        <!-- Filters and Sorting Section -->
+        <section id="filters-section" class="mb-8 p-4 md:p-6 bg-white shadow-md rounded-lg">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label for="category-filter" class="block text-sm font-medium text-mt-earth-brown mb-1" data-translate-key="products_page.filter_category">Filtrer par Catégorie :</label>
+                    <select id="category-filter" class="form-select w-full rounded-md border-mt-warm-taupe focus:ring-mt-classic-gold focus:border-mt-classic-gold">
+                        <option value="" data-translate-key="products_page.all_categories">Toutes les catégories</option>
+                        <!-- Options populated by JS -->
+                    </select>
+                </div>
+                <div>
+                    <label for="sort-by" class="block text-sm font-medium text-mt-earth-brown mb-1" data-translate-key="products_page.sort_by">Trier par :</label>
+                    <select id="sort-by" class="form-select w-full rounded-md border-mt-warm-taupe focus:ring-mt-classic-gold focus:border-mt-classic-gold">
+                        <option value="default" data-translate-key="products_page.sort_default">Défaut</option>
+                        <option value="price-asc" data-translate-key="products_page.sort_price_asc">Prix : Croissant</option>
+                        <option value="price-desc" data-translate-key="products_page.sort_price_desc">Prix : Décroissant</option>
+                        <option value="name-asc" data-translate-key="products_page.sort_name_asc">Nom : A-Z</option>
+                        <option value="name-desc" data-translate-key="products_page.sort_name_desc">Nom : Z-A</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="search-products" class="block text-sm font-medium text-mt-earth-brown mb-1" data-translate-key="products_page.search_label">Rechercher :</label>
+                    <input type="search" id="search-products" placeholder="Nom du produit..." class="form-input w-full rounded-md border-mt-warm-taupe focus:ring-mt-classic-gold focus:border-mt-classic-gold" data-translate-placeholder="products_page.search_placeholder">
+                </div>
+            </div>
+        </section>
+
+        <!-- Product Grid Section -->
+        <section id="product-grid">
+            <div id="product-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+                <!-- Product cards will be dynamically inserted here by nos-produits.js -->
+            </div>
+            <div id="loading-indicator" class="text-center py-10 hidden">
+                <i class="fas fa-spinner fa-spin text-3xl text-mt-classic-gold"></i>
+                <p class="text-mt-earth-brown mt-2" data-translate-key="products_page.loading">Chargement des produits...</p>
+            </div>
+        </section>
+
+        <!-- Pagination Section -->
+        <nav id="pagination-container" aria-label="Pagination des produits" class="mt-10 md:mt-12 flex justify-center">
+            <!-- Pagination links will be dynamically inserted here -->
         </nav>
-
-        <div id="product-detail-container" class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">
-            <!-- Product Image Section -->
-            <div id="product-image-section" class="product-image-gallery">
-                <div class="main-image-container mb-4 relative">
-                    <img id="main-product-image" src="https://placehold.co/600x600/F5EEDE/11120D?text=Maison+Trüvra" alt="Image principale du produit" class="w-full h-auto object-cover rounded-lg shadow-lg cursor-pointer" data-translate-alt="product_detail.main_image_alt">
-                    <button id="prev-image-btn" class="absolute top-1/2 left-2 transform -translate-y-1/2 bg-black bg-opacity-30 text-white p-2 rounded-full hover:bg-opacity-50 focus:outline-none hidden">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <button id="next-image-btn" class="absolute top-1/2 right-2 transform -translate-y-1/2 bg-black bg-opacity-30 text-white p-2 rounded-full hover:bg-opacity-50 focus:outline-none hidden">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-                <div id="thumbnail-container" class="grid grid-cols-4 gap-2">
-                    <!-- Thumbnails will be populated here -->
-                </div>
-            </div>
-
-            <!-- Product Info Section -->
-            <div id="product-info-section" class="product-info">
-                {/* Product name is already H1 and styled by #product-name in main.css for Baskervville */}
-                <h1 id="product-name" class="text-3xl md:text-4xl font-bold text-mt-near-black mb-3 page-title">Nom du Produit</h1>
-                <p id="product-short-description" class="text-mt-earth-brown mb-4 text-base leading-relaxed font-primary">Description courte et alléchante du produit.</p>
-                
-                <div id="product-category-display" class="text-sm text-mt-warm-taupe mb-4 font-primary">
-                    <strong data-translate-key="product_detail.category" class="font-primary">Catégorie:</strong> <span id="product-category-link">N/A</span>
-                </div>
-
-                <div id="product-options-container" class="mb-5">
-                    <!-- Options like weight will be populated here for variable products -->
-                </div>
-
-                <div class="price-section mb-6">
-                     {/* Price display can be Raleway or Baskervville for emphasis, Raleway for consistency with body text */}
-                    <span id="product-price" class="text-3xl font-bold text-mt-truffle-burgundy font-primary">€0.00</span>
-                </div>
-
-                <div class="add-to-cart-section flex items-center gap-4 mb-2">
-                    <div class="quantity-selector">
-                        <label for="quantity-select" class="sr-only font-primary" data-translate-key="product_detail.quantity_label">Quantité</label>
-                        <input type="number" id="quantity-select" value="1" min="1" 
-                               class="w-20 p-2 border border-mt-warm-taupe rounded-md text-center focus:ring-2 focus:ring-mt-classic-gold focus:border-mt-classic-gold font-primary">
-                    </div>
-                    <button id="add-to-cart-btn" class="btn btn-primary flex-grow md:flex-none py-3 px-6">
-                        <i class="fas fa-shopping-cart mr-2"></i> <span data-translate-key="product_detail.add_to_cart">Ajouter au Panier</span>
-                    </button>
-                </div>
-                <div id="stock-indicator" class="text-sm mb-6 ml-1 font-primary">
-                    {/* Stock message will appear here */}
-                </div>
-
-                <div class="product-meta mt-6 space-y-2 text-sm font-primary">
-                    <p id="product-code-display"><strong data-translate-key="product_detail.product_code">Code Produit:</strong> <span>N/A</span></p>
-                    <p id="product-preservation-display"><strong data-translate-key="product_detail.preservation_type">Type de Conservation:</strong> <span>N/A</span></p>
-                    <p id="product-availability-display" class="hidden"><strong data-translate-key="product_detail.availability">Disponibilité:</strong> <span class="font-semibold">En Stock</span></p>
-                </div>
-                
-                <div id="product-details-accordion" class="mt-8 border-t border-mt-cream-dark pt-6">
-                    {/* Accordion titles use .accordion-toggle span, styled in main.css for Baskervville */}
-                    <div>
-                        <button class="accordion-toggle flex justify-between items-center w-full py-3 text-left font-semibold text-lg text-mt-near-black hover:text-mt-truffle-burgundy transition-colors duration-300 focus:outline-none">
-                            <span data-translate-key="product_detail.description_long_title">Description Détaillée</span>
-                            <i class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                        </button>
-                        <div class="accordion-content overflow-hidden max-h-0 transition-all duration-500 ease-in-out">
-                            <p id="product-long-description" class="text-mt-earth-brown pt-2 pb-4 text-base leading-relaxed font-primary">Description longue et détaillée...</p>
-                        </div>
-                    </div>
-                    <div id="sensory-evaluation-accordion" class="border-t border-mt-cream-dark">
-                        <button class="accordion-toggle flex justify-between items-center w-full py-3 text-left font-semibold text-lg text-mt-near-black hover:text-mt-truffle-burgundy transition-colors duration-300 focus:outline-none">
-                            <span data-translate-key="product_detail.sensory_evaluation_title">Évaluation Sensorielle</span>
-                            <i class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                        </button>
-                        <div class="accordion-content overflow-hidden max-h-0 transition-all duration-500 ease-in-out">
-                            <p id="product-sensory-evaluation" class="text-mt-earth-brown pt-2 pb-4 text-base leading-relaxed font-primary">Analyse des saveurs, arômes, textures...</p>
-                        </div>
-                    </div>
-                    <div id="food-pairings-accordion" class="border-t border-mt-cream-dark">
-                        <button class="accordion-toggle flex justify-between items-center w-full py-3 text-left font-semibold text-lg text-mt-near-black hover:text-mt-truffle-burgundy transition-colors duration-300 focus:outline-none">
-                            <span data-translate-key="product_detail.food_pairings_title">Accords Mets & Vins</span>
-                            <i class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                        </button>
-                        <div class="accordion-content overflow-hidden max-h-0 transition-all duration-500 ease-in-out">
-                            <p id="product-food-pairings" class="text-mt-earth-brown pt-2 pb-4 text-base leading-relaxed font-primary">Suggestions d'accompagnements...</p>
-                        </div>
-                    </div>
-                    <div id="species-accordion" class="border-t border-mt-cream-dark">
-                        <button class="accordion-toggle flex justify-between items-center w-full py-3 text-left font-semibold text-lg text-mt-near-black hover:text-mt-truffle-burgundy transition-colors duration-300 focus:outline-none">
-                            <span data-translate-key="product_detail.species_title">Espèce / Variété</span>
-                            <i class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                        </button>
-                        <div class="accordion-content overflow-hidden max-h-0 transition-all duration-500 ease-in-out">
-                            <p id="product-species" class="text-mt-earth-brown pt-2 pb-4 text-base leading-relaxed font-primary">Information sur l'espèce...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <section id="product-reviews-section" class="mt-12 pt-8 border-t border-mt-warm-taupe">
-            <h2 class="text-2xl font-bold text-mt-near-black mb-6 section-title" data-translate-key="product_detail.reviews_title">Avis des Clients</h2>
-            <div id="reviews-summary" class="mb-6 font-primary">
-                {/* Summary like average rating and count can go here */}
-            </div>
-            <div id="reviews-list" class="space-y-6">
-                <p class="text-mt-earth-brown font-primary" data-translate-key="product_detail.no_reviews">Aucun avis pour ce produit pour le moment.</p>
-            </div>
-            <div id="add-review-form-container" class="mt-8"></div>
-        </section>
-
-        <section id="related-products-section" class="mt-12 pt-8 border-t border-mt-warm-taupe">
-            <h2 class="text-2xl font-bold text-mt-near-black mb-6 section-title" data-translate-key="product_detail.related_products_title">Vous Aimerez Aussi</h2>
-            <div id="related-products-container" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                {/* Related products will be populated by JS */}
-            </div>
-        </section>
     </main>
 
-    <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-[100] hidden transition-opacity duration-300">
-        <img id="modal-image-content" src="" alt="Image agrandie du produit" class="max-w-full max-h-full rounded-lg shadow-xl">
-        <button id="close-image-modal" class="absolute top-4 right-4 text-white text-3xl hover:text-gray-300 focus:outline-none">&times;</button>
-    </div>
-    
     <div id="main-footer-placeholder"></div>
     <div id="cart-toast-placeholder" class="fixed bottom-5 right-5 z-50"></div>
     <div id="global-message-container" class="fixed top-20 right-5 z-[1000] w-auto max-w-sm"></div>
@@ -159,6 +70,7 @@
     <script src="js/cart.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/main.js"></script>
-    <script src="js/products.js"></script>
+    <script src="js/products.js"></script> <!-- Contains displayProductCard and other helpers -->
+    <script src="js/nos-produits.js"></script> <!-- Specific logic for this page -->
 </body>
 </html>
