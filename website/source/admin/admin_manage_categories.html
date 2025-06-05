@@ -4,88 +4,137 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Catégories - Admin - Maison Trüvra</title>
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;500;700&display=swap" rel="stylesheet">
-    
-    <!-- Maison Trüvra Global Admin Styles (now in admin_style.css) -->
-    <link rel="stylesheet" href="js/css/admin_style.css"> 
+    <link rel="stylesheet" href="css/admin_style.css"> <!-- Standardized path -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
-<body class="admin-body">
-    <div class="admin-main-container">
-        <header class="admin-page-header d-flex justify-content-between align-items-center">
-            <h1 class="admin-page-title mb-0">Gestion des Catégories</h1>
-            <button type="button" class="btn btn-primary" id="add-new-category-btn">Ajouter une Catégorie</button>
-        </header>
+<body class="admin-body" id="page-admin-manage-categories">
 
-        <main>
-            <section class="admin-content-area">
-                <!-- Add Category Form (could be in a modal or a separate section) -->
-                <div id="add-category-form-section" class="content-card mb-4" style="display: none;"> <!-- Initially hidden, JS will manage visibility -->
-                    <h2 class="section-heading">Ajouter/Modifier une Catégorie</h2> <!-- Title can be changed by JS -->
-                    <form id="category-form">
-                        <input type="hidden" id="category-id" name="category_id">
-                        <div class="form-group">
-                            <label for="category-name">Nom de la Catégorie</label>
-                            <input type="text" id="category-name" name="name" required placeholder="Ex: Truffes Fraîches">
-                        </div>
-                        <div class="form-group">
-                            <label for="category-description">Description (Optionnel)</label>
-                            <textarea id="category-description" name="description" rows="3" placeholder="Courte description de la catégorie"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label for="category-parent">Catégorie Parente (Optionnel)</label>
-                            <select id="category-parent" name="parent_id">
-                                <option value="">Aucune (Catégorie Principale)</option>
-                                <!-- JS (admin_categories.js) to populate with existing categories -->
-                            </select>
-                        </div>
-                        <div class="button-group">
-                            <button type="submit" class="btn btn-primary">Enregistrer Catégorie</button>
-                            <button type="button" class="btn btn-secondary" id="cancel-category-form-btn">Annuler</button>
-                        </div>
-                    </form>
+    <header class="admin-page-header-bar">
+        <div class="container">
+            <div class="flex items-center space-x-4">
+                <a href="admin_dashboard.html" id="back-to-dashboard-button" class="btn btn-admin-secondary btn-sm flex items-center">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Retour au Tableau de Bord
+                </a>
+                <div id="admin-header-title-area">
+                     <h1>Maison Trüvra - Admin</h1>
                 </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="admin-user-greeting" class="text-sm mr-2"></span>
+                <button id="admin-logout-button" class="btn btn-admin-danger btn-sm flex items-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
+                </button>
+            </div>
+        </div>
+    </header>
 
+    <nav class="admin-main-nav">
+        <div class="container">
+            <div class="nav-links-container">
+                <a href="admin_dashboard.html" class="admin-nav-link">Tableau de Bord</a>
+                <a href="admin_manage_products.html" class="admin-nav-link">Produits</a>
+                <a href="admin_manage_inventory.html" class="admin-nav-link">Inventaire</a>
+                <a href="admin_view_inventory.html" class="admin-nav-link">Voir Inventaire</a>
+                <a href="admin_manage_orders.html" class="admin-nav-link">Commandes</a>
+                <a href="admin_manage_users.html" class="admin-nav-link">Utilisateurs</a>
+                <a href="admin_manage_categories.html" class="admin-nav-link active">Catégories</a>
+                <a href="admin_invoices.html" class="admin-nav-link">Factures</a>
+                <a href="admin_manage_reviews.html" class="admin-nav-link">Avis</a>
+                <a href="admin_profile.html" class="admin-nav-link">Mon Profil</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="admin-main-container">
+        <div class="admin-page-header">
+            <div class="d-flex justify-content-between align-items-center">
+                 <h1 class="admin-page-title mb-0">Gestion des Catégories de Produits</h1>
+                 <button type="button" class="btn btn-admin-primary" id="add-new-category-btn"><i class="fas fa-plus mr-1"></i> Ajouter une Catégorie</button>
+            </div>
+        </div>
+        
+        <section id="add-category-form-section" class="admin-form-container content-card" style="display: none;">
+            <h2 class="section-heading" id="category-form-dynamic-title">Ajouter une Nouvelle Catégorie</h2>
+            <form id="category-form" class="admin-form">
+                <input type="hidden" id="category-id" name="category_id">
+                <div class="form-group">
+                    <label for="category-name" class="form-label">Nom de la Catégorie <span class="required">*</span></label>
+                    <input type="text" id="category-name" name="name" required placeholder="Ex: Truffes Fraîches" class="form-input-admin">
+                </div>
+                <div class="form-group">
+                    <label for="category-code" class="form-label">Code Catégorie <span class="required">*</span></label>
+                    <input type="text" id="category-code" name="category_code" required placeholder="Ex: TRF-FRSH" class="form-input-admin">
+                     <small class="form-text">Code unique pour la catégorie (ex: TRUFFES-NOIRES). Utilisé pour les références internes.</small>
+                </div>
+                <div class="form-group">
+                    <label for="category-description" class="form-label">Description (Optionnel)</label>
+                    <textarea id="category-description" name="description" rows="3" placeholder="Courte description de la catégorie" class="form-input-admin"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="category-parent" class="form-label">Catégorie Parente (Optionnel)</label>
+                    <select id="category-parent" name="parent_id" class="form-input-admin">
+                        <option value="">Aucune (Catégorie Principale)</option>
+                        <!-- JS (admin_categories.js) to populate with existing categories -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="category-image-url" class="form-label">URL de l'Image (Optionnel)</label>
+                    <input type="url" id="category-image-url" name="image_url_text" class="form-input-admin" placeholder="https://example.com/image.jpg">
+                    <label for="category-image-file" class="form-label mt-2">Ou Télécharger une Image (Optionnel)</label>
+                    <input type="file" id="category-image-file" name="image_file" class="form-input-admin" accept="image/*">
+                    <div id="category-image-preview-container" class="mt-2">
+                        <img id="category-image-preview" src="#" alt="Aperçu de l'image" style="max-height: 100px; display: none;" class="rounded-md border">
+                        <button type="button" id="remove-category-image-btn" class="btn btn-admin-danger btn-sm mt-1" style="display:none;">Supprimer Image Actuelle</button>
+                    </div>
+                </div>
+                 <div class="form-group">
+                    <input type="checkbox" id="category-is-active" name="is_active" checked class="form-checkbox-admin">
+                    <label for="category-is-active" class="form-label-inline">Active (Visible sur le site)</label>
+                </div>
+                <div class="button-group">
+                    <button type="submit" class="btn btn-admin-primary"><i class="fas fa-save mr-1"></i> Enregistrer Catégorie</button>
+                    <button type="button" class="btn btn-admin-secondary" id="cancel-category-form-btn"><i class="fas fa-times mr-1"></i> Annuler</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="admin-table-container content-card">
+            <h2 class="section-heading">Liste des Catégories Existantes</h2>
+            <div class="overflow-x-auto">
                 <table class="admin-table" id="categories-table">
                     <thead>
                         <tr>
                             <th>Nom de la Catégorie</th>
+                            <th>Code</th>
                             <th>Description</th>
                             <th>Produits Associés</th>
+                            <th>Active</th>
                             <th class="text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Example Row (JS would populate this) -->
-                        <!-- Rows will be dynamically inserted by js/admin_categories.js -->
-                        <tr>
-                            <td colspan="4" class="text-center p-4">Chargement des catégories...</td>
-                        </tr>
+                    <tbody id="categories-table-body">
+                        <tr><td colspan="6" class="text-center p-4">Chargement des catégories...</td></tr>
                     </tbody>
                 </table>
-            </section>
-        </main>
+            </div>
+        </section>
+    </main>
 
-        <footer class="text-center text-small mt-4 py-4 border-t border-mt-warm-taupe">
-            <p>&copy; <span id="current-year"></span> Maison Trüvra. Tous droits réservés.</p>
-        </footer>
-    </div>
+    <footer class="admin-footer">
+        <p>&copy; <span id="currentYearCategories"></span> Maison Trüvra - Admin Panel</p>
+    </footer>
 
-    <!-- Admin specific JS for category management -->
-    <!-- Ensure admin_api.js (or similar for fetchAPIData) is loaded before admin_categories.js if it's a dependency -->
-    <script src="js/admin_api.js"></script> 
+    <div id="admin-toast-container"></div>
+
+    <script src="js/admin_config.js"></script>
+    <script src="js/admin_ui.js"></script>
+    <script src="js/admin_api.js"></script>
+    <script src="js/admin_auth.js"></script>
+    <script src="js/admin_main.js"></script>
     <script src="js/admin_categories.js"></script>
     <script>
-        // Set current year in footer
-        document.getElementById('current-year').textContent = new Date().getFullYear();
-        
-        // The main logic for showing/hiding the form, fetching data, 
-        // and handling form submissions is now in js/admin_categories.js
-        // This inline script is kept minimal.
+        document.getElementById('currentYearCategories').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
-
