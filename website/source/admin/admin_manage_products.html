@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Produits - Admin - Maison Trüvra</title>
-    <link rel="stylesheet" href="css/admin_style.css"> <!-- Standardized path -->
+    <link rel="stylesheet" href="css/admin_style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
 <body class="admin-body" id="page-admin-manage-products">
 
-    <div id="admin-header-placeholder"></div> <!-- Placeholder for the common header -->
+    <div id="admin-header-placeholder"></div>
 
     <main class="admin-main-container">
         <div class="admin-page-header">
@@ -19,9 +19,10 @@
             </div>
         </div>
         
-        <section id="productFormContainer" class="admin-form-container content-card" style="display: none;"> <!-- Initially hidden -->
+        <section id="productFormContainer" class="admin-form-container content-card" style="display: none;">
             <h2 class="section-heading" id="formTitle">Ajouter un Nouveau Produit</h2>
             <form id="productForm" class="admin-form" enctype="multipart/form-data">
+                <input type="hidden" id="productId" name="product_id"> <!-- For editing -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="form-group">
                         <label for="productCode" class="form-label">Code Produit (SKU Principal): <span class="required">*</span></label>
@@ -29,10 +30,15 @@
                         <small class="form-text">Identifiant unique pour le produit. Ex: TRF-NOIRE-MELANO</small>
                     </div>
                     <div class="form-group">
-                        <label for="productName" class="form-label">Nom du Produit: <span class="required">*</span></label>
-                        <input type="text" id="productName" name="name" required class="form-input-admin">
+                        <label for="productName" class="form-label">Nom du Produit (FR): <span class="required">*</span></label>
+                        <input type="text" id="productName" name="name" required class="form-input-admin" data-lang="fr">
                     </div>
                 </div>
+                 <div class="form-group">
+                    <label for="productNameEn" class="form-label">Nom du Produit (EN):</label>
+                    <input type="text" id="productNameEn" name="name_en" class="form-input-admin" data-lang="en">
+                </div>
+
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="form-group">
@@ -44,7 +50,7 @@
                     <div class="form-group">
                         <label for="productType" class="form-label">Type de Produit: <span class="required">*</span></label>
                         <select id="productType" name="type" required class="form-input-admin">
-                            <option value="simple">Simple (Prix Fixe, Stock Unique)</option>
+                            <option value="simple">Simple (Prix Fixe)</option>
                             <option value="variable_weight">Poids Variable (Options de Poids/Prix)</option>
                         </select>
                     </div>
@@ -54,23 +60,70 @@
                     <label for="productPrice" class="form-label">Prix de Base (€) (pour produits 'Simple'):</label>
                     <input type="number" id="productPrice" name="price" step="0.01" min="0" class="form-input-admin">
                 </div>
-                <div class="form-group" id="baseQuantitySection">
-                    <label for="productQuantity" class="form-label">Quantité en Stock (pour produits 'Simple'):</label>
-                    <input type="number" id="productQuantity" name="quantity" min="0" class="form-input-admin">
-                </div>
                 
                 <div class="form-group">
-                    <label for="productDescription" class="form-label">Description Courte:</label>
-                    <textarea id="productDescription" name="description" class="form-input-admin" rows="3"></textarea>
+                    <label for="productDescription" class="form-label">Description Courte (FR):</label>
+                    <textarea id="productDescription" name="description" class="form-input-admin" rows="3" data-lang="fr"></textarea>
+                </div>
+                 <div class="form-group">
+                    <label for="productDescriptionEn" class="form-label">Description Courte (EN):</label>
+                    <textarea id="productDescriptionEn" name="description_en" class="form-input-admin" rows="3" data-lang="en"></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="productLongDescription" class="form-label">Description Longue (HTML permis si backend le gère):</label>
-                    <textarea id="productLongDescription" name="long_description" class="form-input-admin" rows="5"></textarea>
+                    <label for="productLongDescription" class="form-label">Description Longue (FR) (HTML permis si backend le gère):</label>
+                    <textarea id="productLongDescription" name="long_description" class="form-input-admin" rows="5" data-lang="fr"></textarea>
                 </div>
+                 <div class="form-group">
+                    <label for="productLongDescriptionEn" class="form-label">Description Longue (EN) (HTML permis si backend le gère):</label>
+                    <textarea id="productLongDescriptionEn" name="long_description_en" class="form-input-admin" rows="5" data-lang="en"></textarea>
+                </div>
+
+                <!-- New Informational Fields -->
+                <div class="form-group">
+                    <label for="productSensoryEvaluation" class="form-label">Évaluation Sensorielle (FR):</label>
+                    <textarea id="productSensoryEvaluation" name="sensory_evaluation" class="form-input-admin" rows="3" data-lang="fr" placeholder="Ex: Arômes intenses de sous-bois, notes de noisette..."></textarea>
+                </div>
+                 <div class="form-group">
+                    <label for="productSensoryEvaluationEn" class="form-label">Évaluation Sensorielle (EN):</label>
+                    <textarea id="productSensoryEvaluationEn" name="sensory_evaluation_en" class="form-input-admin" rows="3" data-lang="en" placeholder="Ex: Intense forest floor aromas, nutty notes..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="productFoodPairings" class="form-label">Accords Mets & Vins (FR):</label>
+                    <textarea id="productFoodPairings" name="food_pairings" class="form-input-admin" rows="3" data-lang="fr" placeholder="Ex: Idéal avec des pâtes fraîches, risottos, viandes rouges. Vin: Barolo."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="productFoodPairingsEn" class="form-label">Accords Mets & Vins (EN):</label>
+                    <textarea id="productFoodPairingsEn" name="food_pairings_en" class="form-input-admin" rows="3" data-lang="en" placeholder="Ex: Ideal with fresh pasta, risottos, red meats. Wine: Barolo."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="productPreservationType" class="form-label">Type de Conservation:</label>
+                    <select id="productPreservationType" name="preservation_type" class="form-input-admin">
+                        <option value="">Non spécifié</option>
+                        <option value="frais">Frais</option>
+                        <option value="conserve">Conserve (Appertisé)</option>
+                        <option value="sec">Sec</option>
+                        <option value="surgele">Surgelé</option>
+                        <option value="sous_vide">Sous Vide</option>
+                    </select>
+                </div>
+                 <div class="form-group">
+                    <label for="productSpecies" class="form-label">Espèce / Variété (FR):</label>
+                    <input type="text" id="productSpecies" name="species" class="form-input-admin" data-lang="fr" placeholder="Ex: Tuber melanosporum">
+                </div>
+                 <div class="form-group">
+                    <label for="productSpeciesEn" class="form-label">Espèce / Variété (EN):</label>
+                    <input type="text" id="productSpeciesEn" name="species_en" class="form-input-admin" data-lang="en" placeholder="Ex: Tuber melanosporum">
+                </div>
+                <div class="form-group">
+                    <label for="productNotesInternal" class="form-label">Notes Internes (Admin):</label>
+                    <textarea id="productNotesInternal" name="notes_internal" class="form-input-admin" rows="2" placeholder="Notes visibles uniquement par les administrateurs..."></textarea>
+                </div>
+                <!-- End New Informational Fields -->
+
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="form-group">
-                        <label for="productImageUrlTextMain" class="form-label">URL Image Principale (Texte):</label> <!-- Changed ID -->
+                        <label for="productImageUrlTextMain" class="form-label">URL Image Principale (Texte):</label>
                         <input type="url" id="productImageUrlTextMain" name="main_image_url_text" placeholder="https://example.com/image.jpg" class="form-input-admin">
                     </div>
                     <div class="form-group">
@@ -84,7 +137,7 @@
                 </div>
                 
                 <div class="form-group">
-                     <label for="productAdditionalImageFiles" class="form-label">Images Additionnelles (Télécharger fichiers):</label> <!-- Changed ID/Name -->
+                     <label for="productAdditionalImageFiles" class="form-label">Images Additionnelles (Télécharger fichiers):</label>
                      <input type="file" id="productAdditionalImageFiles" name="additional_image_files" multiple class="form-input-admin mb-2" accept="image/*">
                      <label for="productAdditionalImagesText" class="form-label">Ou URLs Images Additionnelles (JSON Array):</label>
                      <small class="form-text">Format: [{"image_url":"url1", "alt_text":"alt1"}, {"image_url":"url2"}]</small>
@@ -92,10 +145,6 @@
                      <div id="additional-images-preview-container" class="mt-2 d-flex flex-wrap gap-2"></div>
                 </div>
 
-                <div class="form-group">
-                    <label for="lowStockThreshold" class="form-label">Seuil de Stock Bas:</label>
-                    <input type="number" id="lowStockThreshold" name="low_stock_threshold" min="0" value="10" class="form-input-admin">
-                </div>
                 <div class="form-group">
                     <label for="supplierInfo" class="form-label">Informations Fournisseur:</label>
                     <input type="text" id="supplierInfo" name="supplier_info" class="form-input-admin">
@@ -126,14 +175,14 @@
                 <table id="productsTable" class="admin-table">
                     <thead>
                         <tr>
-                            <th>Code</th>
-                            <th>Nom</th>
+                            <th>Code Produit</th>
+                            <th>Nom (FR)</th>
                             <th>Catégorie</th>
                             <th>Prix (€)</th>
-                            <th>Stock</th>
                             <th>Type</th>
                             <th>Actif</th>
                             <th>Vedette</th>
+                            <th>Variantes (SKUs)</th>
                             <th class="text-right">Actions</th>
                         </tr>
                     </thead>
@@ -144,7 +193,6 @@
             </div>
         </section>
 
-         <!-- Modal for Product Options/Variants -->
         <div id="product-options-modal" class="admin-modal-overlay">
             <div class="admin-modal-content sm-max-w-2xl">
                 <form id="product-options-form" class="admin-form">
@@ -154,6 +202,7 @@
                     </div>
                     <div class="admin-modal-body">
                         <input type="hidden" id="options-product-id">
+                        <p class="text-sm text-gray-600 mb-3">Ici, vous définissez les différentes options de poids (variantes) pour ce produit. Le stock pour chaque variante est géré dans la section "Inventaire".</p>
                         <div id="product-options-container" class="space-y-4">
                             <!-- Product options will be dynamically added here -->
                         </div>
@@ -167,25 +216,20 @@
             </div>
         </div>
         
-        <!-- Template for product option row -->
         <template id="product-option-template">
             <div class="weight-option-row grid grid-cols-12 gap-2 items-center">
                 <input type="hidden" name="option_id[]" value="">
-                <div class="col-span-3 form-group mb-0">
+                <div class="col-span-4 form-group mb-0"> <!-- Adjusted col-span -->
                     <label class="form-label text-xs">Poids (g) <span class="required">*</span></label>
                     <input type="number" name="weight_grams[]" required class="form-input-admin" placeholder="Ex: 20">
                 </div>
-                <div class="col-span-3 form-group mb-0">
+                <div class="col-span-4 form-group mb-0"> <!-- Adjusted col-span -->
                     <label class="form-label text-xs">Prix (€) <span class="required">*</span></label>
                     <input type="number" name="price[]" step="0.01" required class="form-input-admin" placeholder="Ex: 75.00">
                 </div>
-                <div class="col-span-3 form-group mb-0">
+                <div class="col-span-3 form-group mb-0"> <!-- Adjusted col-span -->
                     <label class="form-label text-xs">Suffixe SKU <span class="required">*</span></label>
                     <input type="text" name="sku_suffix[]" required class="form-input-admin" placeholder="Ex: 20G">
-                </div>
-                 <div class="col-span-2 form-group mb-0">
-                    <label class="form-label text-xs">Stock</label>
-                    <input type="number" name="option_stock[]" min="0" class="form-input-admin" placeholder="Ex: 10">
                 </div>
                 <div class="col-span-1">
                     <button type="button" class="remove-option-btn btn btn-admin-danger btn-sm p-1 mt-4"><i class="fas fa-trash-alt"></i></button>
@@ -205,22 +249,21 @@
     <script src="js/admin_ui.js"></script> 
     <script src="js/admin_api.js"></script>
     <script src="js/admin_auth.js"></script>
-    <script src="js/admin_main.js"></script> <!-- This will load the common header -->
+    <script src="js/admin_main.js"></script>
     <script src="js/admin_products.js"></script> 
     <script>
         document.getElementById('currentYearManageProducts').textContent = new Date().getFullYear();
-        // Event listener for the main "Add New Product" button on this page
         const mainAddProductBtn = document.getElementById('add-new-product-btn-main');
         const productFormContainer = document.getElementById('productFormContainer');
         const productFormTitle = document.getElementById('formTitle');
         
         if(mainAddProductBtn && productFormContainer) {
             mainAddProductBtn.addEventListener('click', () => {
-                // Logic from admin_products.js to reset/show form for adding new
-                if (typeof resetForm === 'function') resetForm(); // Assuming resetForm is global from admin_products.js
+                if (typeof resetForm === 'function') resetForm();
                 productFormTitle.textContent = 'Ajouter un Nouveau Produit';
                 productFormContainer.style.display = 'block';
                 document.getElementById('productCode').focus();
+                 window.scrollTo({ top: productFormContainer.offsetTop - 80, behavior: 'smooth' });
             });
         }
     </script>
