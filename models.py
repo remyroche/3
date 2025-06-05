@@ -587,4 +587,3 @@ class TokenBlocklist(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     expires_at = db.Column(db.DateTime, nullable=False, index=True) # Token expiry for cleanup
     def __repr__(self): return f"<TokenBlocklist {self.jti}>"
-
