@@ -325,11 +325,6 @@
                         <td class="label">Dont TVA ({{rate}}%) :</td>
                         <td class="amount">{{ "%.2f"|format(amount|float) }} {{ invoice.currency }}</td>
                     </tr>
-                    {% endfor %}
-                    <tr>
-                        <td class="label">Total TVA :</td>
-                        <td class="amount">{{ "%.2f"|format(invoice.total_vat_amount|float) }} {{ invoice.currency }}</td>
-                    </tr>
                 {% endif %}
                 
                 <tr class="grand-total">
