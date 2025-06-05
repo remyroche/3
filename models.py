@@ -144,6 +144,15 @@ class User(db.Model):
     b2b_tier = db.Column(db.Enum(B2BPricingTierEnum, name="b2b_pricing_tier_enum_v2"), nullable=True, default=B2BPricingTierEnum.STANDARD, index=True)
 
 
+        # --- Added Referral Fields ---
+    referral_code = db.Column(db.String(50), unique=True, nullable=True, index=True) # User's own referral code
+    referred_by_code = db.Column(db.String(50), nullable=True, index=True) # Code of the user who referred them
+    # Consider: db.ForeignKey('users.referral_code') for referred_by_code if strict validation is needed,
+    # but this makes referral_code non-nullable or requires careful handling of circular dependencies or deferred constraints.
+    # For now, keeping it as a simple string.
+    referral_credit_balance = db.Column(db.Float, default=0.0, nullable=False)
+
+    
     reset_token = db.Column(db.String(100), index=True, nullable=True)
     reset_token_expires_at = db.Column(db.DateTime, nullable=True)
     verification_token = db.Column(db.String(100), index=True, nullable=True)
@@ -195,35 +204,41 @@ class User(db.Model):
         # if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password): return "auth.error.password_no_special" # Optional
         return None
 
+        
     def generate_totp_secret(self): self.totp_secret = pyotp.random_base32(); return self.totp_secret
     
     def get_totp_uri(self, issuer_name=None):
-        if not self.totp_secret: self.generate_totp_secret() 
-        issuer = issuer_name or current_app.config.get('TOTP_ISSUER_NAME', 'Maison Truvra')
+        # ... (TOTP URI logic) ...
         if not self.totp_secret: raise ValueError("TOTP secret missing.")
-        return pyotp.totp.TOTP(self.totp_secret).provisioning_uri(name=self.email, issuer_name=issuer)
+        return pyotp.totp.TOTP(self.totp_secret).provisioning_uri(name=self.email, issuer_name=issuer_name or current_app.config.get('TOTP_ISSUER_NAME', 'Maison Truvra'))
     
-    def verify_totp(self, code, for_time=None, window=1): return pyotp.TOTP(self.totp_secret).verify(code, for_time=for_time, window=window) if self.totp_secret else False
-    
-    def to_dict(self): # Ensure this is comprehensive for admin needs too
+    def to_dict(self):
         return {
             "id": self.id, "email": self.email, "first_name": self.first_name, 
             "last_name": self.last_name, "role": self.role.value if self.role else None, 
             "is_active": self.is_active, "is_verified": self.is_verified, 
             "company_name": self.company_name, "vat_number": self.vat_number, "siret_number": self.siret_number,
             "professional_status": self.professional_status.value if self.professional_status else None, 
-            "b2b_tier": self.b2b_tier.value if self.b2b_tier else None, # Add B2B tier
+            "b2b_tier": self.b2b_tier.value if self.b2b_tier else None,
             "is_totp_enabled": self.is_totp_enabled, 
-            "is_admin": self.role == UserRoleEnum.ADMIN, # Quick check for admin role
+            "is_admin": self.role == UserRoleEnum.ADMIN,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "shipping_address_line1": self.shipping_address_line1, # Example of including address info
+            "shipping_address_line1": self.shipping_address_line1,
             "currency": self.currency,
             "newsletter_b2c_subscribed": self.newsletter_b2c_subscribed,
             "newsletter_b2b_subscribed": self.newsletter_b2b_subscribed,
-            "preferred_language": self.preferred_language
+            "preferred_language": self.preferred_language,
+            # --- Added Referral Fields to to_dict ---
+            "referral_code": self.referral_code,
+            "referred_by_code": self.referred_by_code,
+            "referral_credit_balance": self.referral_credit_balance
+            # --- End Added Referral Fields to to_dict ---
         }
+        
     def __repr__(self): return f'<User {self.email}>'
+
+
 
 # ... (Category, Product, ProductImage, ProductWeightOption, SerializedInventoryItem, StockMovement, Order, OrderItem, Review, Cart, CartItem models remain the same for now) ...
 # ... (ProfessionalDocument, Invoice, InvoiceItem, AuditLog models remain the same) ...
@@ -244,15 +259,6 @@ class Category(db.Model):
     children = db.relationship('Category', back_populates='parent_category', remote_side='Category.id', lazy='dynamic', cascade="all, delete-orphan")
     parent_category = db.relationship('Category', back_populates='children', remote_side=[id])
     localizations = db.relationship('CategoryLocalization', back_populates='category', lazy='dynamic', cascade="all, delete-orphan")
-
-    def to_dict(self): 
-        return {
-            "id": self.id, "name": self.name, "description": self.description, 
-            "image_url": self.image_url, "category_code": self.category_code, 
-            "parent_id": self.parent_id, "slug": self.slug, "is_active": self.is_active,
-            "product_count": self.products.filter_by(is_active=True).count() # Count active products
-        }
-    def __repr__(self): return f'<Category {self.name}>'
 
 
 class Product(db.Model):
