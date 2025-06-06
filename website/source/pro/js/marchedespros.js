@@ -1,11 +1,49 @@
-// website/source/js/marchedespros.js
-// Manages the B2B "Marché des Professionnels" e-commerce page.
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const productsContainer = document.getElementById('products-container');
+    const token = localStorage.getItem('proToken');
+
+    if (!token) {
+        window.location.href = 'professionnels.html';
+        return;
+    }
+
+    fetch('/api/products', { // Assuming a generic products API for now
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => response.json())
+    .then(products => {
+        products.forEach(product => {
+            const productCard = `
+                <div class="bg-white rounded-lg shadow-md p-4 flex flex-col">
+                    <img src="${product.image_url || '../assets/images/placeholder.png'}" alt="${product.name}" class="rounded-md mb-4 h-48 w-full object-cover">
+                    <h3 class="text-lg font-bold mb-2">${product.name}</h3>
+                    <p class="text-gray-600 mb-4">${product.description}</p>
+                    <div class="mt-auto flex justify-between items-center">
+                        <span class="text-xl font-bold">${product.price} €</span>
+                        <button class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 add-to-cart-pro" data-product-id="${product.id}">
+                            ${window.i18n.add_to_cart}
+                        </button>
+                    </div>
+                </div>
+            `;
+            productsContainer.innerHTML += productCard;
+        });
+    })
+    .catch(error => {
+        console.error('Error fetching products:', error);
+        productsContainer.innerHTML = '<p>Error loading products.</p>';
+    });
+});
+</script>
+
 
 // --- B2B Cart Specific Functions ---
 const B2B_CART_STORAGE_KEY = 'maisonTruvraB2BCart';
 let currentB2BProductsCache = []; // Cache for currently displayed products with B2B pricing
 let b2bUserTier = null; // To store the logged-in B2B user's tier
-
 
 
 document.addEventListener('DOMContentLoaded', () => {
