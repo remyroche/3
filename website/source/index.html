@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title data-translate-key="home.title">Maison Trüvra - Accueil</title>
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -114,6 +115,7 @@
             <h2 class="section-title mb-4" data-translate-key="home.newsletter_title">Restez Connecté</h2>
             <p class="max-w-2xl mx-auto mb-8 text-mt-earth-brown" data-translate-key="home.newsletter_subtitle">Abonnez-vous à notre newsletter pour recevoir nos dernières actualités, recettes exclusives et offres spéciales.</p>
             <form id="newsletter-form-homepage" class="max-w-lg mx-auto flex flex-col sm:flex-row gap-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label for="email-newsletter-homepage" class="sr-only" data-translate-key="newsletter.email_label">Votre email</label>
                 <input type="email" id="email-newsletter-homepage" name="email" placeholder="Votre adresse e-mail" required class="flex-grow p-3 border border-mt-warm-taupe rounded-md focus:ring-2 focus:ring-mt-classic-gold focus:border-mt-classic-gold">
                 <button type="submit" class="btn btn-primary py-3 px-6" data-translate-key="newsletter.subscribe_btn">S'abonner</button>
