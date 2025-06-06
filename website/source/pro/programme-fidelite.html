@@ -3,207 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-translate-key="pro_loyalty.title">Programme de Fidélité Professionnel - Maison Trüvra</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/pro_common.css"> <!-- Common B2B styles -->
-    <!-- <link rel="stylesheet" href="css/programme-fidelite.css"> Specific styles if needed -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        /* Additional page-specific styles can go here or in programme-fidelite.css */
-        .status-card {
-            background-color: var(--mt-cream);
-            border: 1px solid var(--mt-classic-gold);
-            border-left-width: 4px;
-        }
-        .tier-card {
-            background-color: white;
-            border: 1px solid var(--mt-warm-taupe);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .tier-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-        .tier-card h3 {
-            color: var(--mt-truffle-burgundy);
-        }
-        .tier-card .perk-icon {
-            color: var(--mt-classic-gold);
-        }
-        .referral-section table th {
-            background-color: var(--mt-earth-brown);
-            color: var(--mt-cream);
-        }
-         .progress-bar-container {
-            background-color: var(--mt-warm-taupe); /* Light grey for the track */
-        }
-        .progress-bar {
-            background-color: var(--mt-classic-gold); /* Gold for the progress */
-            transition: width 0.5s ease-in-out;
-        }
-        .highlight-stat {
-            color: var(--mt-truffle-burgundy);
-        }
-    </style>
+    <title>Mon Compte Pro - Le Marché des Pros</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/marchedespros.css">
 </head>
-<body class="pro-page bg-mt-cream-light">
+<body class="bg-gray-100">
 
-    <div id="pro-header-placeholder"></div>
+    <div id="pro-header"></div>
 
-    <main class="pro-main-container container mx-auto px-4 py-8">
-        <header class="text-center mb-12">
-            <h1 class="page-title text-3xl md:text-4xl lg:text-5xl font-bold" data-translate-key="pro_loyalty.main_title">Programme Partenaire Exclusif Trüvra</h1>
-            <p class="text-lg text-mt-earth-brown max-w-3xl mx-auto mt-4" data-translate-key="pro_loyalty.subtitle">Découvrez les avantages et récompenses conçus pour nos partenaires professionnels privilégiés.</p>
-        </header>
+    <main class="container mx-auto p-4 mt-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Mon Compte Professionnel</h1>
 
-        <!-- User Status Section - Dynamic Data -->
-        <section id="user-loyalty-status" class="mb-12 p-6 rounded-lg shadow-lg status-card">
-            <h2 class="section-title text-2xl mb-6" data-translate-key="pro_loyalty.your_status_title">Votre Statut Partenaire</h2>
-            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 text-center md:text-left">
-                <div>
-                    <p class="text-sm text-mt-earth-brown uppercase tracking-wider" data-translate-key="pro_loyalty.current_tier">Niveau Actuel</p>
-                    <p id="user-tier-name" class="text-2xl font-semibold highlight-stat">Chargement...</p>
-                </div>
-                <div>
-                    <p class="text-sm text-mt-earth-brown uppercase tracking-wider" data-translate-key="pro_loyalty.annual_spend">Dépenses (365j)</p>
-                    <p id="user-annual-spend" class="text-2xl font-semibold highlight-stat">€0.00</p>
-                </div>
-                <div>
-                    <p class="text-sm text-mt-earth-brown uppercase tracking-wider" data-translate-key="pro_loyalty.referral_credit">Crédit de Parrainage</p>
-                    <p id="user-referral-credit" class="text-2xl font-semibold highlight-stat">€0.00</p>
-                </div>
-                <div>
-                    <p class="text-sm text-mt-earth-brown uppercase tracking-wider" data-translate-key="pro_loyalty.referral_code">Votre Code de Parrainage</p>
-                    <p id="user-referral-code" class="text-xl font-mono bg-mt-warm-taupe text-mt-cream p-2 rounded inline-block">CHARGEMENT</p>
-                    <button id="copy-referral-code" class="ml-2 text-sm btn-pro-secondary btn-sm py-1 px-2" data-translate-key="common.copy">Copier</button>
-                </div>
-            </div>
-            <div class="mt-6" id="next-tier-progress-section">
-                <p class="text-sm text-mt-earth-brown mb-1" data-translate-key="pro_loyalty.next_tier_progress">Progression vers le prochain niveau (<span id="next-tier-name-progress">N/A</span>) : <span id="spend-to-next-tier">€X</span> restants</p>
-                <div class="progress-bar-container w-full h-4 rounded-full overflow-hidden">
-                    <div id="loyalty-progress-bar" class="progress-bar h-full rounded-full" style="width: 0%;"></div>
-                </div>
-            </div>
-        </section>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="p-4 mb-4 text-sm text-green-700 bg-green-100 rounded-lg" role="alert">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
 
-        <!-- Program Details Section -->
-        <section id="program-details" class="space-y-12">
-
-            <!-- Annual Spend-Based Perks -->
-            <div>
-                <h2 class="section-title text-2xl mb-6" data-translate-key="pro_loyalty.spend_perks_title">Avantages Annuels Basés sur les Dépenses</h2>
-                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <!-- Tier 1 -->
-                    <div class="tier-card p-6 rounded-lg shadow-md" id="tier-1000">
-                        <h3 class="text-xl font-semibold mb-3" data-translate-key="pro_loyalty.tier1_name">Palier Argent (€1,000+)</h3>
-                        <ul class="list-disc list-inside space-y-2 text-mt-earth-brown text-sm">
-                            <li data-translate-key="pro_loyalty.tier1_perk1"><i class="fas fa-percent perk-icon mr-2"></i>2% de réduction</li>
-                            <li data-translate-key="pro_loyalty.tier1_perk2"><i class="fas fa-shipping-fast perk-icon mr-2"></i>Expédition express</li>
-                        </ul>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Mes Informations</h2>
+            <form id="profile-form" action="{{ url_for('b2b_profile.update_profile') }}" method="POST">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="company_name" class="block text-sm font-medium text-gray-700">Nom de l'entreprise</label>
+                        <input type="text" id="company_name" name="company_name" value="{{ user.company_name }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                     </div>
-                    <!-- Tier 2 -->
-                    <div class="tier-card p-6 rounded-lg shadow-md" id="tier-5000">
-                        <h3 class="text-xl font-semibold mb-3" data-translate-key="pro_loyalty.tier2_name">Palier Saphir (€5,000+)</h3>
-                        <ul class="list-disc list-inside space-y-2 text-mt-earth-brown text-sm">
-                            <li data-translate-key="pro_loyalty.tier2_perk1"><i class="fas fa-percent perk-icon mr-2"></i>5% de réduction</li>
-                            <li data-translate-key="pro_loyalty.tier2_perk2"><i class="fas fa-shipping-fast perk-icon mr-2"></i>Expédition express</li>
-                            <li data-translate-key="pro_loyalty.tier2_perk3"><i class="fas fa-gem perk-icon mr-2"></i>Accès produits exclusifs</li>
-                        </ul>
+                    <div>
+                        <label for="contact_name" class="block text-sm font-medium text-gray-700">Nom du contact</label>
+                        <input type="text" id="contact_name" name="contact_name" value="{{ user.contact_name }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                     </div>
-                    <!-- Tier 3 -->
-                    <div class="tier-card p-6 rounded-lg shadow-md" id="tier-15000">
-                        <h3 class="text-xl font-semibold mb-3" data-translate-key="pro_loyalty.tier3_name">Palier Or (€15,000+)</h3>
-                        <ul class="list-disc list-inside space-y-2 text-mt-earth-brown text-sm">
-                            <li data-translate-key="pro_loyalty.tier3_perk1"><i class="fas fa-percent perk-icon mr-2"></i>8% de réduction</li>
-                            <li data-translate-key="pro_loyalty.tier3_perk2"><i class="fas fa-boxes perk-icon mr-2"></i>Priorité sur stock</li>
-                            <li data-translate-key="pro_loyalty.tier3_perk3"><i class="fab fa-whatsapp perk-icon mr-2"></i>Support WhatsApp dédié</li>
-                            <li data-translate-key="pro_loyalty.tier3_perk_all_previous"><i>& tous les avantages précédents</i></li>
-                        </ul>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" id="email" name="email" value="{{ user.email }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                     </div>
-                    <!-- Tier 4 -->
-                    <div class="tier-card p-6 rounded-lg shadow-md" id="tier-25000">
-                        <h3 class="text-xl font-semibold mb-3" data-translate-key="pro_loyalty.tier4_name">Palier Diamant (€25,000+)</h3>
-                        <ul class="list-disc list-inside space-y-2 text-mt-earth-brown text-sm">
-                            <li data-translate-key="pro_loyalty.tier4_perk1"><i class="fas fa-percent perk-icon mr-2"></i>10% de réduction</li>
-                            <li data-translate-key="pro_loyalty.tier4_perk2"><i class="fas fa-eye perk-icon mr-2"></i>Avant-premières privées</li>
-                            <li data-translate-key="pro_loyalty.tier4_perk3"><i class="fas fa-leaf perk-icon mr-2"></i>Accès récoltes limitées</li>
-                            <li data-translate-key="pro_loyalty.tier4_perk_all_previous"><i>& tous les avantages précédents</i></li>
-                        </ul>
+                    <div>
+                        <label for="phone_number" class="block text-sm font-medium text-gray-700">Téléphone</label>
+                        <input type="text" id="phone_number" name="phone_number" value="{{ user.phone_number }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="address" class="block text-sm font-medium text-gray-700">Adresse</label>
+                        <textarea id="address" name="address" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">{{ user.address }}</textarea>
+                    </div>
+                     <div>
+                        <label for="siret_number" class="block text-sm font-medium text-gray-700">Numéro de SIRET</label>
+                        <input type="text" id="siret_number" name="siret_number" value="{{ user.siret_number }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" readonly>
                     </div>
                 </div>
-            </div>
-
-            <!-- Restaurant Branding Incentive -->
-            <div>
-                <h2 class="section-title text-2xl mb-6" data-translate-key="pro_loyalty.branding_title">Incitation à la Marque en Restaurant</h2>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <p class="text-mt-earth-brown mb-2" data-translate-key="pro_loyalty.branding_desc">Les participants approuvés affichant "Maison Trüvra" sur leurs menus bénéficient de :</p>
-                    <p class="text-xl font-semibold highlight-stat" data-translate-key="pro_loyalty.branding_reward">30% de réduction + tous les avantages du palier le plus élevé atteint.</p>
-                    <p class="text-xs text-mt-warm-taupe mt-2" data-translate-key="pro_loyalty.branding_condition">Conditions et approbation requises. Contactez-nous pour participer.</p>
+                <div class="mt-6">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Mettre à jour</button>
                 </div>
-            </div>
-
-            <!-- Referrals Program -->
-            <div class="referral-section">
-                <h2 class="section-title text-2xl mb-6" data-translate-key="pro_loyalty.referral_title">Programme de Parrainage</h2>
-                <div class="overflow-x-auto">
-                    <table class="pro-table w-full">
-                        <thead>
-                            <tr>
-                                <th data-translate-key="pro_loyalty.referral_col_category">Catégorie</th>
-                                <th data-translate-key="pro_loyalty.referral_col_criteria">Critère</th>
-                                <th data-translate-key="pro_loyalty.referral_col_reward">Récompense / Avantage</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td data-translate-key="pro_loyalty.referral_type_branding">Parrainage – Incitation Marque Restaurant</td>
-                                <td data-translate-key="pro_loyalty.referral_criteria_branding">Le filleul participe à l'Incitation Marque Restaurant</td>
-                                <td data-translate-key="pro_loyalty.referral_reward_branding">€500 de crédit pour le parrain</td>
-                            </tr>
-                            <tr>
-                                <td rowspan="3" data-translate-key="pro_loyalty.referral_type_purchase" class="align-top">Parrainage – Basé sur les Achats du Filleul</td>
-                                <td data-translate-key="pro_loyalty.referral_criteria_purchase1">Le filleul atteint €5,000/an</td>
-                                <td data-translate-key="pro_loyalty.referral_reward_purchase1">€250 de crédit pour le parrain</td>
-                            </tr>
-                            <tr>
-                                <td data-translate-key="pro_loyalty.referral_criteria_purchase2">Le filleul atteint €10,000/an</td>
-                                <td data-translate-key="pro_loyalty.referral_reward_purchase2">+ €500 de crédit supplémentaire pour le parrain</td>
-                            </tr>
-                            <tr>
-                                <td data-translate-key="pro_loyalty.referral_criteria_purchase3">Le filleul atteint €20,000/an</td>
-                                <td data-translate-key="pro_loyalty.referral_reward_purchase3">+ €1,000 de crédit supplémentaire pour le parrain</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <p class="text-xs text-mt-warm-taupe mt-4" data-translate-key="pro_loyalty.referral_note">Utilisez votre code de parrainage unique (voir ci-dessus) lorsque vous nous référez de nouveaux partenaires. Les crédits sont appliqués après vérification.</p>
-            </div>
-
-            <!-- Your Referrals Section - Placeholder for dynamic data -->
-             <section id="user-referrals-section" class="mt-12 hidden">
-                <h2 class="section-title text-2xl mb-6" data-translate-key="pro_loyalty.your_referrals_title">Vos Parrainages Actifs</h2>
-                <div id="user-referrals-list" class="space-y-4">
-                    <!-- Referral data will be populated by JS -->
-                    <p class="text-mt-earth-brown italic" data-translate-key="pro_loyalty.no_referrals_yet">Vous n'avez pas encore de parrainages actifs.</p>
-                </div>
-            </section>
-
-        </section>
+            </form>
+        </div>
     </main>
 
-    <div id="pro-footer-placeholder"></div>
+    <div id="pro-footer"></div>
 
-    <!-- Global Message Container (if needed, or use the one from pro_common.css/pro_header.html) -->
-    <div id="global-message-container" class="fixed top-20 right-5 z-[1000] w-auto max-w-sm"></div>
-    
-    <!-- Shared Pro JS, User Auth/API JS -->
-    <script src="../js/api.js"></script> <!-- Adjust path as needed -->
-    <script src="../js/auth.js"></script> <!-- Adjust path as needed -->
-    <script src="../js/ui.js"></script> <!-- Adjust path as needed -->
-    <script src="js/pro_main.js"></script> <!-- Common JS for pro section header/footer -->
-    
-    <!-- Page Specific JS -->
-    <script src="js/programme-fidelite.js"></script>
+    <script src="/pro/js/pro_main.js"></script>
 </body>
 </html>
