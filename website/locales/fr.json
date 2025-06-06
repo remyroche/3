@@ -732,4 +732,110 @@
   "admin.invoices.table.no_invoices_found": "Aucune facture trouvée.",
   "admin.invoices.table.load_error": "Erreur de chargement des factures.",
   "admin.invoices.table.download_btn": "PDF"
+
+  "global": {
+    "shop_now": "Boutique",
+    "discover": "Découvrir",
+    "professionals": "Professionnels",
+    "our_story": "Notre Histoire",
+    "my_account": "Mon Compte",
+    "cart": "Panier",
+    "logout": "Déconnexion",
+    "cancel": "Annuler",
+    "submit": "Soumettre"
+  },
+  "footer": {
+    "contact_us": "Contactez-nous",
+    "newsletter": "Newsletter",
+    "newsletter_placeholder": "Votre adresse e-mail...",
+    "subscribe": "S'abonner",
+    "newsletter_consent_label": "J'accepte de recevoir des communications de la part de Maison Trüvra.",
+    "follow_us": "Suivez-nous",
+    "copyright": "Maison Trüvra. Tous droits réservés.",
+    "privacy_policy": "Politique de Confidentialité",
+    "terms": "Conditions Générales de Vente",
+    "delivery": "Livraison & Retours",
+    "accessibility": "Accessibilité"
+  },
+  "home": {
+    "title": "Maison Trüvra - Accueil",
+    "hero_title": "Maison Trüvra",
+    "hero_subtitle": "Le luxe cultivé. L’avenir de la truffe, façonné avec art et passion.",
+    "hero_cta": "Découvrir Nos Trésors",
+    "featured_products_title": "Nos Produits d'Exception"
+  },
+  "products_page": {
+    "title": "Nos Produits - Maison Trüvra",
+    "main_title": "Découvrez Nos Trésors Truffés",
+    "subtitle": "Une sélection exquise de truffes fraîches et de produits fins, cultivés avec passion et savoir-faire.",
+    "filter_category": "Filtrer par Catégorie :",
+    "all_categories": "Toutes les catégories",
+    "sort_by": "Trier par :",
+    "sort_default": "Défaut",
+    "sort_price_asc": "Prix : Croissant",
+    "sort_price_desc": "Prix : Décroissant",
+    "sort_name_asc": "Nom : A-Z",
+    "sort_name_desc": "Nom : Z-A",
+    "search_label": "Rechercher :",
+    "search_placeholder": "Nom du produit...",
+    "loading": "Chargement des produits..."
+  },
+  "cart_page": {
+    "title": "Votre Panier - Maison Trüvra",
+    "main_title": "Votre Panier d'Exception",
+    "empty_message": "Votre panier est actuellement vide.",
+    "cta_shop_now": "Découvrir nos produits",
+    "table_product": "Produit",
+    "table_price": "Prix",
+    "table_quantity": "Quantité",
+    "table_total": "Total",
+    "table_actions": "Actions",
+    "clear_cart_btn": "Vider le Panier",
+    "continue_shopping_btn": "Continuer les Achats",
+    "summary_title": "Résumé du Panier",
+    "summary_subtotal": "Sous-total :",
+    "summary_total_label": "Total :",
+    "checkout_btn": "Passer à la Caisse",
+    "checkout_secure_note": "Paiement sécurisé. Taxes incluses. Frais de port calculés à l'étape suivante."
+  },
+  "payment_page": {
+    "title": "Paiement - Maison Trüvra",
+    "main_title": "Finalisation de Votre Commande",
+    "summary_title": "Résumé de la Commande",
+    "loading_summary": "Chargement du résumé...",
+    "summary_shipping": "Livraison :",
+    "shipping_calculated_later": "Calculée à l'étape suivante",
+    "pay_button_text": "Payer"
+  },
+  "b2b_shop": {
+    "page_title": "Marché des Pros - Maison Trüvra",
+    "main_title": "Marché des Professionnels",
+    "subtitle": "Accédez à notre catalogue exclusif, passez commande ou demandez un devis.",
+    "quote_modal_title": "Demande de Devis",
+    "quote_modal_intro": "Veuillez fournir des détails supplémentaires pour votre demande de devis. Notre équipe vous contactera rapidement.",
+    "quote_modal_summary_title": "Articles dans la demande :",
+    "quote_modal_loading_summary": "Chargement du résumé...",
+    "quote_modal_notes_label": "Notes ou Instructions Spécifiques :",
+    "quote_modal_notes_placeholder": "Ex: Quantités souhaitées si différentes du panier, date de livraison préférée, etc.",
+    "quote_modal_contact_label": "Personne à Contacter (si différent du compte) :",
+    "quote_modal_phone_label": "Téléphone Direct (optionnel) :",
+    "quote_modal_submit_btn": "Envoyer la Demande de Devis"
+  },
+  "pro_cart_page": {
+    "page_title": "Panier Professionnel - Maison Trüvra",
+    "main_title": "Panier Professionnel",
+    "empty_message": "Votre panier professionnel est vide.",
+    "cta_discover": "Explorer le Marché des Pros",
+    "unit_price_ht": "Prix Unitaire (HT)",
+    "total_ht": "Total (HT)",
+    "summary_title": "Résumé du Panier Pro",
+    "subtotal_ht": "Sous-total (HT) :",
+    "partnership_discount": "Remise Partenaire :",
+    "estimated_vat": "TVA estimée :",
+    "total_ttc": "Total Estimé (TTC) :",
+    "pay_by_card": "Payer par Carte",
+    "request_quote": "Demander un Devis",
+    "submit_po": "Soumettre PO"
+  }
+
 }
