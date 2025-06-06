@@ -13,6 +13,41 @@ from .. import db, limiter
 from ..models import User, TokenBlocklist, UserRoleEnum
 from ..utils import admin_required
 
+@auth_bp.route('/login', methods=['POST'])
+def login():
+    """
+    B2B User login route. On success, sets an HttpOnly access token cookie.
+    """
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({"message": "Email and password are required"}), 400
+
+    user = ProfessionalUser.query.filter_by(email=email).first()
+
+    if user and user.check_password(password):
+        # Identity can be the user's ID or any other unique identifier
+        access_token = create_access_token(identity=user.id)
+        response = jsonify({"message": "Login successful"})
+        # set_access_cookies(response, access_token) # flask_jwt_extended > 4.0
+        response.set_cookie('access_token_cookie', access_token, httponly=True, secure=True, samesite='Lax')
+        return response, 200
+    
+    return jsonify({"message": "Invalid credentials"}), 401
+
+@auth_bp.route('/logout', methods=['POST'])
+def logout():
+    """
+    B2B User logout route. Clears the HttpOnly access token cookie.
+    """
+    response = jsonify({"message": "Logout successful"})
+    unset_jwt_cookies(response)
+    return response, 200
+
+</pre>
+
 def _create_admin_session_and_get_response(admin_user, redirect_url=None):
     """Helper to create JWT and user info for successful admin login."""
     identity = admin_user.id
