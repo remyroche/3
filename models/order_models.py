@@ -1,8 +1,34 @@
 # backend/models/order_models.py
-from .base import db
+from .base import db, BaseModel
 from .enums import OrderStatusEnum, InvoiceStatusEnum, QuoteRequestStatusEnum
 from datetime import datetime, timezone
+from .enums import OrderStatus, PaymentStatus, QuoteStatus
 
+class Quote(BaseModel):
+    __tablename__ = 'quotes'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('b2b_users.id'), nullable=False)
+    total_price = db.Column(db.Float, nullable=False)
+    status = db.Column(db.Enum(QuoteStatus), default=QuoteStatus.PENDING)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
+    
+    # Add a comment field
+    comment = db.Column(db.Text, nullable=True)
+
+    items = db.relationship('QuoteItem', backref='quote', lazy=True, cascade="all, delete-orphan")
+    user = db.relationship('B2BUser', backref='quotes')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'total_price': self.total_price,
+            'status': self.status.value,
+            'order_id': self.order_id,
+            'comment': self.comment, # Include comment in serialization
+            'created_at': self.created_at.isoformat(),
+            'items': [item.to_dict() for item in self.items]
+            
 class Order(db.Model):
     __tablename__ = 'orders'
     id = db.Column(db.Integer, primary_key=True)
