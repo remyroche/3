@@ -1,157 +1,61 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title data-translate-key="home.title">Maison Trüvra - Accueil</title>
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Specific styles for hero or unique index elements can go into a separate index.css if needed -->
-    <style>
-        /* Example: Hero section specific styles for impact */
-        .hero-section {
-            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url('https://placehold.co/1920x1080/A28C6A/F5EEDE?text=Terroir+de+Trufficulture') no-repeat center center/cover;
-            color: var(--mt-cream);
-            /* min-height: calc(100vh - var(--header-height)); If header is fixed and part of viewport height */
-            min-height: 80vh; /* Or a fixed large height */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: var(--spacing-xl) var(--spacing-md);
-        }
-        .hero-section .hero-title {
-            font-family: var(--font-secondary); /* Baskervville */
-            font-size: 3rem; /* Large */
-            font-weight: bold;
-            margin-bottom: var(--spacing-md);
-            line-height: 1.2;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-        }
-        @media (min-width: 768px) {
-            .hero-section .hero-title {
-                font-size: 4.5rem;
-            }
-        }
-        .hero-section .hero-subtitle {
-            font-family: var(--font-primary); /* Raleway */
-            font-size: 1.25rem;
-            margin-bottom: var(--spacing-lg);
-            max-width: 700px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
-        }
-        .featured-products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: var(--spacing-lg);
-        }
-    </style>
+    <title><%= t('home_page_title') %></title>
+    <link href="[https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css](https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css)" rel="stylesheet">
+    <link rel="stylesheet" href="main/main.css">
 </head>
-<body>
-    <div id="main-header-placeholder"></div>
+<body class="bg-gray-50">
 
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="container mx-auto">
-            <h1 class="hero-title" data-translate-key="home.hero_title">Maison Trüvra</h1>
-            <p class="hero-subtitle" data-translate-key="home.hero_subtitle">Le luxe cultivé. L’avenir de la truffe, façonné avec art et passion.</p>
-            <a href="nos-produits.html" class="btn btn-primary py-3 px-8 text-lg" data-translate-key="home.hero_cta">Découvrir Nos Trésors</a>
-        </div>
-    </section>
+    <%- include('header.html') %>
 
-    <main class="container mx-auto px-4 py-8 md:py-12">
-        <!-- Featured Products Section -->
-        <section id="featured-products" class="py-10 md:py-16">
-            <h2 class="section-title text-center mb-10" data-translate-key="home.featured_products_title">Nos Produits d'Exception</h2>
-            <div id="featured-products-container" class="featured-products-grid">
-                <!-- Product cards will be dynamically inserted here by products.js or directly if static -->
-                <!-- Example structure for one card (to be repeated or generated) -->
-                <div class="product-card bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl relative flex flex-col">
-                    <a href="produit-detail.html?slug=truffe-noire-extra" class="block group">
-                        <div class="aspect-square overflow-hidden">
-                            <img src="https://placehold.co/300x300/7D6A4F/F5EEDE?text=Truffe+Noire+Extra" alt="Truffe Noire Extra" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out">
-                        </div>
-                    </a>
-                    <div class="p-4 flex flex-col flex-grow">
-                        <h3 class="card-title text-lg font-semibold text-mt-near-black mb-1 truncate" title="Truffe Noire Extra (Tuber Melanosporum)">
-                            <a href="produit-detail.html?slug=truffe-noire-extra" class="hover:text-mt-truffle-burgundy">Truffe Noire Extra</a>
-                        </h3>
-                        <p class="text-xs text-mt-warm-taupe mb-2 truncate">Truffes Fraîches</p>
-                        <p class="text-sm text-mt-earth-brown mb-3 text-ellipsis overflow-hidden line-clamp-2" style="min-height: 2.5em;">
-                            L'or noir de la gastronomie, notre Tuber Melanosporum fraîchement récoltée.
-                        </p>
-                        <div class="mt-auto">
-                            <p class="text-xl font-bold text-mt-truffle-burgundy mb-3">
-                                À partir de €75.00
-                            </p>
-                            <a href="produit-detail.html?slug=truffe-noire-extra" class="btn btn-primary w-full">
-                                <i class="fas fa-eye mr-2"></i> Voir les Détails
-                            </a>
-                        </div>
-                    </div>
+    <main>
+        <!-- Hero Section -->
+        <section class="bg-blue-600 text-white text-center py-20">
+            <h1 class="text-5xl font-bold mb-4"><%= t('home_hero_title') %></h1>
+            <p class="text-xl mb-8"><%= t('home_hero_subtitle') %></p>
+            <a href="nos-produits.html" class="bg-white text-blue-600 font-bold py-3 px-8 rounded-full hover:bg-gray-200 transition-colors duration-300"><%= t('home_hero_cta') %></a>
+        </section>
+
+        <!-- Featured Products -->
+        <section class="py-16">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl font-bold text-center mb-12"><%= t('home_featured_products_title') %></h2>
+                <div id="featured-products-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Products loaded by JS -->
                 </div>
-                <!-- End Example Card -->
             </div>
         </section>
 
         <!-- About Us Snippet -->
-        <section id="about-snippet" class="py-10 md:py-16 bg-mt-earth-brown text-mt-cream rounded-lg my-10 md:my-16 px-6 md:px-10">
-            <div class="grid md:grid-cols-2 gap-8 items-center">
-                <div>
-                    <h2 class="section-title mb-4" data-translate-key="home.about_title">Notre Savoir-Faire</h2>
-                    <p class="mb-6 text-lg leading-relaxed" data-translate-key="home.about_text">Chez Maison Trüvra, chaque truffe est le fruit d'une tradition ancestrale et d'une innovation constante. Nous cultivons l'excellence pour vous offrir des produits d'une qualité inégalée, directement de notre terroir à votre table.</p>
-                    <a href="notre-histoire.html" class="btn btn-secondary" data-translate-key="home.learn_more">En Savoir Plus</a>
-                </div>
-                <div class="rounded-lg overflow-hidden shadow-xl">
-                    <img src="https://placehold.co/600x400/A28C6A/11120D?text=Passion+Trufficole" alt="Culture de truffes Maison Trüvra" class="w-full h-auto object-cover">
-                </div>
+        <section class="bg-gray-100 py-16">
+            <div class="container mx-auto px-6 text-center">
+                 <h2 class="text-3xl font-bold mb-4"><%= t('home_about_title') %></h2>
+                 <p class="max-w-3xl mx-auto text-gray-600 mb-8"><%= t('home_about_text') %></p>
+                 <a href="notre-histoire.html" class="text-blue-600 font-semibold hover:underline"><%= t('home_about_cta') %></a>
             </div>
-        </section>
-
-        <!-- Call to Action / Newsletter -->
-        <section id="newsletter-cta" class="py-10 md:py-16 text-center">
-            <h2 class="section-title mb-4" data-translate-key="home.newsletter_title">Restez Connecté</h2>
-            <p class="max-w-2xl mx-auto mb-8 text-mt-earth-brown" data-translate-key="home.newsletter_subtitle">Abonnez-vous à notre newsletter pour recevoir nos dernières actualités, recettes exclusives et offres spéciales.</p>
-            <form id="newsletter-form-homepage" class="max-w-lg mx-auto flex flex-col sm:flex-row gap-3">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <label for="email-newsletter-homepage" class="sr-only" data-translate-key="newsletter.email_label">Votre email</label>
-                <input type="email" id="email-newsletter-homepage" name="email" placeholder="Votre adresse e-mail" required class="flex-grow p-3 border border-mt-warm-taupe rounded-md focus:ring-2 focus:ring-mt-classic-gold focus:border-mt-classic-gold">
-                <button type="submit" class="btn btn-primary py-3 px-6" data-translate-key="newsletter.subscribe_btn">S'abonner</button>
-            </form>
-            <div id="newsletter-message-homepage" class="mt-4 text-sm"></div>
         </section>
     </main>
 
-    <div id="main-footer-placeholder"></div>
-    <div id="cart-toast-placeholder" class="fixed bottom-5 right-5 z-50"></div>
-    <div id="global-message-container" class="fixed top-20 right-5 z-[1000] w-auto max-w-sm"></div>
-
-
+    <%- include('footer.html') %>
+    
+    <script>
+        window.i18n = {
+            add_to_cart: "<%= t('pro_market_add_to_cart') %>",
+            nav_account: "<%= t('nav_account') %>",
+            nav_logout: "<%= t('nav_logout') %>",
+            nav_login: "<%= t('nav_login') %>",
+            newsletter_success: "<%= t('newsletter_success') %>",
+            newsletter_error: "<%= t('newsletter_error') %>",
+        }
+    </script>
+    <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/cart.js"></script>
     <script src="js/ui.js"></script>
-    <script src="js/main.js"></script> 
-    <script src="js/products.js"></script> <!-- For featured products, if dynamic -->
+    <script src="js/main.js"></script>
     <script src="js/newsletter.js"></script>
-    <script>
-        // Initialize specific elements for homepage if needed
-        document.addEventListener('DOMContentLoaded', () => {
-            // Example: Load featured products dynamically
-            // For now, they are static in HTML, but products.js could populate #featured-products-container
-            // if (typeof productsModule !== 'undefined' && typeof productsModule.displayFeaturedProducts === 'function') {
-            //     productsModule.displayFeaturedProducts('featured-products-container', 3); // Display 3 featured products
-            // }
-
-            // Newsletter form for homepage
-            const newsletterFormHome = document.getElementById('newsletter-form-homepage');
-            const newsletterMessageHome = document.getElementById('newsletter-message-homepage');
-            if (newsletterFormHome && newsletterMessageHome && typeof NewsletterSubscription !== 'undefined') {
-                const homeNewsletter = new NewsletterSubscription(newsletterFormHome, newsletterMessageHome, api);
-            }
-        });
-    </script>
 </body>
 </html>
