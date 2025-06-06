@@ -766,3 +766,105 @@
     "submit_po": "Submit PO"
   }
 }
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>English Translations</title>
+</head>
+<body>
+<pre>
+{
+    "home_title": "The Pros Market",
+    "home_welcome": "Welcome to the Pros Market",
+    "products_title": "Our Products",
+    "about_title": "Our Story",
+    "contact_title": "Contact Us",
+    "login_title": "Login",
+    "logout_button": "Logout",
+    "cart_title": "Your Cart",
+    "empty_cart_message": "Your cart is empty.",
+    "total_label": "Total:",
+    "checkout_button": "Checkout",
+    "account_title": "My Account",
+
+    "pro_header_title": "Pros Market",
+    "pro_header_home": "Home",
+    "pro_header_invoices": "Invoices",
+    "pro_header_loyalty": "Loyalty Program",
+    "pro_header_referral": "Referral",
+    "pro_header_profile": "Profile",
+    "pro_header_logout": "Logout",
+
+    "invoices_title": "My Invoices",
+    "invoices_main_title": "My Invoices",
+    "invoices_error_loading": "Error loading invoices.",
+    "invoices_none_found": "No invoices found.",
+    "invoices_header_number": "Number",
+    "invoices_header_date": "Date",
+    "invoices_header_amount": "Amount",
+    "invoices_header_status": "Status",
+    "invoices_download": "Download",
+    "invoices_status_paid": "Paid",
+    "invoices_status_unpaid": "Unpaid",
+
+    "profile_title": "My Profile",
+    "profile_main_title": "Manage My Profile",
+    "profile_company_name": "Company Name",
+    "profile_siret": "SIRET",
+    "profile_email": "Email Address",
+    "profile_phone": "Phone",
+    "profile_address": "Address",
+    "profile_city": "City",
+    "profile_zip": "Zip Code",
+    "profile_save_button": "Save Changes",
+    "profile_update_success": "Profile updated successfully.",
+    "profile_update_error": "Error updating profile.",
+
+    "pro_market_title": "Pros Market",
+    "pro_market_main_title": "Welcome to the Pros Market",
+    "pro_market_cart_title": "Your Cart",
+    "pro_market_total_label": "Total",
+    "pro_market_checkout_button": "Checkout",
+    "pro_market_add_to_cart": "Add to Cart",
+    "pro_market_product_added": "Product added!",
+
+    "loyalty_page_title": "Loyalty Program",
+    "loyalty_main_title": "My Loyalty Program",
+    "loyalty_how_it_works_title": "How It Works",
+    "loyalty_how_it_works_p1": "Earn points for every euro spent on our platform. It's our way of saying thank you for your loyalty.",
+    "loyalty_how_it_works_p2": "Use your points to get discounts on your next orders.",
+    "loyalty_history_title": "Points History",
+    "loyalty_current_points_title": "Your Points",
+    "loyalty_points_label": "points",
+    "loyalty_history_header_date": "Date",
+    "loyalty_history_header_description": "Description",
+    "loyalty_history_header_points": "Points",
+    "loyalty_history_no_entries": "No point movements yet.",
+    "loyalty_history_error": "Error loading history.",
+
+    "referral_page_title": "Referral Program",
+    "referral_main_title": "Refer and Earn",
+    "referral_code_title": "Your Unique Referral Code",
+    "referral_copy_button": "Copy",
+    "referral_copy_success_message": "Copied!",
+    "referral_share_title": "Share Your Code",
+    "referral_share_description": "Share this code with other professionals. When they sign up and place their first order, you'll both receive a reward!",
+    "referral_history_title": "Your Referral History",
+    "referral_history_header_date": "Date",
+    "referral_history_header_email": "Referred (Email)",
+    "referral_history_header_status": "Status",
+    "referral_history_status_pending": "Pending",
+    "referral_history_status_completed": "Completed",
+    "referral_history_no_entries": "You haven't referred anyone yet.",
+    "referral_history_error": "Error loading history.",
+
+    "footer_company_name": "My Awesome Company",
+    "footer_rights_reserved": "All rights reserved.",
+    "footer_privacy_policy": "Privacy Policy",
+    "footer_terms_of_service": "Terms of Service"
+}
+</pre>
+</body>
+</html>
