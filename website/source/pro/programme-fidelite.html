@@ -1,6 +1,62 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= t('loyalty_page_title') %></title>
+    <link href="[https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css](https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css)" rel="stylesheet">
+    <link rel="stylesheet" href="css/pro_common.css">
+</head>
+<body class="bg-gray-100">
+    <%- include('pro_header.html') %>
+
+    <main class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6"><%= t('loyalty_main_title') %></h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="md:col-span-2">
+                <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                    <h2 class="text-2xl font-bold mb-4"><%= t('loyalty_how_it_works_title') %></h2>
+                    <p><%= t('loyalty_how_it_works_p1') %></p>
+                    <p class="mt-2"><%= t('loyalty_how_it_works_p2') %></p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h2 class="text-xl font-bold mb-4"><%= t('loyalty_history_title') %></h2>
+                    <div id="loyalty-history-list" class="space-y-4">
+                        <!-- Loyalty history will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md text-center h-fit">
+                <h2 class="text-xl font-bold mb-2"><%= t('loyalty_current_points_title') %></h2>
+                <p class="text-5xl font-bold text-blue-600" id="loyalty-points">0</p>
+                <p class="text-gray-500"><%= t('loyalty_points_label') %></p>
+            </div>
+        </div>
+    </main>
+
+    <%- include('pro_footer.html') %>
+
+    <script>
+        window.i18n = {
+            history_header_date: "<%= t('loyalty_history_header_date') %>",
+            history_header_description: "<%= t('loyalty_history_header_description') %>",
+            history_header_points: "<%= t('loyalty_history_header_points') %>",
+            history_no_entries: "<%= t('loyalty_history_no_entries') %>",
+            history_error: "<%= t('loyalty_history_error') %>",
+        };
+    </script>
+    <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="js/programme-fidelite.js"></script>
+    <script src="js/pro_main.js"></script>
+</body>
+</html>
+
+
+
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Programme Partenaires - Le Marché des Pros</title>
