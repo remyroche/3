@@ -1,13 +1,11 @@
-<script>
 document.addEventListener('DOMContentLoaded', () => {
     const registerForm = document.getElementById('pro-register-form');
     if (registerForm) {
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const messageDiv = document.getElementById('pro-register-message');
-            messageDiv.textContent = ''; // Clear previous messages
+            messageDiv.textContent = '';
 
-            // Basic client-side validation
             const password = document.getElementById('password').value;
             if (password.length < 8) {
                 messageDiv.textContent = 'Password must be at least 8 characters long.';
@@ -28,11 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
 
                 if (response.ok) {
-                    messageDiv.textContent = window.i18n.register_success || "Registration successful! You can now log in.";
+                    // --- NEW MESSAGE ---
+                    // Inform user about the approval process.
+                    messageDiv.textContent = window.i18n.register_pending_approval || "Registration successful! Your account is pending admin approval.";
                     messageDiv.className = 'text-center mt-4 h-4 text-green-600';
-                    setTimeout(() => {
-                        window.location.href = 'professionnels.html';
-                    }, 2000);
+                    registerForm.reset(); // Clear the form
                 } else {
                     messageDiv.textContent = result.message || window.i18n.register_error;
                     messageDiv.className = 'text-center mt-4 h-4 text-red-500';
@@ -45,4 +43,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-</script>
