@@ -23,10 +23,10 @@ def create_order():
 
     subtotal = cart.get_total_price()
     
-    # 1. Apply Loyalty Tier Discount
+    # 1. Apply Partnership Discount
     discount_amount = 0
     if isinstance(current_user.b2b_profile, B2BUser):
-        discount_percent = get_discount_for_tier(current_user.b2b_profile.loyalty_tier)
+        discount_percent = get_discount_for_user(current_user.id)
         if discount_percent > 0:
             discount_amount = (subtotal * discount_percent) / 100
     
