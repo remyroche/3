@@ -16,6 +16,51 @@ def get_b2b_quotes():
 
 # Add other B2B management routes here as your application grows.
 
+@b2b_management_blueprint.route('/b2b_user/<int:user_id>/details', methods=['GET'])
+@login_required
+def get_b2b_user_details(user_id):
+    """
+    Gets a comprehensive overview of a B2B user for the admin panel.
+    """
+    user = User.query.get_or_404(user_id)
+    if not user.b2b_profile:
+        return jsonify({'error': 'Not a B2B user'}), 404
+
+    # Recalculate level to ensure data is fresh
+    level, annual_spend = b2b_partnership_service.update_user_partnership_level(user.id)
+
+    referees = [
+        {'id': ref.id, 'email': ref.email, 'company_name': ref.b2b_profile.company_name if ref.b2b_profile else 'N/A'}
+        for ref in user.referrals
+    ]
+
+    details = {
+        'user_info': user.to_dict(),
+        'annual_spend': annual_spend,
+        'partnership_level': level.value,
+        'referral_info': {
+            'code': user.referral_code,
+            'credit_balance': user.referral_credit_balance,
+            'referee_count': len(referees),
+            'referees': referees
+        }
+    }
+    return jsonify(details)
+
+@b2b_management_blueprint.route('/recalculate_all_levels', methods=['POST'])
+@login_required
+def recalculate_all_levels():
+    """
+    Admin-triggered job to recalculate partnership levels for all B2B users.
+    """
+    b2b_users = B2BUser.query.all()
+    count = 0
+    for b2b_user in b2b_users:
+        b2b_partnership_service.update_user_partnership_level(b2b_user.user_id)
+        count += 1
+    return jsonify({'success': True, 'message': f'{count} B2B user levels recalculated.'})
+
+
 @b2b_management_blueprint.route('/b2b_user/<int:user_id>/approve_branding_partner', methods=['POST'])
 @login_required
 def approve_branding_partner(user_id):
