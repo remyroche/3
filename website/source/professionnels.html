@@ -1,164 +1,53 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title data-translate-key="professionals_page.title">Espace Professionnels - Maison Trüvra</title>
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/professionnels.css"> <!-- Specific styles for this page -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title><%= t('professionals_page_title') %></title>
+    <link href="[https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css](https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css)" rel="stylesheet">
+    <link rel="stylesheet" href="main/main.css">
 </head>
-<body>
-    <div id="main-header-placeholder"></div>
+<body class="bg-gray-100">
+    <%- include('header.html') %>
 
-    <main class="container mx-auto px-4 py-8 mt-20 md:mt-24 lg:mt-28">
-        <header class="page-header text-center mb-10 md:mb-12">
-            <h1 class="page-title text-3xl md:text-4xl lg:text-5xl font-bold" data-translate-key="professionals_page.main_title">Espace Professionnels</h1>
-            <p class="text-lg text-mt-earth-brown max-w-3xl mx-auto mt-4" data-translate-key="professionals_page.subtitle">Accédez à nos offres exclusives, tarifs préférentiels et services dédiés aux professionnels de la gastronomie et de la distribution.</p>
-        </header>
-
-        <section id="professional-content" class="grid md:grid-cols-2 gap-8 md:gap-12 items-start">
-            <!-- Login/Register Form Area -->
-            <div id="pro-auth-area" class="bg-white p-6 md:p-8 rounded-lg shadow-xl">
-                <div id="pro-login-form-container">
-                    <h2 class="section-title text-2xl mb-6" data-translate-key="professionals_page.login_title">Connexion Professionnel</h2>
-                    <form id="pro-login-form" class="space-y-6">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <div class="form-group">
-                            <label for="pro-login-email" class="block text-sm font-medium text-mt-earth-brown mb-1" data-translate-key="form.email_label">Adresse e-mail</label>
-                            <input type="email" id="pro-login-email" name="email" required class="form-input w-full" placeholder="votreadresse@example.com">
-                        </div>
-                        <div class="form-group">
-                            <label for="pro-login-password" class="block text-sm font-medium text-mt-earth-brown mb-1" data-translate-key="form.password_label">Mot de passe</label>
-                            <input type="password" id="pro-login-password" name="password" required class="form-input w-full" placeholder="********">
-                        </div>
-                        <button type="submit" class="btn btn-primary w-full py-3" data-translate-key="form.login_btn">Se Connecter</button>
-                        <div id="pro-login-message" class="mt-4 text-sm text-center"></div>
-                        <p class="text-center text-sm mt-4">
-                            <a href="#" id="forgot-password-pro-link" class="text-mt-truffle-burgundy hover:underline" data-translate-key="form.forgot_password">Mot de passe oublié ?</a>
-                        </p>
-                    </form>
+    <main class="container mx-auto mt-10 px-4">
+        <div class="bg-white p-8 rounded-xl shadow-lg max-w-lg mx-auto">
+            <h1 class="text-3xl font-bold text-center mb-6"><%= t('professionals_main_title') %></h1>
+            <p class="text-center text-gray-600 mb-8"><%= t('professionals_subtitle') %></p>
+            
+            <form id="pro-login-form">
+                <div class="mb-4">
+                    <label for="email-pro" class="block text-gray-700 text-sm font-bold mb-2"><%= t('professionals_email_label') %></label>
+                    <input type="email" id="email-pro" name="email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
                 </div>
-
-                <div class="text-center my-6">
-                    <p class="text-mt-earth-brown" data-translate-key="professionals_page.no_account_yet">Pas encore de compte professionnel ?</p>
-                    <button id="show-pro-register-form-btn" class="btn btn-secondary mt-2" data-translate-key="professionals_page.register_btn_text">Devenir Partenaire Trüvra</button>
+                <div class="mb-6">
+                    <label for="password-pro" class="block text-gray-700 text-sm font-bold mb-2"><%= t('professionals_password_label') %></label>
+                    <input type="password" id="password-pro" name="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" required>
                 </div>
-
-                <div id="pro-register-form-container" class="hidden">
-                    <h2 class="section-title text-2xl mb-6" data-translate-key="professionals_page.register_title">Demande d'Ouverture de Compte Professionnel</h2>
-                    <p class="text-sm text-mt-earth-brown mb-6" data-translate-key="professionals_page.register_intro">Remplissez le formulaire ci-dessous. Notre équipe examinera votre demande et vous contactera dans les plus brefs délais.</p>
-                    <form id="pro-register-form" class="space-y-6" enctype="multipart/form-data">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-group">
-                                <label for="pro-company-name" class="form-label" data-translate-key="form.company_name_label">Nom de l'entreprise <span class="text-red-500">*</span></label>
-                                <input type="text" id="pro-company-name" name="company_name" required class="form-input w-full">
-                            </div>
-                            <div class="form-group">
-                                <label for="pro-siret" class="form-label" data-translate-key="form.siret_label">Numéro SIRET <span class="text-red-500">*</span></label>
-                                <input type="text" id="pro-siret" name="siret_number" required class="form-input w-full">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="pro-vat" class="form-label" data-translate-key="form.vat_label">Numéro de TVA Intracommunautaire (si applicable)</label>
-                            <input type="text" id="pro-vat" name="vat_number" class="form-input w-full">
-                        </div>
-                        <hr class="my-4 border-mt-cream-dark">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-group">
-                                <label for="pro-first-name" class="form-label" data-translate-key="form.first_name_label">Prénom du contact <span class="text-red-500">*</span></label>
-                                <input type="text" id="pro-first-name" name="first_name" required class="form-input w-full">
-                            </div>
-                            <div class="form-group">
-                                <label for="pro-last-name" class="form-label" data-translate-key="form.last_name_label">Nom du contact <span class="text-red-500">*</span></label>
-                                <input type="text" id="pro-last-name" name="last_name" required class="form-input w-full">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="pro-register-email" class="form-label" data-translate-key="form.email_label">Adresse e-mail de contact <span class="text-red-500">*</span></label>
-                            <input type="email" id="pro-register-email" name="email" required class="form-input w-full">
-                        </div>
-                         <div class="form-group">
-                            <label for="pro-phone" class="form-label" data-translate-key="form.phone_label">Téléphone <span class="text-red-500">*</span></label>
-                            <input type="tel" id="pro-phone" name="phone_number" required class="form-input w-full">
-                        </div>
-                        <div class="form-group">
-                            <label for="pro-register-password" class="form-label" data-translate-key="form.password_label">Créer un mot de passe <span class="text-red-500">*</span></label>
-                            <input type="password" id="pro-register-password" name="password" required class="form-input w-full">
-                        </div>
-                        <div class="form-group">
-                            <label for="pro-confirm-password" class="form-label" data-translate-key="form.confirm_password_label">Confirmer le mot de passe <span class="text-red-500">*</span></label>
-                            <input type="password" id="pro-confirm-password" name="confirm_password" required class="form-input w-full">
-                        </div>
-                        <div class="form-group">
-                            <label for="pro-kbis" class="form-label" data-translate-key="form.kbis_label">Extrait Kbis (ou équivalent, moins de 3 mois) <span class="text-red-500">*</span></label>
-                            <input type="file" id="pro-kbis" name="kbis_file" accept=".pdf,.jpg,.jpeg,.png" required class="form-input w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-mt-cream file:text-mt-truffle-burgundy hover:file:bg-mt-earth-brown hover:file:text-mt-cream">
-                            <p class="text-xs text-mt-warm-taupe mt-1" data-translate-key="form.file_types_note">Formats acceptés : PDF, JPG, PNG. Max 2MB.</p>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-full py-3" data-translate-key="form.submit_application_btn">Envoyer la Demande</button>
-                        <div id="pro-register-message" class="mt-4 text-sm text-center"></div>
-                         <p class="text-center text-sm mt-4">
-                            <a href="#" id="show-pro-login-form-btn" class="text-mt-truffle-burgundy hover:underline" data-translate-key="professionals_page.already_account_login">Déjà un compte ? Se connecter</a>
-                        </p>
-                    </form>
+                <div class="flex items-center justify-between">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        <%= t('professionals_login_button') %>
+                    </button>
+                    <a href="#" class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
+                        <%= t('professionals_forgot_password') %>
+                    </a>
                 </div>
+                <p id="pro-login-error" class="text-red-500 text-center mt-4"></p>
+            </form>
+            
+            <div class="text-center mt-8">
+                <p class="text-gray-600"><%= t('professionals_no_account') %> <a href="pro-register.html" class="text-blue-500 hover:underline"><%= t('professionals_register_link') %></a></p>
             </div>
-
-            <!-- Information / Benefits Area -->
-            <div class="pro-benefits bg-mt-earth-brown text-mt-cream p-6 md:p-8 rounded-lg shadow-xl">
-                <h2 class="section-title text-2xl mb-6 text-mt-classic-gold" data-translate-key="professionals_page.benefits_title">Devenez Partenaire Maison Trüvra</h2>
-                <p class="mb-4" data-translate-key="professionals_page.benefits_intro">En tant que professionnel partenaire, vous bénéficiez d'avantages exclusifs pour sublimer vos créations et satisfaire une clientèle exigeante :</p>
-                <ul class="list-disc list-inside space-y-2 mb-6">
-                    <li data-translate-key="professionals_page.benefit1"><i class="fas fa-star text-mt-classic-gold mr-2"></i>Produits d'exception sélectionnés pour leur qualité supérieure.</li>
-                    <li data-translate-key="professionals_page.benefit2"><i class="fas fa-euro-sign text-mt-classic-gold mr-2"></i>Tarifs préférentiels et conditions d'achat adaptées.</li>
-                    <li data-translate-key="professionals_page.benefit3"><i class="fas fa-truck text-mt-classic-gold mr-2"></i>Logistique optimisée pour des livraisons rapides et fiables.</li>
-                    <li data-translate-key="professionals_page.benefit4"><i class="fas fa-headset text-mt-classic-gold mr-2"></i>Accompagnement personnalisé par notre équipe d'experts.</li>
-                    <li data-translate-key="professionals_page.benefit5"><i class="fas fa-certificate text-mt-classic-gold mr-2"></i>Accès en avant-première à nos nouveautés et récoltes limitées.</li>
-                </ul>
-                <p data-translate-key="professionals_page.benefits_contact_prompt">Pour toute question ou demande spécifique, n'hésitez pas à <a href="mailto:professionnels@maisontruvra.com" class="font-semibold hover:underline text-mt-classic-gold">nous contacter</a>.</p>
-            </div>
-        </section>
-        
-        <!-- Logged-in Professional Dashboard Snippet (Hidden by default) -->
-        <section id="pro-dashboard-snippet" class="hidden mt-12 p-6 md:p-8 bg-white shadow-xl rounded-lg">
-            <h2 class="section-title text-2xl mb-4" data-translate-key="professionals_page.dashboard_welcome">Bienvenue, <span id="pro-dashboard-user-name">Professionnel</span> !</h2>
-            <p class="text-mt-earth-brown mb-6" data-translate-key="professionals_page.dashboard_intro">Vous êtes connecté à votre espace professionnel Maison Trüvra.</p>
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <a href="nos-produits.html?pro=true" class="pro-dashboard-link-card">
-                    <i class="fas fa-boxes fa-2x mb-3"></i>
-                    <h3 data-translate-key="professionals_page.dashboard_catalog">Catalogue Pro & Commande</h3>
-                    <p data-translate-key="professionals_page.dashboard_catalog_desc">Accédez à notre catalogue complet avec vos tarifs.</p>
-                </a>
-                <a href="invoices-pro.html" class="pro-dashboard-link-card">
-                    <i class="fas fa-file-invoice-dollar fa-2x mb-3"></i>
-                    <h3 data-translate-key="professionals_page.dashboard_invoices">Mes Factures</h3>
-                    <p data-translate-key="professionals_page.dashboard_invoices_desc">Consultez et téléchargez vos factures.</p>
-                </a>
-                 <a href="compte.html?pro=true" class="pro-dashboard-link-card">
-                    <i class="fas fa-user-cog fa-2x mb-3"></i>
-                    <h3 data-translate-key="professionals_page.dashboard_account">Mon Compte Pro</h3>
-                    <p data-translate-key="professionals_page.dashboard_account_desc">Gérez vos informations et préférences.</p>
-                </a>
-            </div>
-             <button id="pro-logout-dashboard-btn" class="btn btn-outline mt-8" data-translate-key="form.logout_btn_dashboard"><i class="fas fa-sign-out-alt mr-2"></i>Se Déconnecter</button>
-        </section>
-
-
+        </div>
     </main>
 
-    <div id="main-footer-placeholder"></div>
-    <div id="cart-toast-placeholder" class="fixed bottom-5 right-5 z-50"></div>
-    <div id="global-message-container" class="fixed top-20 right-5 z-[1000] w-auto max-w-sm"></div>
+    <%- include('footer.html') %>
 
-
-    <script src="js/api.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/cart.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/main.js"></script>
+    <script>
+        window.i18n = {
+            login_error: "<%= t('professionals_login_error') %>"
+        }
+    </script>
     <script src="js/professionnels.js"></script>
 </body>
 </html>
