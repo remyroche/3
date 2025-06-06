@@ -1,0 +1,64 @@
+<!--------------------------------------------------------------------------------
+-- File: website/source/pro-register.html (New File)
+-- Desc: The registration form for new professional users.
+--------------------------------------------------------------------------------->
+<!DOCTYPE html>
+<html lang="<%= lang %>">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= t('pro_register_page_title') %></title>
+    <link href="[https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css](https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css)" rel="stylesheet">
+    <link rel="stylesheet" href="main/main.css">
+</head>
+<body class="bg-gray-100">
+    <%- include('header.html') %>
+
+    <main class="container mx-auto mt-10 px-4">
+        <div class="bg-white p-8 rounded-xl shadow-lg max-w-2xl mx-auto">
+            <h1 class="text-3xl font-bold text-center mb-6"><%= t('pro_register_main_title') %></h1>
+            <form id="pro-register-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="companyName" class="block text-sm font-medium text-gray-700"><%= t('profile_company_name') %></label>
+                        <input type="text" id="companyName" name="companyName" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                    </div>
+                    <div>
+                        <label for="siret" class="block text-sm font-medium text-gray-700"><%= t('profile_siret') %></label>
+                        <input type="text" id="siret" name="siret" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700"><%= t('profile_email') %></label>
+                        <input type="email" id="email" name="email" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                    </div>
+                     <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-700"><%= t('profile_phone') %></label>
+                        <input type="tel" id="phone" name="phone" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="password" class="block text-sm font-medium text-gray-700"><%= t('professionals_password_label') %></label>
+                        <input type="password" id="password" name="password" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                    </div>
+                </div>
+                 <div class="mt-8">
+                    <button type="submit" class="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700"><%= t('pro_register_button') %></button>
+                </div>
+                <p id="pro-register-message" class="text-center mt-4 h-4"></p>
+            </form>
+            <div class="text-center mt-4">
+                <p class="text-gray-600"><%= t('pro_register_already_account') %> <a href="professionnels.html" class="text-blue-500 hover:underline"><%= t('nav_login') %></a></p>
+            </div>
+        </div>
+    </main>
+
+    <%- include('footer.html') %>
+    
+    <script>
+        window.i18n = {
+            register_success: "<%= t('pro_register_success') %>",
+            register_error: "<%= t('pro_register_error') %>"
+        }
+    </script>
+    <script src="js/pro-register.js"></script>
+</body>
+</html>
