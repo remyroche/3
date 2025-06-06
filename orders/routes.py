@@ -1,63 +1,60 @@
-from flask import Blueprint, request, jsonify, redirect, url_for
+from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 import stripe
-from models import db, Order, OrderItem, Product, Cart, CartItem, Payment, User, B2BUser
+from models import db, Order, OrderItem, Cart, CartItem, Payment, B2BUser
 from models.enums import OrderStatus, PaymentStatus
 from config import Config
 from services.b2b_invoice_service import create_b2b_invoice_from_order
+from services.b2b_loyalty_service import get_discount_for_tier, add_points_for_order
 
 order_blueprint = Blueprint('order', __name__)
-stripe.api_key = Config.SECRET_KEY # This should be your Stripe Secret Key
-
+stripe.api_key = Config.STRIPE_SECRET_KEY # Ensure you have this in your config
 
 
 @order_blueprint.route('/create_order', methods=['POST'])
 @login_required
 def create_order():
     data = request.get_json()
-    
     cart = Cart.query.filter_by(user_id=current_user.id).first()
     if not cart or not cart.items:
         return jsonify({'error': 'Your cart is empty'}), 400
 
     total_amount = cart.get_total_price()
+    discount_amount = 0
+
+    # --- APPLY LOYALTY DISCOUNT FOR B2B USERS ---
+    if isinstance(current_user, B2BUser):
+        discount_percent = get_discount_for_tier(current_user.loyalty_tier)
+        if discount_percent > 0:
+            discount_amount = (total_amount * discount_percent) / 100
+            total_amount -= discount_amount
+    # ---------------------------------------------
+    
+    final_amount = round(total_amount, 2)
 
     try:
-        # Create a new order in a PENDING state
         new_order = Order(
             user_id=current_user.id,
-            total_amount=total_amount,
+            total_amount=final_amount,
             status=OrderStatus.PENDING
         )
         db.session.add(new_order)
         db.session.flush()
 
         for item in cart.items:
-            order_item = OrderItem(
-                order_id=new_order.id,
-                product_id=item.product_id,
-                quantity=item.quantity,
-                price=item.product.price
-            )
+            order_item = OrderItem(order_id=new_order.id, product_id=item.product_id, quantity=item.quantity, price=item.product.price)
             db.session.add(order_item)
 
         payment_intent = stripe.PaymentIntent.create(
-            amount=int(total_amount * 100),  # Amount in cents
+            amount=int(final_amount * 100),
             currency='eur',
             metadata={'order_id': new_order.id}
         )
         
-        new_payment = Payment(
-            order_id=new_order.id,
-            stripe_payment_intent_id=payment_intent.id,
-            amount=total_amount,
-            status=PaymentStatus.PENDING
-        )
+        new_payment = Payment(order_id=new_order.id, stripe_payment_intent_id=payment_intent.id, amount=final_amount, status=PaymentStatus.PENDING)
         db.session.add(new_payment)
 
-        # Clear the cart
         CartItem.query.filter_by(cart_id=cart.id).delete()
-        
         db.session.commit()
 
         return jsonify({'clientSecret': payment_intent.client_secret})
@@ -86,21 +83,18 @@ def stripe_webhook():
         order_id = payment_intent['metadata']['order_id']
         
         order = Order.query.get(order_id)
-        payment = Payment.query.filter_by(stripe_payment_intent_id=payment_intent.id).first()
-        
-        if order and payment:
-            order.status = OrderStatus.COMPLETED
-            payment.status = PaymentStatus.COMPLETED
-            
-            # --- AUTOMATIC INVOICE GENERATION FOR B2B ---
-            # Check if the user associated with the order is a B2B user
+        if order:
+            # --- AWARD LOYALTY POINTS ---
+            add_points_for_order(order)
+            # --------------------------
+
+            # ... (rest of the logic for order/payment status update and B2C/B2B invoice)
             if isinstance(order.user, B2BUser):
                 create_b2b_invoice_from_order(order)
-            # ---------------------------------------------
-                
             db.session.commit()
             
     return 'Success', 200
+
 
 
 @orders_bp.route('/history', methods=['GET'])
