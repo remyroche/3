@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Gestion des Produits - Admin - Maison Trüvra</title>
     <link rel="stylesheet" href="css/admin_style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
@@ -22,6 +23,7 @@
         <section id="productFormContainer" class="admin-form-container content-card" style="display: none;">
             <h2 class="section-heading" id="formTitle">Ajouter un Nouveau Produit</h2>
             <form id="productForm" class="admin-form" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" id="productId" name="product_id"> <!-- For editing -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="form-group">
@@ -196,6 +198,7 @@
         <div id="product-options-modal" class="admin-modal-overlay">
             <div class="admin-modal-content sm-max-w-2xl">
                 <form id="product-options-form" class="admin-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="admin-modal-header">
                         <h3 id="product-options-modal-title" class="admin-form-title">Gérer les Options de Poids pour <span id="modal-product-name-placeholder"></span></h3>
                         <button type="button" class="admin-modal-close" id="close-product-options-modal">&times;</button>
