@@ -6,6 +6,35 @@ const B2B_CART_STORAGE_KEY = 'maisonTruvraB2BCart';
 let currentB2BProductsCache = []; // Cache for currently displayed products with B2B pricing
 let b2bUserTier = null; // To store the logged-in B2B user's tier
 
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadDashboardInfo();
+    loadQuotes();
+    loadOrders();
+    // Invoices are on a separate page, so no need to load them here.
+});
+
+async function loadDashboardInfo() {
+    const token = localStorage.getItem('token');
+    try {
+        const response = await fetch('/pro/dashboard_info', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error('Failed to fetch dashboard info');
+        
+        const data = await response.json();
+        
+        document.getElementById('partnership-level').textContent = data.partnership_level || 'Bronze';
+        document.getElementById('partnership-discount').textContent = `Remise de ${data.discount_percent || 0}%`;
+        document.getElementById('annual-spend').textContent = `${(data.annual_spend || 0).toFixed(2)} €`;
+        document.getElementById('referral-credit').textContent = `${(data.referral_credit_balance || 0).toFixed(2)} €`;
+
+    } catch (error) {
+        console.error('Error loading dashboard info:', error);
+    }
+}
+
 function getB2BCartItems() {
     try {
         const cartJson = localStorage.getItem(B2B_CART_STORAGE_KEY);
