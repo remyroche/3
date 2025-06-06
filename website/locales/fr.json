@@ -839,3 +839,104 @@
   }
 
 }
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>French Translations</title>
+</head>
+<body>
+<pre>
+{
+    "home_title": "Le Marché des Pros",
+    "home_welcome": "Bienvenue sur le marché des pros",
+    "products_title": "Nos produits",
+    "about_title": "Notre histoire",
+    "contact_title": "Contactez-nous",
+    "login_title": "Connexion",
+    "logout_button": "Déconnexion",
+    "cart_title": "Votre panier",
+    "empty_cart_message": "Votre panier est vide.",
+    "total_label": "Total:",
+    "checkout_button": "Passer la commande",
+    "account_title": "Mon Compte",
+
+    "pro_header_title": "Marché des Pros",
+    "pro_header_home": "Accueil",
+    "pro_header_invoices": "Factures",
+    "pro_header_loyalty": "Programme de fidélité",
+    "pro_header_referral": "Parrainage",
+    "pro_header_profile": "Profil",
+    "pro_header_logout": "Déconnexion",
+
+    "invoices_title": "Mes Factures",
+    "invoices_main_title": "Mes Factures",
+    "invoices_error_loading": "Erreur lors du chargement des factures.",
+    "invoices_none_found": "Aucune facture trouvée.",
+    "invoices_header_number": "Numéro",
+    "invoices_header_date": "Date",
+    "invoices_header_amount": "Montant",
+    "invoices_header_status": "Statut",
+    "invoices_download": "Télécharger",
+    "invoices_status_paid": "Payée",
+    "invoices_status_unpaid": "Non Payée",
+
+    "profile_title": "Mon Profil",
+    "profile_main_title": "Gérer mon profil",
+    "profile_company_name": "Nom de l'entreprise",
+    "profile_siret": "SIRET",
+    "profile_email": "Adresse e-mail",
+    "profile_phone": "Téléphone",
+    "profile_address": "Adresse",
+    "profile_city": "Ville",
+    "profile_zip": "Code Postal",
+    "profile_save_button": "Enregistrer les modifications",
+    "profile_update_success": "Profil mis à jour avec succès.",
+    "profile_update_error": "Erreur lors de la mise à jour du profil.",
+
+    "pro_market_title": "Marché des Pros",
+    "pro_market_main_title": "Bienvenue sur le Marché des Pros",
+    "pro_market_cart_title": "Votre Panier",
+    "pro_market_total_label": "Total",
+    "pro_market_checkout_button": "Valider la commande",
+    "pro_market_add_to_cart": "Ajouter au panier",
+    "pro_market_product_added": "Produit ajouté!",
+
+    "loyalty_page_title": "Programme de Fidélité",
+    "loyalty_main_title": "Mon Programme de Fidélité",
+    "loyalty_how_it_works_title": "Comment ça marche ?",
+    "loyalty_how_it_works_p1": "Gagnez des points pour chaque euro dépensé sur notre plateforme. C'est notre façon de vous remercier pour votre fidélité.",
+    "loyalty_how_it_works_p2": "Utilisez vos points pour obtenir des réductions sur vos prochaines commandes.",
+    "loyalty_history_title": "Historique des points",
+    "loyalty_current_points_title": "Vos Points",
+    "loyalty_points_label": "points",
+    "loyalty_history_header_date": "Date",
+    "loyalty_history_header_description": "Description",
+    "loyalty_history_header_points": "Points",
+    "loyalty_history_no_entries": "Aucun mouvement de points pour le moment.",
+    "loyalty_history_error": "Erreur de chargement de l'historique.",
+
+    "referral_page_title": "Parrainage",
+    "referral_main_title": "Parrainez et Gagnez",
+    "referral_code_title": "Votre Code de Parrainage Unique",
+    "referral_copy_button": "Copier",
+    "referral_copy_success_message": "Copié !",
+    "referral_share_title": "Partagez votre code",
+    "referral_share_description": "Partagez ce code avec d'autres professionnels. Lorsqu'ils s'inscrivent et passent leur première commande, vous recevrez tous les deux une récompense !",
+    "referral_history_title": "Historique de vos parrainages",
+    "referral_history_header_date": "Date",
+    "referral_history_header_email": "Filleul (Email)",
+    "referral_history_header_status": "Statut",
+    "referral_history_status_pending": "En attente",
+    "referral_history_status_completed": "Complété",
+    "referral_history_no_entries": "Vous n'avez pas encore parrainé personne.",
+    "referral_history_error": "Erreur de chargement de l'historique.",
+
+    "footer_company_name": "Ma Super Entreprise",
+    "footer_rights_reserved": "Tous droits réservés.",
+    "footer_privacy_policy": "Politique de confidentialité",
+    "footer_terms_of_service": "Conditions d'utilisation"
+}
+</pre>
+</body>
+</html>
