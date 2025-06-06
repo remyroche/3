@@ -6,8 +6,56 @@ from datetime import datetime, timezone, timedelta
 
 from .. import db
 from ..models import (Invoice, InvoiceItem, Order, User,
-                    InvoiceStatusEnum, OrderStatusEnum, UserRoleEnum)
+                    InvoiceStatusEnum, OrderStatusEnum, UserRoleEnum
+                    db, B2BInvoice)
 from ..utils import sanitize_input
+from jinja2 import Environment, FileSystemLoader
+
+def get_invoice_html(invoice):
+    """
+    Renders the correct HTML template for an invoice based on its status.
+    - Renders a receipt for 'PAID' invoices.
+    - Renders a standard bill for other statuses.
+    """
+    if not invoice:
+        return None
+
+    template_dir = os.path.join(os.path.dirname(__file__), '..', 'templates')
+    env = Environment(loader=FileSystemLoader(template_dir))
+
+    # Choose the template based on the invoice status
+    if invoice.status == 'PAID':
+        template = env.get_template('b2b_receipt_template.html')
+    else:
+        template = env.get_template('b2b_invoice_template.html')
+        
+    return template.render(invoice=invoice)
+
+def create_b2b_invoice_from_order(order):
+    """
+    Creates and saves a B2BInvoice record from a completed Order.
+    This is called when a B2B user pays by card.
+    """
+    if not order or not order.user_id:
+        return None
+
+    # Generate a unique invoice number
+    invoice_number = f"INV-B2B-{order.id}-{order.created_at.strftime('%Y%m%d')}"
+
+    # Create the new invoice
+    new_invoice = B2BInvoice(
+        invoice_number=invoice_number,
+        user_id=order.user_id,
+        order_id=order.id,
+        amount=order.total_amount,
+        status='PAID'  # Marked as PAID since it's from a card transaction
+    )
+
+    db.session.add(new_invoice)
+    # The commit will happen as part of the order creation process in the webhook
+    
+    return new_invoice
+
 
 class B2BInvoiceService:
     """Handles invoice creation and management for B2B clients."""
