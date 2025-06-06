@@ -1,24 +1,76 @@
 // Assuming `t` function is available globally or via import, similar to professionnels.js
 // Assuming `showGlobalMessage` from ui.js is already i18n-aware or you pass translated strings to it.
 
-document.addEventListener('DOMContentLoaded', () => {
-    if (document.body.id !== 'page-invoices-pro') return;
-
-    if (!isLoggedIn()) {
-        window.location.href = 'professionnels.html'; // Redirect if not logged in
-        return;
-    }
-    // Also ensure the user is a professional
-    const user = getUser();
-    if (!user || user.role !== 'b2b_professional') {
-        showGlobalMessage(t('professionnels.erreurProduite'), 'error'); // Or a more specific message
-        window.location.href = 'index.html'; // Redirect to home or login
+document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('proToken');
+    if (!token) {
+        window.location.href = 'professionnels.html';
         return;
     }
 
+    const invoicesList = document.getElementById('invoices-list');
 
-    loadInvoices();
+    fetch('/api/b2b/invoices', {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to fetch invoices');
+        }
+        return response.json();
+    })
+    .then(invoices => {
+        displayInvoices(invoices);
+    })
+    .catch(error => {
+        console.error('Error loading invoices:', error);
+        invoicesList.innerHTML = `<p class="text-red-500">${window.i18n.error_loading}</p>`;
+    });
+
+    function displayInvoices(invoices) {
+        if (invoices.length === 0) {
+            invoicesList.innerHTML = `<p>${window.i18n.none_found}</p>`;
+            return;
+        }
+
+        const table = `
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${window.i18n.header_number}</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${window.i18n.header_date}</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${window.i18n.header_amount}</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${window.i18n.header_status}</th>
+                        <th scope="col" class="relative px-6 py-3">
+                            <span class="sr-only">Download</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    ${invoices.map(invoice => `
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${invoice.invoice_number}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(invoice.date).toLocaleDateString()}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${invoice.amount.toFixed(2)} €</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${invoice.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                    ${invoice.status === 'paid' ? window.i18n.status_paid : window.i18n.status_unpaid}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="/api/b2b/invoices/${invoice.id}/download" class="text-indigo-600 hover:text-indigo-900">${window.i18n.download}</a>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        invoicesList.innerHTML = table;
+    }
 });
+
 
 async function loadInvoices() {
     const tableBody = document.getElementById('invoices-table-body');
