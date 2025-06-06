@@ -1,36 +1,35 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const newsletterForm = document.getElementById('newsletter-form');
-    if (newsletterForm) {
-        newsletterForm.addEventListener('submit', async (e) => {
+    const proLoginForm = document.getElementById('pro-login-form');
+    const proLoginError = document.getElementById('pro-login-error');
+
+    if (proLoginForm) {
+        proLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const emailInput = document.getElementById('newsletter-email');
-            const message = document.getElementById('newsletter-message');
-            
-            if (!emailInput || !message || !window.i18n) return;
+            const email = document.getElementById('email-pro').value;
+            const password = document.getElementById('password-pro').value;
 
             try {
-                const response = await fetch('/api/newsletter/subscribe', {
+                const response = await fetch('/api/b2b/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: emailInput.value })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
-                    message.textContent = window.i18n.newsletter_success;
-                    message.className = 'mt-2 text-sm h-4 text-green-400';
-                    emailInput.value = '';
+                    localStorage.setItem('proToken', data.token);
+                    window.location.href = 'pro/marchedespros.html';
                 } else {
-                    message.textContent = window.i18n.newsletter_error;
-                    message.className = 'mt-2 text-sm h-4 text-red-400';
+                    proLoginError.textContent = window.i18n.login_error || (data.message || 'Login failed');
                 }
             } catch (error) {
-                console.error('Newsletter subscription error:', error);
-                message.textContent = window.i18n.newsletter_error;
-                message.className = 'mt-2 text-sm h-4 text-red-400';
+                console.error('Login error:', error);
+                proLoginError.textContent = window.i18n.login_error || 'An unexpected error occurred.';
             }
-
-            setTimeout(() => { message.textContent = ''; }, 3000);
         });
     }
 });
