@@ -1,175 +1,42 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-translate-key="product_detail.title">Détails du Produit - Maison Trüvra</title>
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/produit-detail.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title><%= t('product_detail_page_title') %></title>
+    <link href="[https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css](https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css)" rel="stylesheet">
+    <link rel="stylesheet" href="main/main.css">
 </head>
-<body>
-    <div id="main-header-placeholder"></div>
+<body class="bg-gray-100">
 
-    <main class="container mx-auto px-4 py-8 mt-20 md:mt-24 lg:mt-28">
-        <nav aria-label="breadcrumb" class="mb-6 text-sm text-gray-600">
-            <ol class="list-none p-0 inline-flex">
-                <li class="flex items-center">
-                    <a href="index.html" class="hover:text-mt-truffle-burgundy" data-translate-key="breadcrumb.home">Accueil</a>
-                    <i class="fas fa-chevron-right mx-2"></i>
-                </li>
-                <li class="flex items-center">
-                    <a href="nos-produits.html" class="hover:text-mt-truffle-burgundy" data-translate-key="breadcrumb.products">Nos Produits</a>
-                    <i class="fas fa-chevron-right mx-2"></i>
-                </li>
-                <li class="flex items-center">
-                    <span id="breadcrumb-product-name" class="text-gray-500" aria-current="page" data-translate-key="breadcrumb.current_product">Produit</span>
-                </li>
-            </ol>
-        </nav>
+    <%- include('header.html') %>
 
-        <div id="product-detail-container" class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">
-            <!-- Product Image Section -->
-            <div id="product-image-section" class="product-image-gallery">
-                <div class="main-image-container mb-4 relative">
-                    <img id="main-product-image" src="https://placehold.co/600x600/F5EEDE/11120D?text=Maison+Trüvra" alt="Image principale du produit" class="w-full h-auto object-cover rounded-lg shadow-lg cursor-pointer" data-translate-alt="product_detail.main_image_alt">
-                    <button id="prev-image-btn" class="absolute top-1/2 left-2 transform -translate-y-1/2 bg-black bg-opacity-30 text-white p-2 rounded-full hover:bg-opacity-50 focus:outline-none hidden">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <button id="next-image-btn" class="absolute top-1/2 right-2 transform -translate-y-1/2 bg-black bg-opacity-30 text-white p-2 rounded-full hover:bg-opacity-50 focus:outline-none hidden">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-                <div id="thumbnail-container" class="grid grid-cols-4 gap-2">
-                    <!-- Thumbnails will be populated here -->
-                </div>
-            </div>
-
-            <!-- Product Info Section -->
-            <div id="product-info-section" class="product-info">
-                <h1 id="product-name" class="text-3xl md:text-4xl font-serif font-bold text-mt-near-black mb-3">Nom du Produit</h1>
-                <p id="product-short-description" class="text-mt-earth-brown mb-4 text-base leading-relaxed">Description courte et alléchante du produit.</p>
-                
-                <div id="product-category-display" class="text-sm text-mt-warm-taupe mb-4">
-                    <strong data-translate-key="product_detail.category">Catégorie:</strong> <span id="product-category-link">N/A</span>
-                </div>
-
-                <div id="product-options-container" class="mb-5">
-                    <!-- Options like weight will be populated here for variable products -->
-                </div>
-
-                <div class="price-section mb-6">
-                    <span id="product-price" class="text-3xl font-bold text-mt-truffle-burgundy">€0.00</span>
-                    <!-- Add original price here if needed for sales -->
-                </div>
-
-                <div class="add-to-cart-section flex items-center gap-4 mb-2">
-                    <div class="quantity-selector">
-                        <label for="quantity-select" class="sr-only" data-translate-key="product_detail.quantity_label">Quantité</label>
-                        <input type="number" id="quantity-select" value="1" min="1" 
-                               class="w-20 p-2 border border-mt-warm-taupe rounded-md text-center focus:ring-2 focus:ring-mt-classic-gold focus:border-mt-classic-gold">
-                    </div>
-                    <button id="add-to-cart-btn" class="btn btn-primary flex-grow md:flex-none py-3 px-6">
-                        <i class="fas fa-shopping-cart mr-2"></i> <span data-translate-key="product_detail.add_to_cart">Ajouter au Panier</span>
-                    </button>
-                </div>
-                <div id="stock-indicator" class="text-sm mb-6 ml-1">
-                    <!-- Stock message will appear here -->
-                    <!-- e.g., <span class="text-mt-truffle-burgundy font-semibold">Stock faible : Plus que X en stock !</span> -->
-                    <!-- e.g., <span class="text-mt-deep-sage-green">En stock</span> -->
-                </div>
-
-
-                <div class="product-meta mt-6 space-y-2 text-sm">
-                    <p id="product-code-display"><strong data-translate-key="product_detail.product_code">Code Produit:</strong> <span>N/A</span></p>
-                    <p id="product-preservation-display"><strong data-translate-key="product_detail.preservation_type">Type de Conservation:</strong> <span>N/A</span></p>
-                    <p id="product-availability-display" class="hidden"><strong data-translate-key="product_detail.availability">Disponibilité:</strong> <span class="font-semibold">En Stock</span></p>
-                </div>
-                
-                <!-- Accordion for more details -->
-                <div id="product-details-accordion" class="mt-8 border-t border-mt-cream-dark pt-6">
-                    <!-- Long Description -->
-                    <div>
-                        <button class="accordion-toggle flex justify-between items-center w-full py-3 text-left font-semibold text-lg text-mt-near-black hover:text-mt-truffle-burgundy transition-colors duration-300 focus:outline-none">
-                            <span data-translate-key="product_detail.description_long_title">Description Détaillée</span>
-                            <i class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                        </button>
-                        <div class="accordion-content overflow-hidden max-h-0 transition-all duration-500 ease-in-out">
-                            <p id="product-long-description" class="text-mt-earth-brown pt-2 pb-4 text-base leading-relaxed">Description longue et détaillée...</p>
-                        </div>
-                    </div>
-                    <!-- Sensory Evaluation -->
-                    <div id="sensory-evaluation-accordion" class="border-t border-mt-cream-dark">
-                        <button class="accordion-toggle flex justify-between items-center w-full py-3 text-left font-semibold text-lg text-mt-near-black hover:text-mt-truffle-burgundy transition-colors duration-300 focus:outline-none">
-                            <span data-translate-key="product_detail.sensory_evaluation_title">Évaluation Sensorielle</span>
-                            <i class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                        </button>
-                        <div class="accordion-content overflow-hidden max-h-0 transition-all duration-500 ease-in-out">
-                            <p id="product-sensory-evaluation" class="text-mt-earth-brown pt-2 pb-4 text-base leading-relaxed">Analyse des saveurs, arômes, textures...</p>
-                        </div>
-                    </div>
-                    <!-- Food Pairings -->
-                    <div id="food-pairings-accordion" class="border-t border-mt-cream-dark">
-                        <button class="accordion-toggle flex justify-between items-center w-full py-3 text-left font-semibold text-lg text-mt-near-black hover:text-mt-truffle-burgundy transition-colors duration-300 focus:outline-none">
-                            <span data-translate-key="product_detail.food_pairings_title">Accords Mets & Vins</span>
-                            <i class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                        </button>
-                        <div class="accordion-content overflow-hidden max-h-0 transition-all duration-500 ease-in-out">
-                            <p id="product-food-pairings" class="text-mt-earth-brown pt-2 pb-4 text-base leading-relaxed">Suggestions d'accompagnements...</p>
-                        </div>
-                    </div>
-                     <!-- Species -->
-                    <div id="species-accordion" class="border-t border-mt-cream-dark">
-                        <button class="accordion-toggle flex justify-between items-center w-full py-3 text-left font-semibold text-lg text-mt-near-black hover:text-mt-truffle-burgundy transition-colors duration-300 focus:outline-none">
-                            <span data-translate-key="product_detail.species_title">Espèce / Variété</span>
-                            <i class="fas fa-chevron-down transform transition-transform duration-300"></i>
-                        </button>
-                        <div class="accordion-content overflow-hidden max-h-0 transition-all duration-500 ease-in-out">
-                            <p id="product-species" class="text-mt-earth-brown pt-2 pb-4 text-base leading-relaxed">Information sur l'espèce...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <main class="container mx-auto mt-10 px-4">
+        <div id="product-detail-container" class="bg-white p-8 rounded-lg shadow-md flex flex-col md:flex-row gap-8">
+            <!-- Product detail will be loaded by JS -->
         </div>
-
-        <!-- Product Reviews Section -->
-        <section id="product-reviews-section" class="mt-12 pt-8 border-t border-mt-warm-taupe">
-            <h2 class="text-2xl font-serif font-bold text-mt-near-black mb-6" data-translate-key="product_detail.reviews_title">Avis des Clients</h2>
-            <div id="reviews-summary" class="mb-6">
-                <!-- Summary like average rating and count can go here -->
-            </div>
-            <div id="reviews-list" class="space-y-6">
-                <!-- Reviews will be populated here -->
-                <p class="text-mt-earth-brown" data-translate-key="product_detail.no_reviews">Aucun avis pour ce produit pour le moment.</p>
-            </div>
-            <!-- Add review form if user is logged in and eligible -->
-            <div id="add-review-form-container" class="mt-8"></div>
-        </section>
-
-        <!-- Related Products Section -->
-        <section id="related-products-section" class="mt-12 pt-8 border-t border-mt-warm-taupe">
-            <h2 class="text-2xl font-serif font-bold text-mt-near-black mb-6" data-translate-key="product_detail.related_products_title">Vous Aimerez Aussi</h2>
-            <div id="related-products-container" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-                <!-- Related products will be populated by JS -->
-            </div>
-        </section>
-
     </main>
 
-    <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-[100] hidden transition-opacity duration-300">
-        <img id="modal-image-content" src="" alt="Image agrandie du produit" class="max-w-full max-h-full rounded-lg shadow-xl">
-        <button id="close-image-modal" class="absolute top-4 right-4 text-white text-3xl hover:text-gray-300 focus:outline-none">&times;</button>
-    </div>
-    
-    <div id="main-footer-placeholder"></div>
-    <div id="cart-toast-placeholder" class="fixed bottom-5 right-5 z-50"></div>
-    <div id="global-message-container" class="fixed top-20 right-5 z-[1000] w-auto max-w-sm"></div>
+    <%- include('footer.html') %>
 
+    <script>
+         window.i18n = {
+            add_to_cart: "<%= t('pro_market_add_to_cart') %>",
+            nav_account: "<%= t('nav_account') %>",
+            nav_logout: "<%= t('nav_logout') %>",
+            nav_login: "<%= t('nav_login') %>",
+            newsletter_success: "<%= t('newsletter_success') %>",
+            newsletter_error: "<%= t('newsletter_error') %>",
+            product_quantity: "<%= t('product_detail_quantity') %>",
+            product_not_found: "<%= t('product_detail_not_found') %>",
+        }
+    </script>
+    <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/cart.js"></script>
     <script src="js/ui.js"></script>
-    <script src="js/main.js"></script>
     <script src="js/products.js"></script>
+    <script src="js/newsletter.js"></script>
 </body>
 </html>
+
