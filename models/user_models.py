@@ -170,15 +170,34 @@ class B2BUser(BaseModel):
     invoices = db.relationship('B2BInvoice', back_populates='user', lazy='dynamic')
 
 
-    
+ 
     def to_dict(self):
-        data = super().to_dict()
-        data.update({
-            'is_restaurant_branding_partner': self.is_restaurant_branding_partner
-            data['partnership_level'] = self.partnership_level.value
-        })
+        """
+        Consolidated method to serialize user data.
+        Includes B2B profile information if it exists.
+        """
+        data = {
+            "id": self.id,
+            "email": self.email,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "role": self.role.value if self.role else None,
+            "is_active": self.is_active,
+            "is_verified": self.is_verified,
+            "is_totp_enabled": self.is_totp_enabled,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "preferred_language": self.preferred_language,
+            "newsletter_opt_in": self.newsletter_opt_in,
+            "referral_code": self.referral_code,
+            "referral_credit_balance": self.referral_credit_balance,
+        }
+        if self.role == UserRoleEnum.B2B_CUSTOMER and self.b2b_profile:
+            data.update(self.b2b_profile.to_dict())
         return data
-    
+
+    def __repr__(self):
+        return f'<User {self.email}>'
 
 class TokenBlocklist(db.Model):
     """
