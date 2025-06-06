@@ -17,14 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(product => {
-            document.title = product.name; // Update page title
+            document.title = product.name;
             const productHtml = `
                 <div class="w-full md:w-1/2">
                     <img src="${product.image_url || 'assets/images/placeholder.png'}" alt="${product.name}" class="rounded-lg shadow-lg w-full">
                 </div>
                 <div class="w-full md:w-1/2">
                     <h1 class="text-4xl font-bold mb-4">${product.name}</h1>
-                    <p class="text-gray-600 mb-6">${product.long_description}</p>
+                    <p class="text-gray-600 mb-6">${product.description || ''}</p>
                     <div class="flex items-center justify-between mb-6">
                         <span class="text-3xl font-bold text-blue-600">${product.price} €</span>
                         <div class="flex items-center">
