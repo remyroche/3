@@ -127,11 +127,10 @@ def get_products_admin():
     db = get_db_connection()
     include_variants_param = request.args.get('include_variants', 'false').lower() == 'true'
     try:
-        products_data = query_db(
-            """SELECT p.*, c.name as category_name, c.category_code
-               FROM products p LEFT JOIN categories c ON p.category_id = c.id
-               ORDER BY p.name""", db_conn=db
-        )
+        products_data = db.session.execute(
+            text("SELECT * FROM products WHERE category_id = :cat_id"),
+            {'cat_id': category_id}
+        ).fetchall()
         products = [dict(row) for row in products_data] if products_data else []
         for product in products:
             product['created_at'] = format_datetime_for_display(product['created_at'])
