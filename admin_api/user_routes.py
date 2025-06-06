@@ -1,120 +1,170 @@
-# admin_api/user_routes.py
-from flask import request, jsonify, current_app
+# backend/admin_api/user_routes.py
+# Admin User Management (CRUD)
+
+from flask import request, jsonify, current_app, url_for
 from flask_jwt_extended import get_jwt_identity
-import sqlite3
+from sqlalchemy import func, or_
+from datetime import datetime, timezone
 
 from . import admin_api_bp
-from ..database import get_db_connection, query_db
-from ..utils import admin_required, format_datetime_for_display
+from .. import db
+from ..models import User, ProfessionalDocument, UserRoleEnum, ProfessionalStatusEnum, B2BPricingTierEnum
+from ..utils import admin_required
 
 @admin_api_bp.route('/users', methods=['GET'])
 @admin_required
 def get_users_admin():
-    """Retrieves a list of users, with optional filters."""
-    db = get_db_connection()
-    role_filter = request.args.get('role')
-    status_filter_str = request.args.get('is_active')
-    search_term = request.args.get('search')
-
-    query_sql = "SELECT id, email, first_name, last_name, role, is_active, is_verified, company_name, professional_status, created_at FROM users"
-    conditions = []
-    params = []
-
-    if role_filter:
-        conditions.append("role = ?")
-        params.append(role_filter)
-    if status_filter_str is not None:
-        is_active_val = status_filter_str.lower() == 'true'
-        conditions.append("is_active = ?")
-        params.append(is_active_val)
-    if search_term:
-        conditions.append("(email LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR company_name LIKE ? OR CAST(id AS TEXT) LIKE ?)")
-        term = f"%{search_term}%"
-        params.extend([term, term, term, term, term])
-
-    if conditions:
-        query_sql += " WHERE " + " AND ".join(conditions)
-    query_sql += " ORDER BY created_at DESC"
-
+    audit_logger = current_app.audit_log_service
+    current_admin_id = get_jwt_identity()
     try:
-        users_data = query_db(query_sql, params, db_conn=db)
-        users = [dict(row) for row in users_data] if users_data else []
-        for user in users:
-            user['created_at'] = format_datetime_for_display(user['created_at'])
-        return jsonify(users=users, success=True), 200
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 15, type=int)
+        role_filter = request.args.get('role')
+        is_active_filter = request.args.get('is_active')
+        professional_status_filter = request.args.get('professional_status')
+        search_term = request.args.get('search')
+
+        query = User.query
+
+        if role_filter:
+            try: query = query.filter(User.role == UserRoleEnum(role_filter))
+            except ValueError: return jsonify(message=f"Invalid role filter: {role_filter}", success=False), 400
+        
+        if is_active_filter is not None:
+            query = query.filter(User.is_active == (is_active_filter.lower() == 'true'))
+        
+        if professional_status_filter:
+            try: query = query.filter(User.professional_status == ProfessionalStatusEnum(professional_status_filter))
+            except ValueError: return jsonify(message=f"Invalid professional status filter: {professional_status_filter}", success=False), 400
+        
+        if search_term:
+            term_like = f"%{search_term.lower()}%"
+            query = query.filter(
+                or_(
+                    User.email.ilike(term_like),
+                    User.first_name.ilike(term_like),
+                    User.last_name.ilike(term_like),
+                    User.company_name.ilike(term_like),
+                    func.cast(User.id, db.String).ilike(term_like)
+                )
+            )
+        
+        paginated_users = query.order_by(User.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+        users_data = [u.to_dict() for u in paginated_users.items]
+        
+        audit_logger.log_action(user_id=current_admin_id, action='admin_get_users_list', status='success', ip_address=request.remote_addr)
+        return jsonify({
+            "users": users_data,
+            "pagination": {
+                "current_page": paginated_users.page, "per_page": paginated_users.per_page,
+                "total_items": paginated_users.total, "total_pages": paginated_users.pages
+            },
+            "success": True
+        }), 200
     except Exception as e:
         current_app.logger.error(f"Error fetching users for admin: {e}", exc_info=True)
-        return jsonify(message=f"Failed to fetch users: {str(e)}", success=False), 500
+        return jsonify(message="Failed to fetch users.", success=False), 500
 
 @admin_api_bp.route('/users/<int:user_id>', methods=['GET'])
 @admin_required
 def get_user_admin_detail(user_id):
-    """Retrieves detailed information for a single user."""
-    db = get_db_connection()
-    try:
-        user_data = query_db("SELECT id, email, first_name, last_name, role, is_active, is_verified, company_name, vat_number, siret_number, professional_status, created_at, updated_at FROM users WHERE id = ?", [user_id], db_conn=db, one=True)
-        if not user_data:
-            return jsonify(message="User not found", success=False), 404
+    """Retrieves detailed information for a single user for the admin panel."""
+    user_model = User.query.get_or_404(user_id)
+    user_data = user_model.to_dict()
 
-        user = dict(user_data)
-        user['created_at'] = format_datetime_for_display(user['created_at'])
-        user['updated_at'] = format_datetime_for_display(user['updated_at'])
-
-        orders_data = query_db("SELECT id as order_id, order_date, total_amount, status FROM orders WHERE user_id = ? ORDER BY order_date DESC", [user_id], db_conn=db)
-        user['orders'] = [dict(row) for row in orders_data] if orders_data else []
-        for order_item in user['orders']:
-            order_item['order_date'] = format_datetime_for_display(order_item['order_date'])
-        return jsonify(user=user, success=True), 200
-    except Exception as e:
-        current_app.logger.error(f"Error fetching admin user detail for ID {user_id}: {e}", exc_info=True)
-        return jsonify(message=f"Failed to fetch user details (admin): {str(e)}", success=False), 500
-
+    if user_model.role == UserRoleEnum.B2B_PROFESSIONAL:
+        user_data['professional_documents'] = []
+        for doc in user_model.professional_documents:
+            doc_download_url = None
+            if doc.file_path:
+                try:
+                    # Uses the asset serving route
+                    doc_download_url = url_for('admin_api.serve_asset', asset_relative_path=doc.file_path, _external=True)
+                except Exception as e_doc_url:
+                    current_app.logger.warning(f"Could not generate URL for professional document {doc.file_path}: {e_doc_url}")
+            
+            user_data['professional_documents'].append({
+                "id": doc.id,
+                "document_type": doc.document_type,
+                "upload_date": doc.upload_date.strftime('%Y-%m-%d %H:%M:%S'),
+                "status": doc.status.value if doc.status else None,
+                "download_url": doc_download_url,
+                "notes": doc.notes
+            })
+            
+    return jsonify(user=user_data, success=True), 200
 
 @admin_api_bp.route('/users/<int:user_id>', methods=['PUT'])
 @admin_required
 def update_user_admin(user_id):
-    """Updates a user's details."""
+    """Updates a user's details from the admin panel."""
     current_admin_id = get_jwt_identity()
     audit_logger = current_app.audit_log_service
-    db = get_db_connection()
-    cursor = db.cursor()
     data = request.json
-
     if not data:
         return jsonify(message="No data provided for update.", success=False), 400
 
-    allowed_fields = ['first_name', 'last_name', 'role', 'is_active', 'is_verified',
-                      'company_name', 'vat_number', 'siret_number', 'professional_status']
-    update_payload = {k: data[k] for k in data if k in allowed_fields}
+    user = User.query.get_or_404(user_id)
+    
+    # List of fields an admin is allowed to modify
+    allowed_fields = [
+        'first_name', 'last_name', 'role', 'is_active', 'is_verified',
+        'company_name', 'vat_number', 'siret_number', 'professional_status',
+        'b2b_tier', 'newsletter_b2c_opt_in', 'newsletter_b2b_opt_in'
+    ]
+    updated_fields_log = []
 
-    if not update_payload:
-        return jsonify(message="No valid fields to update", success=False), 400
+    for field in allowed_fields:
+        if field in data:
+            new_value = data[field]
+            current_value = getattr(user, field, None)
+            
+            # Process value (e.g., convert to Enum or boolean) before comparison
+            try:
+                if field == 'role' and new_value:
+                    new_value_processed = UserRoleEnum(new_value)
+                elif field == 'professional_status' and new_value:
+                    new_value_processed = ProfessionalStatusEnum(new_value)
+                elif field == 'b2b_tier' and new_value:
+                    new_value_processed = B2BPricingTierEnum(new_value)
+                elif isinstance(current_value, bool):
+                    new_value_processed = str(new_value).lower() in ['true', '1', 'yes']
+                else:
+                    new_value_processed = new_value
+            except ValueError as e_enum:
+                return jsonify(message=f"Invalid value for {field}: {new_value}. Error: {str(e_enum)}", success=False), 400
 
-    if 'is_active' in update_payload:
-        update_payload['is_active'] = str(update_payload['is_active']).lower() == 'true'
-    if 'is_verified' in update_payload:
-        update_payload['is_verified'] = str(update_payload['is_verified']).lower() == 'true'
-
-    set_clause = ", ".join([f"{key} = ?" for key in update_payload.keys()])
-    sql_args = list(update_payload.values()) + [user_id]
+            if new_value_processed != current_value:
+                setattr(user, field, new_value_processed)
+                updated_fields_log.append(field)
+    
+    if not updated_fields_log:
+        return jsonify(message="No changes detected.", success=True), 200
 
     try:
-        if not query_db("SELECT id FROM users WHERE id = ?", [user_id], db_conn=db, one=True):
-             return jsonify(message="User not found", success=False), 404
-
-        cursor.execute(f"UPDATE users SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?", tuple(sql_args))
-        db.commit()
-
-        if cursor.rowcount == 0:
-            return jsonify(message="User not found or no changes made", success=False), 404
-
-        audit_logger.log_action(user_id=current_admin_id, action='update_user_admin', target_type='user', target_id=user_id, details=f"User {user_id} updated. Fields: {', '.join(update_payload.keys())}", status='success', ip_address=request.remote_addr)
-        return jsonify(message="User updated successfully", success=True), 200
-    except sqlite3.Error as e:
-        db.rollback()
-        current_app.logger.error(f"DB Error updating user {user_id}: {e}", exc_info=True)
-        return jsonify(message="Failed to update user due to a database error.", success=False), 500
+        user.updated_at = datetime.now(timezone.utc)
+        db.session.commit()
+        audit_logger.log_action(
+            user_id=current_admin_id, 
+            action='update_user_admin_success', 
+            target_type='user', 
+            target_id=user_id, 
+            details=f"Fields updated: {', '.join(updated_fields_log)}", 
+            status='success', 
+            ip_address=request.remote_addr
+        )
+        return jsonify(message="User updated successfully.", user=user.to_dict(), success=True), 200
     except Exception as e:
-        db.rollback()
-        current_app.logger.error(f"Error updating user {user_id}: {e}", exc_info=True)
-        return jsonify(message=f"Failed to update user: {str(e)}", success=False), 500
+        db.session.rollback()
+        current_app.logger.error(f"Failed to update user {user_id}: {e}", exc_info=True)
+        audit_logger.log_action(
+            user_id=current_admin_id, 
+            action='update_user_admin_fail', 
+            target_type='user', 
+            target_id=user_id, 
+            details=str(e), 
+            status='failure', 
+            ip_address=request.remote_addr
+        )
+        return jsonify(message="Failed to update user.", error=str(e), success=False), 500
+
