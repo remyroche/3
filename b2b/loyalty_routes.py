@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, jsonify
 from flask_login import login_required, current_user
 from models import B2BUser
-from services.b2b_loyalty_service import get_loyalty_points_for_user
+from services.b2b_loyalty_service import get_user_loyalty_info
 
 loyalty_blueprint = Blueprint('b2b_loyalty', __name__)
 
@@ -16,13 +16,16 @@ def loyalty_program():
     return render_template('pro/programme-fidelite.html')
 
 
-@loyalty_blueprint.route('/get_loyalty_points')
+@loyalty_blueprint.route('/get_loyalty_info')
 @login_required
 def get_loyalty_points():
     """
-    Get the loyalty points for the current B2B user.
+    Get the full loyalty info (points, tier, discount) for the current B2B user.
     """
     if not isinstance(current_user, B2BUser):
         return jsonify({"error": "Not a B2B user"}), 403
-    points = get_loyalty_points_for_user(current_user.id)
-    return jsonify({"points": points})
+    
+    loyalty_info = get_user_loyalty_info(current_user.id)
+    if loyalty_info:
+        return jsonify(loyalty_info)
+    return jsonify({"error": "Could not retrieve loyalty information"}), 500
