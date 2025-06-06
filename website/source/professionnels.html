@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title data-translate-key="professionals_page.title">Espace Professionnels - Maison Trüvra</title>
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/professionnels.css"> <!-- Specific styles for this page -->
@@ -23,6 +24,7 @@
                 <div id="pro-login-form-container">
                     <h2 class="section-title text-2xl mb-6" data-translate-key="professionals_page.login_title">Connexion Professionnel</h2>
                     <form id="pro-login-form" class="space-y-6">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="form-group">
                             <label for="pro-login-email" class="block text-sm font-medium text-mt-earth-brown mb-1" data-translate-key="form.email_label">Adresse e-mail</label>
                             <input type="email" id="pro-login-email" name="email" required class="form-input w-full" placeholder="votreadresse@example.com">
@@ -48,6 +50,7 @@
                     <h2 class="section-title text-2xl mb-6" data-translate-key="professionals_page.register_title">Demande d'Ouverture de Compte Professionnel</h2>
                     <p class="text-sm text-mt-earth-brown mb-6" data-translate-key="professionals_page.register_intro">Remplissez le formulaire ci-dessous. Notre équipe examinera votre demande et vous contactera dans les plus brefs délais.</p>
                     <form id="pro-register-form" class="space-y-6" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="form-group">
                                 <label for="pro-company-name" class="form-label" data-translate-key="form.company_name_label">Nom de l'entreprise <span class="text-red-500">*</span></label>
