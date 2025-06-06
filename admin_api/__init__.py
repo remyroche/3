@@ -1,36 +1,18 @@
-# backend/models/__init__.py
-# This file makes the 'models' directory a Python package and imports all model classes
-# into the package's namespace, so they can be easily imported elsewhere.
-# e.g., from ..models import User, Product, Order
+# backend/admin_api/__init__.py
+from flask import Blueprint
 
-from .base import db
-from .enums import (
-    UserRoleEnum, ProfessionalStatusEnum, B2BPricingTierEnum, ProductTypeEnum, 
-    PreservationTypeEnum, SerializedInventoryItemStatusEnum, StockMovementTypeEnum, 
-    OrderStatusEnum, InvoiceStatusEnum, AuditLogStatusEnum, AssetTypeEnum, 
-    NewsletterTypeEnum, QuoteRequestStatusEnum
-)
-from .user_models import User, ProfessionalDocument, TokenBlocklist, ReferralAwardLog
-from .product_models import (
-    Category, Product, ProductImage, ProductWeightOption, 
-    ProductB2BTierPrice, ProductLocalization, CategoryLocalization
-)
-from .order_models import Order, OrderItem, QuoteRequest, QuoteRequestItem, Invoice, InvoiceItem
-from .inventory_models import SerializedInventoryItem, StockMovement
-from .utility_models import Review, Cart, CartItem, NewsletterSubscription, Setting, GeneratedAsset, AuditLog
+# Define the main blueprint for the entire admin API.
+# All other route files in this module will attach their routes to this blueprint.
+admin_api_bp = Blueprint('admin_api', __name__, url_prefix='/api/admin')
 
-
-# You can optionally create an __all__ variable to define the public API of this package
-__all__ = [
-    'db', 
-    'User', 'ProfessionalDocument', 'TokenBlocklist', 'ReferralAwardLog',
-    'Category', 'Product', 'ProductImage', 'ProductWeightOption', 'ProductB2BTierPrice',
-    'ProductLocalization', 'CategoryLocalization',
-    'Order', 'OrderItem', 'QuoteRequest', 'QuoteRequestItem', 'Invoice', 'InvoiceItem',
-    'SerializedInventoryItem', 'StockMovement',
-    'Review', 'Cart', 'CartItem', 'NewsletterSubscription', 'Setting', 'GeneratedAsset', 'AuditLog',
-    'UserRoleEnum', 'ProfessionalStatusEnum', 'B2BPricingTierEnum', 'ProductTypeEnum',
-    'PreservationTypeEnum', 'SerializedInventoryItemStatusEnum', 'StockMovementTypeEnum',
-    'OrderStatusEnum', 'InvoiceStatusEnum', 'AuditLogStatusEnum', 'AssetTypeEnum',
-    'NewsletterTypeEnum', 'QuoteRequestStatusEnum'
-]
+# Import all the route modules to register their routes with the admin_api_bp.
+# This pattern keeps the code modular and organized.
+from . import auth_routes
+from . import user_routes
+from . import product_routes
+from . import order_routes
+from . import inventory_routes # Assuming inventory is managed under admin
+from . import dashboard_routes
+from . import b2b_management_routes
+from . import site_management_routes
+from . import asset_routes
