@@ -1,3 +1,42 @@
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const proLoginForm = document.getElementById('pro-login-form');
+    const proLoginError = document.getElementById('pro-login-error');
+
+    if (proLoginForm) {
+        proLoginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            proLoginError.textContent = ''; // Clear previous errors
+            const email = document.getElementById('email-pro').value;
+            const password = document.getElementById('password-pro').value;
+
+            try {
+                const response = await fetch('/api/b2b/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    // Login was successful, cookie is set by the server.
+                    // Redirect to the pros market.
+                    window.location.href = 'pro/marchedespros.html';
+                } else {
+                    const data = await response.json();
+                    proLoginError.textContent = window.i18n.login_error || (data.message || 'Login failed');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                proLoginError.textContent = window.i18n.login_error || 'An unexpected error occurred.';
+            }
+        });
+    }
+});
+</script>
+
+
 document.addEventListener('DOMContentLoaded', () => {
     if (document.body.id !== 'page-professionnels') return;
 
