@@ -153,7 +153,6 @@ def update_category(category_id):
     if not name or not category_code:
         return jsonify(message="Name and Category Code are required.", success=False), 400
 
-    # Uniqueness checks
     if name != category.name and Category.query.filter(func.lower(Category.name) == name.lower(), Category.id != category_id).first():
         return jsonify(message="Category name already exists.", success=False), 409
     if category_code != category.category_code and Category.query.filter(func.upper(Category.category_code) == category_code, Category.id != category_id).first():
@@ -163,7 +162,6 @@ def update_category(category_id):
     if new_slug != category.slug and Category.query.filter_by(slug=new_slug, id!=category_id).first():
         return jsonify(message=f"Category name (slug: '{new_slug}') already exists.", success=False), 409
 
-    # Image handling
     if remove_image and category.image_url:
         old_image_path = os.path.join(current_app.config['UPLOAD_FOLDER'], category.image_url)
         if os.path.exists(old_image_path): os.remove(old_image_path)
@@ -179,7 +177,6 @@ def update_category(category_id):
         image_file.save(os.path.join(upload_folder_cats, filename))
         category.image_url = os.path.join('categories', filename).replace(os.sep, '/')
 
-    # Update fields
     category.name = name
     category.slug = new_slug
     category.category_code = category_code
@@ -245,24 +242,29 @@ def get_products_admin():
             if include_variants and p_model.type == ProductTypeEnum.VARIABLE_WEIGHT:
                 product_dict['weight_options'] = [opt.to_dict() for opt in p_model.weight_options]
                 product_dict['variant_count'] = len(product_dict['weight_options'])
-            
+            else:
+                product_dict['variant_count'] = p_model.weight_options.count()
+
             products_data.append(product_dict)
         return jsonify(products=products_data, success=True), 200
     except Exception as e:
         current_app.logger.error(f"Error fetching admin products list: {e}", exc_info=True)
         return jsonify(message="Failed to fetch products list.", success=False), 500
 
+
 @admin_api_bp.route('/products', methods=['POST'])
 @admin_required
 def create_product_admin():
-    current_user_id = get_jwt_identity()
+    current_admin_id = get_jwt_identity()
     audit_logger = current_app.audit_log_service
     data = request.form.to_dict()
     main_image_file = request.files.get('main_image_file')
 
-    if not data.get('name') or not data.get('product_code') or not data.get('category_id'):
+    # Basic Validation
+    if not all(data.get(k) for k in ['name', 'product_code', 'category_id']):
         return jsonify(message="Name (FR), Product Code, and Category are required.", success=False), 400
 
+    # Uniqueness Checks
     if Product.query.filter(func.upper(Product.product_code) == data['product_code'].upper()).first():
         return jsonify(message=f"Product Code '{data['product_code']}' already exists.", success=False), 409
     
@@ -271,6 +273,7 @@ def create_product_admin():
         return jsonify(message=f"A product with a similar name (slug: '{slug}') already exists.", success=False), 409
         
     try:
+        # Image Upload Handling
         main_image_db_path = None
         if main_image_file and allowed_file(main_image_file.filename):
             filename = secure_filename(f"product_{slug}_{uuid.uuid4().hex[:8]}.{get_file_extension(main_image_file.filename)}")
@@ -279,6 +282,7 @@ def create_product_admin():
             main_image_file.save(os.path.join(upload_folder, filename))
             main_image_db_path = os.path.join('products', filename).replace(os.sep, '/')
 
+        # Create Product Instance
         new_product = Product(
             name=sanitize_input(data['name']),
             product_code=sanitize_input(data['product_code']).upper(),
@@ -294,6 +298,7 @@ def create_product_admin():
         db.session.add(new_product)
         db.session.flush()
 
+        # Handle Localizations
         loc_data_fr = { 'name': new_product.name, 'description': data.get('description'), 'long_description': data.get('long_description') }
         _update_or_create_product_localization(new_product.id, 'fr', loc_data_fr)
         
@@ -303,7 +308,7 @@ def create_product_admin():
 
         db.session.commit()
         generate_static_json_files()
-        audit_logger.log_action(user_id=current_user_id, action='create_product_admin_success', target_type='product', target_id=new_product.id, details=f"Product '{new_product.name}' created.", status='success')
+        audit_logger.log_action(user_id=current_admin_id, action='create_product_admin_success', target_type='product', target_id=new_product.id, details=f"Product '{new_product.name}' created.", status='success')
         return jsonify(message="Product created successfully", product=new_product.to_dict(), success=True), 201
 
     except Exception as e:
@@ -311,23 +316,60 @@ def create_product_admin():
         current_app.logger.error(f"Error creating product: {e}", exc_info=True)
         return jsonify(message="Server error while creating product.", error=str(e), success=False), 500
 
+
 @admin_api_bp.route('/products/<int:product_id>', methods=['PUT'])
 @admin_required
 def update_product_admin(product_id):
     product = Product.query.get_or_404(product_id)
     data = request.form.to_dict()
+    main_image_file = request.files.get('main_image_file')
+    remove_main_image = data.get('remove_main_image_flag') == 'true'
     current_admin_id = get_jwt_identity()
     audit_logger = current_app.audit_log_service
 
-    # Update logic from the monolithic routes.py should be adapted here.
-    # This involves updating product fields, handling image uploads/deletions,
-    # and updating localizations.
-
     try:
-        # Example: Updating a simple field
-        product.name = sanitize_input(data.get('name', product.name))
-        # ... update all other fields from 'data' similar to create_product_admin ...
+        name_fr = sanitize_input(data.get('name', product.name))
+        new_product_code = sanitize_input(data.get('product_code', product.product_code)).strip().upper()
         
+        # Check for uniqueness conflicts
+        if name_fr != product.name:
+            new_slug = generate_slug(name_fr)
+            if Product.query.filter(Product.slug == new_slug, Product.id != product_id).first():
+                return jsonify(message=f"Product name (slug: '{new_slug}') already exists.", success=False), 409
+            product.slug = new_slug
+        
+        if new_product_code != product.product_code and Product.query.filter(Product.product_code == new_product_code, Product.id != product_id).first():
+            return jsonify(message=f"Product Code '{new_product_code}' already exists.", success=False), 409
+        
+        product.name = name_fr
+        product.product_code = new_product_code
+        product.category_id = int(data['category_id']) if data.get('category_id') else product.category_id
+        product.is_active = str(data.get('is_active', 'true')).lower() == 'true'
+        product.is_featured = str(data.get('is_featured', 'false')).lower() == 'true'
+        product.base_price = float(data['price']) if data.get('price') else None
+
+        # Handle image logic
+        if remove_main_image and product.main_image_url:
+            old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], product.main_image_url)
+            if os.path.exists(old_path): os.remove(old_path)
+            product.main_image_url = None
+        elif main_image_file and allowed_file(main_image_file.filename):
+            if product.main_image_url:
+                old_path = os.path.join(current_app.config['UPLOAD_FOLDER'], product.main_image_url)
+                if os.path.exists(old_path): os.remove(old_path)
+            
+            filename = secure_filename(f"product_{product.slug}_{uuid.uuid4().hex[:8]}.{get_file_extension(main_image_file.filename)}")
+            upload_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'products')
+            os.makedirs(upload_folder, exist_ok=True)
+            main_image_file.save(os.path.join(upload_folder, filename))
+            product.main_image_url = os.path.join('products', filename).replace(os.sep, '/')
+
+        # Handle localization updates
+        loc_data_fr = { 'name': name_fr, 'description': data.get('description'), 'long_description': data.get('long_description') }
+        _update_or_create_product_localization(product_id, 'fr', loc_data_fr)
+        loc_data_en = { 'name_en': data.get('name_en'), 'description_en': data.get('description_en'), 'long_description_en': data.get('long_description_en') }
+        _update_or_create_product_localization(product_id, 'en', loc_data_en)
+
         db.session.commit()
         generate_static_json_files()
         audit_logger.log_action(user_id=current_admin_id, action='update_product_admin_success', target_type='product', target_id=product_id, details=f"Product '{product.name}' updated.", status='success')
@@ -346,8 +388,7 @@ def update_product_options_admin(product_id):
 
     data = request.json
     options_data = data.get('options', [])
-    
-    existing_option_ids_from_payload = {opt.get('option_id') for opt in options_data if opt.get('option_id')}
+    existing_option_ids_from_payload = {int(opt.get('option_id')) for opt in options_data if opt.get('option_id')}
 
     try:
         # Delete options not present in the payload
@@ -365,18 +406,13 @@ def update_product_options_admin(product_id):
                 raise ValueError("Weight, price, and SKU suffix are required for each option.")
 
             if option_id: # Update existing
-                option = ProductWeightOption.query.get(option_id)
+                option = ProductWeightOption.query.get(int(option_id))
                 if option and option.product_id == product_id:
                     option.weight_grams = weight
                     option.price = price
                     option.sku_suffix = sku_suffix
             else: # Create new
-                new_option = ProductWeightOption(
-                    product_id=product_id,
-                    weight_grams=weight,
-                    price=price,
-                    sku_suffix=sku_suffix
-                )
+                new_option = ProductWeightOption(product_id=product_id, weight_grams=weight, price=price, sku_suffix=sku_suffix)
                 db.session.add(new_option)
 
         db.session.commit()
@@ -388,6 +424,7 @@ def update_product_options_admin(product_id):
         db.session.rollback()
         current_app.logger.error(f"Failed to update product options for product ID {product_id}: {e}", exc_info=True)
         return jsonify(message="Failed to update product options due to a server error.", success=False), 500
+
 
 @admin_api_bp.route('/products/<int:product_id>', methods=['DELETE'])
 @admin_required
