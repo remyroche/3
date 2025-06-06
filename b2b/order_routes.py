@@ -5,6 +5,31 @@ from models.enums import OrderStatus
 
 order_blueprint = Blueprint('b2b_order', __name__)
 
+@order_blueprint.route('/quotes', methods=['GET'])
+@login_required
+def get_quotes():
+    """
+    Get all quotes for the current B2B user.
+    """
+    if not isinstance(current_user, B2BUser):
+        return jsonify({"error": "Not a B2B user"}), 403
+    
+    quotes = Quote.query.filter_by(user_id=current_user.id).all()
+    return jsonify([quote.to_dict() for quote in quotes])
+
+@order_blueprint.route('/orders', methods=['GET'])
+@login_required
+def get_orders():
+    """
+    Get all orders for the current B2B user.
+    """
+    if not isinstance(current_user, B2BUser):
+        return jsonify({"error": "Not a B2B user"}), 403
+        
+    orders = Order.query.filter_by(user_id=current_user.id).all()
+    return jsonify([order.to_dict() for order in orders])
+
+
 @order_blueprint.route('/quote_to_order', methods=['POST'])
 @login_required
 def quote_to_order():
