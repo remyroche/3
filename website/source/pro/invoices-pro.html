@@ -1,70 +1,43 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-translate-key="pro_invoices.title">Mes Factures - Espace Pro - Maison Trüvra</title>
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/compte.css"> <!-- Assuming similar styles to account page or specific pro-account.css -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title><%= t('invoices_title') %></title>
+    <link href="[https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css](https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css)" rel="stylesheet">
+    <link rel="stylesheet" href="css/pro_common.css">
 </head>
-<body>
-    <div id="main-header-placeholder"></div>
+<body class="bg-gray-100">
+    <%- include('pro_header.html') %>
 
-    <main class="container mx-auto px-4 py-8 mt-20 md:mt-24 lg:mt-28">
-        <header class="page-header text-center mb-10 md:mb-12">
-            <h1 class="page-title text-3xl md:text-4xl font-bold" data-translate-key="pro_invoices.main_title">Mes Factures Professionnelles</h1>
-        </header>
-
-        <section id="pro-invoices-list" class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="section-title text-xl font-semibold" data-translate-key="pro_invoices.list_title">Historique des Factures</h2>
-                <!-- Maybe add filters here if needed: by date, status -->
+    <main class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6"><%= t('invoices_main_title') %></h1>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div id="invoices-list" class="space-y-4">
+                <!-- Invoices will be loaded here by invoices-pro.js -->
             </div>
-
-            <div id="invoices-table-container" class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="border-b-2 border-mt-classic-gold">
-                        <tr>
-                            <th class="py-3 px-4 text-sm font-semibold uppercase text-mt-earth-brown tracking-wider" data-translate-key="pro_invoices.table_number">N° Facture</th>
-                            <th class="py-3 px-4 text-sm font-semibold uppercase text-mt-earth-brown tracking-wider" data-translate-key="pro_invoices.table_date">Date</th>
-                            <th class="py-3 px-4 text-sm font-semibold uppercase text-mt-earth-brown tracking-wider text-right" data-translate-key="pro_invoices.table_amount">Montant</th>
-                            <th class="py-3 px-4 text-sm font-semibold uppercase text-mt-earth-brown tracking-wider" data-translate-key="pro_invoices.table_status">Statut</th>
-                            <th class="py-3 px-4 text-sm font-semibold uppercase text-mt-earth-brown tracking-wider text-center" data-translate-key="pro_invoices.table_actions">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="professional-invoices-tbody">
-                        <!-- Invoice rows will be populated by JS -->
-                        <tr>
-                            <td colspan="5" class="text-center py-10 text-mt-earth-brown" data-translate-key="pro_invoices.loading">Chargement de vos factures...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div id="pro-invoices-empty-message" class="text-center py-10 text-mt-earth-brown hidden">
-                <i class="fas fa-file-invoice fa-3x text-mt-warm-taupe mb-4"></i>
-                <p data-translate-key="pro_invoices.no_invoices">Aucune facture trouvée pour votre compte.</p>
-            </div>
-             <div id="pro-invoices-pagination-controls" class="mt-6 flex justify-center">
-                <!-- Pagination will be inserted here -->
-            </div>
-        </section>
-         <div class="mt-8 text-center">
-            <a href="professionnels.html#pro-dashboard-snippet" class="btn btn-outline" data-translate-key="pro_invoices.back_to_dashboard_pro">
-                <i class="fas fa-arrow-left mr-2"></i>Retour à l'Espace Pro
-            </a>
         </div>
     </main>
 
-    <div id="main-footer-placeholder"></div>
-    <div id="cart-toast-placeholder" class="fixed bottom-5 right-5 z-50"></div>
-    <div id="global-message-container" class="fixed top-20 right-5 z-[1000] w-auto max-w-sm"></div>
+    <%- include('pro_footer.html') %>
 
-    <script src="js/api.js"></script>
-    <script src="js/auth.js"></script> <!-- Important for checking pro login status -->
-    <script src="js/cart.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/invoices-pro.js"></script> <!-- Specific JS for this page -->
+    <script>
+        // Pass translations to the JavaScript file to handle dynamic content.
+        window.i18n = {
+            error_loading: "<%= t('invoices_error_loading') %>",
+            none_found: "<%= t('invoices_none_found') %>",
+            header_number: "<%= t('invoices_header_number') %>",
+            header_date: "<%= t('invoices_header_date') %>",
+            header_amount: "<%= t('invoices_header_amount') %>",
+            header_status: "<%= t('invoices_header_status') %>",
+            download: "<%= t('invoices_download') %>",
+            status_paid: "<%= t('invoices_status_paid') %>",
+            status_unpaid: "<%= t('invoices_status_unpaid') %>"
+        };
+    </script>
+    <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="js/invoices-pro.js"></script>
+    <script src="js/pro_main.js"></script>
 </body>
 </html>
