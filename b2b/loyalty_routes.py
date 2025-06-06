@@ -1,9 +1,27 @@
 from flask import Blueprint, render_template, jsonify
 from flask_login import login_required, current_user
 from models import B2BUser
-from services.b2b_loyalty_service import get_user_loyalty_info
+from services.b2b_loyalty_service import get_user_loyalty_info, LoyaltyService
 
 loyalty_blueprint = Blueprint('b2b_loyalty', __name__)
+
+@b2b_bp.route('/loyalty', methods=['GET'])
+@jwt_required()
+def get_loyalty_status():
+    user_id = get_jwt_identity()
+    loyalty_service = LoyaltyService()
+    # This service should be adapted to fetch loyalty points and history
+    # For now, returning mock data.
+    mock_data = {
+        "total_points": 1250,
+        "history": [
+            {"date": "2025-05-15", "description": "Order #1055", "points": 500},
+            {"date": "2025-04-20", "description": "Order #1043", "points": 750}
+        ]
+    }
+    return jsonify(mock_data)
+
+
 
 @loyalty_blueprint.route('/loyalty_program')
 @login_required
