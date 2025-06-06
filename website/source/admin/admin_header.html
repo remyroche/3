@@ -1,4 +1,9 @@
 <!-- admin_header.html -->
+<head>
+    <!-- ... other head elements like charset, viewport, title, css ... -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- ... -->
+</head>
 <header class="admin-page-header-bar">
     <div class="container">
         <div class="flex items-center space-x-4">
