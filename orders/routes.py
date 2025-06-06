@@ -15,27 +15,39 @@ stripe.api_key = Config.STRIPE_SECRET_KEY # Ensure you have this in your config
 @login_required
 def create_order():
     data = request.get_json()
+    use_credit = data.get('use_credit', False)
+
     cart = Cart.query.filter_by(user_id=current_user.id).first()
     if not cart or not cart.items:
         return jsonify({'error': 'Your cart is empty'}), 400
 
-    total_amount = cart.get_total_price()
-    discount_amount = 0
-
-    # --- APPLY LOYALTY DISCOUNT FOR B2B USERS ---
-    if isinstance(current_user, B2BUser):
-        discount_percent = get_discount_for_tier(current_user.loyalty_tier)
-        if discount_percent > 0:
-            discount_amount = (total_amount * discount_percent) / 100
-            total_amount -= discount_amount
-    # ---------------------------------------------
+    subtotal = cart.get_total_price()
     
-    final_amount = round(total_amount, 2)
+    # 1. Apply Loyalty Tier Discount
+    discount_amount = 0
+    if isinstance(current_user.b2b_profile, B2BUser):
+        discount_percent = get_discount_for_tier(current_user.b2b_profile.loyalty_tier)
+        if discount_percent > 0:
+            discount_amount = (subtotal * discount_percent) / 100
+    
+    amount_after_discount = subtotal - discount_amount
 
+    # 2. Apply Referral Credit
+    credit_used = 0
+    if use_credit and current_user.referral_credit_balance > 0:
+        credit_to_apply = min(current_user.referral_credit_balance, amount_after_discount)
+        credit_used = credit_to_apply
+        current_user.referral_credit_balance -= credit_used
+    
+    final_amount = round(amount_after_discount - credit_used, 2)
+    
     try:
         new_order = Order(
             user_id=current_user.id,
             total_amount=final_amount,
+            subtotal=subtotal,
+            discount_amount=discount_amount,
+            credit_used=credit_used,
             status=OrderStatus.PENDING
         )
         db.session.add(new_order)
