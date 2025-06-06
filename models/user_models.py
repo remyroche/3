@@ -26,7 +26,7 @@ class User(BaseModel, UserMixin):
     referral_code = db.Column(db.String(50), unique=True, nullable=True, index=True)
     referred_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     referral_credit_balance = db.Column(db.Float, default=0.0, nullable=False)
-    # -----------------------
+    referrals = db.relationship('User', backref=db.backref('referrer', remote_side='User.id'))
     
     # Relationships
     b2b_profile = db.relationship('B2BUser', back_populates='user', uselist=False, cascade="all, delete-orphan")
@@ -159,11 +159,12 @@ class B2BUser(BaseModel):
     
     # --- RESTAURANT BRANDING INCENTIVE ---
     is_restaurant_branding_partner = db.Column(db.Boolean, default=False, nullable=False)
-    # ------------------------------------
 
+    # --- UPDATED PARTNERSHIP FIELD ---
+    partnership_level = db.Column(db.Enum(PartnershipLevel), default=PartnershipLevel.BRONZE, nullable=False)
+    is_restaurant_branding_partner = db.Column(db.Boolean, default=False, nullable=False)
     user = db.relationship('User', back_populates='b2b_profile')
 
-    
     # Relationships
     user = db.relationship('User', back_populates='b2b_profile')
     invoices = db.relationship('B2BInvoice', back_populates='user', lazy='dynamic')
@@ -174,6 +175,7 @@ class B2BUser(BaseModel):
         data = super().to_dict()
         data.update({
             'is_restaurant_branding_partner': self.is_restaurant_branding_partner
+            data['partnership_level'] = self.partnership_level.value
         })
         return data
     
