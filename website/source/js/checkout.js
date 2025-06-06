@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const paymentForm = document.getElementById('payment-form');
     const checkoutSummaryContainer = document.getElementById('checkout-summary-container');
     const paymentButtonAmount = document.getElementById('payment-amount-button');
+
     
     async function displayCheckoutSummary() {
         if (!checkoutSummaryContainer) return;
