@@ -12,7 +12,7 @@ from . import admin_api_bp
 from .. import db, limiter
 from ..models import User, TokenBlocklist, UserRoleEnum
 from ..utils import admin_required
-
+from models.user_models import ProfessionalUser, db
 
 # --- Pydantic Schemas for Validation ---
 class RegistrationSchema(BaseModel):
@@ -25,44 +25,43 @@ class RegistrationSchema(BaseModel):
 class LoginSchema(BaseModel):
     email: EmailStr
     password: str
-
 # --- Registration Route ---
 @auth_bp.route('/register', methods=['POST'])
 def register():
     """
-    Handles registration for new professional users.
-    Validates input, checks for existing users, and creates a new user.
+    Creates a new professional user with an inactive status,
+    requiring admin approval before login.
     """
     try:
         data = RegistrationSchema.parse_obj(request.get_json())
     except ValidationError as e:
         return jsonify({"message": "Validation failed", "errors": e.errors()}), 422
 
-    # Check if user already exists
     if ProfessionalUser.query.filter_by(email=data.email).first() or \
        ProfessionalUser.query.filter_by(siret=data.siret).first():
         return jsonify({"message": "A user with this email or SIRET already exists."}), 409
 
-    # Create new user
+    # Create user with is_active=False by default
     new_user = ProfessionalUser(
         email=data.email,
         company_name=data.company_name,
         siret=data.siret,
-        phone_number=data.phone_number
+        phone_number=data.phone_number,
+        is_active=False # User cannot log in until an admin changes this to True
     )
-    new_user.set_password(data.password) # Hashes the password
+    new_user.set_password(data.password)
 
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify({"message": "User created successfully. Please log in."}), 201
+    return jsonify({"message": "Registration successful. Your account is pending admin approval."}), 201
 
 
 # --- Login and Logout Routes ---
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """
-    B2B User login route. Sets an HttpOnly access token cookie on success.
+    B2B User login. Now checks if the user's account has been approved.
     """
     try:
         data = LoginSchema.parse_obj(request.get_json())
@@ -72,6 +71,12 @@ def login():
     user = ProfessionalUser.query.filter_by(email=data.email).first()
 
     if user and user.check_password(data.password):
+        # --- NEW CHECK ---
+        if not user.is_active:
+            # User exists but has not been approved by an admin yet.
+            return jsonify({"message": "Your account is pending approval."}), 403 # 403 Forbidden
+
+        # If user is active, proceed with login
         access_token = create_access_token(identity=user.id)
         response = jsonify({"message": "Login successful"})
         response.set_cookie('access_token_cookie', access_token, httponly=True, secure=True, samesite='Lax')
@@ -81,14 +86,10 @@ def login():
 
 @auth_bp.route('/logout', methods=['POST'])
 def logout():
-    """
-    B2B User logout route. Clears the HttpOnly access token cookie.
-    """
     response = jsonify({"message": "Logout successful"})
     unset_jwt_cookies(response)
     return response, 200
-</pre>
-
+    
 
 def _create_admin_session_and_get_response(admin_user, redirect_url=None):
     """Helper to create JWT and user info for successful admin login."""
