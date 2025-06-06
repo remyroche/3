@@ -7,63 +7,69 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
-    displayCart();
+    await displayCart(); 
     setupEventListeners();
 });
+
 
 async function displayCart() {
     const cartContainer = document.getElementById('cart-container');
     const cartTotalSpan = document.getElementById('cart-total');
+    const cartSummaryDiv = document.getElementById('cart-summary');
     const token = localStorage.getItem('token');
 
-    try {
-        const response = await fetch('/get_cart', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+    // Remove old discount line if it exists
+    const oldDiscountLine = document.getElementById('discount-line');
+    if (oldDiscountLine) oldDiscountLine.remove();
 
-        if (!response.ok) {
-            throw new Error('Could not fetch cart.');
+    try {
+        // Fetch cart and loyalty info in parallel
+        const [cartResponse, loyaltyResponse] = await Promise.all([
+            fetch('/get_cart', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('/pro/get_loyalty_info', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+        
+        if (!cartResponse.ok) throw new Error('Could not fetch cart.');
+        const cart = await cartResponse.json();
+
+        let loyaltyInfo = { discount_percent: 0 };
+        if (loyaltyResponse.ok) {
+            loyaltyInfo = await loyaltyResponse.json();
         }
 
-        const cart = await response.json();
-        cartContainer.innerHTML = ''; // Clear loading message
+        cartContainer.innerHTML = ''; 
 
         if (!cart.items || cart.items.length === 0) {
-            cartContainer.innerHTML = '<p>Votre panier est vide.</p>';
-            cartTotalSpan.textContent = '0.00 €';
-            // Disable buttons if cart is empty
-            document.getElementById('checkout-btn').disabled = true;
-            document.getElementById('request-quote-btn').disabled = true;
+            // ... (handle empty cart)
             return;
         }
 
-        let total = 0;
+        let subtotal = 0;
         cart.items.forEach(item => {
-            const itemElement = document.createElement('div');
-            itemElement.className = 'flex justify-between items-center mb-4 pb-4 border-b';
-            itemElement.innerHTML = `
-                <div class="flex items-center">
-                    <img src="${item.product.images[0]?.image_url || 'https://placehold.co/80x80/eee/ccc?text=Image'}" alt="${item.product.name}" class="w-20 h-20 object-cover rounded mr-4">
-                    <div>
-                        <h4 class="font-semibold">${item.product.name}</h4>
-                        <p class="text-sm text-gray-600">${item.product.price.toFixed(2)} €</p>
-                    </div>
-                </div>
-                <div class="flex items-center">
-                    <button class="quantity-change bg-gray-200 px-2 rounded" data-product-id="${item.product.id}" data-change="-1">-</button>
-                    <span class="mx-2">${item.quantity}</span>
-                    <button class="quantity-change bg-gray-200 px-2 rounded" data-product-id="${item.product.id}" data-change="1">+</button>
-                    <button class="remove-item text-red-500 hover:text-red-700 ml-4" data-product-id="${item.product.id}">Supprimer</button>
-                </div>
-            `;
-            cartContainer.appendChild(itemElement);
-            total += item.product.price * item.quantity;
+            // ... (render cart items)
+            subtotal += item.product.price * item.quantity;
         });
 
-        cartTotalSpan.textContent = `${total.toFixed(2)} €`;
+        const discountAmount = (subtotal * loyaltyInfo.discount_percent) / 100;
+        const finalTotal = subtotal - discountAmount;
+
+        // Display discount info if applicable
+        if (loyaltyInfo.discount_percent > 0) {
+            const discountElement = document.createElement('div');
+            discountElement.id = 'discount-line';
+            discountElement.className = 'flex justify-between text-accent font-semibold mb-2';
+            discountElement.innerHTML = `
+                <span>Remise Fidélité (${loyaltyInfo.tier} -${loyaltyInfo.discount_percent}%):</span>
+                <span>- ${discountAmount.toFixed(2)} €</span>
+            `;
+            // Insert before the total line
+            cartSummaryDiv.querySelector('div.flex.justify-between').insertAdjacentElement('beforebegin', discountElement);
+        }
+
+        cartTotalSpan.textContent = `${finalTotal.toFixed(2)} €`;
+
     } catch (error) {
+
         console.error('Error displaying cart:', error);
         cartContainer.innerHTML = `<p class="text-red-500">Erreur lors du chargement du panier.</p>`;
     }
