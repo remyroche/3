@@ -1,42 +1,37 @@
-// website/js/newsletter.js
-// Handles newsletter subscription form.
-
-function initializeNewsletterForm() {
+<script>
+document.addEventListener('DOMContentLoaded', () => {
     const newsletterForm = document.getElementById('newsletter-form');
     if (newsletterForm) {
-        newsletterForm.addEventListener('submit', async function (event) {
-            event.preventDefault();
-            const newsletterEmailInput = document.getElementById('email-newsletter');
-            if (!newsletterEmailInput) {
-                console.error(t('public.js.newsletter_email_field_not_found')); // New key: public.js.newsletter_email_field_not_found
-                return;
-            }
-            clearFormErrors(newsletterForm); 
+        newsletterForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const emailInput = document.getElementById('newsletter-email');
+            const message = document.getElementById('newsletter-message');
+            
+            if (!emailInput || !message || !window.i18n) return;
 
-            const email = newsletterEmailInput.value;
-
-            if (!email || !validateEmail(email)) { 
-                setFieldError(newsletterEmailInput, t('public.js.newsletter_invalid_email')); // Key: public.js.newsletter_invalid_email
-                showGlobalMessage(t('public.js.newsletter_invalid_email'), "error"); 
-                return;
-            }
-            showGlobalMessage(t('public.js.newsletter_subscribing'), "info"); // Key: public.js.newsletter_subscribing
             try {
-                const result = await makeApiRequest('/subscribe-newsletter', 'POST', { email: email, consentement: 'Y' }); // Assuming API endpoint is /api/subscribe-newsletter
-                if (result.success) {
-                    showGlobalMessage(result.message || t('public.js.newsletter_success'), "success"); // Key: public.js.newsletter_success
-                    newsletterEmailInput.value = ""; 
+                const response = await fetch('/api/newsletter/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailInput.value })
+                });
+
+                if (response.ok) {
+                    message.textContent = window.i18n.newsletter_success;
+                    message.className = 'mt-2 text-sm h-4 text-green-400';
+                    emailInput.value = '';
                 } else {
-                    setFieldError(newsletterEmailInput, result.message || t('public.js.newsletter_error')); // Key: public.js.newsletter_error
-                    showGlobalMessage(result.message || t('public.js.newsletter_error'), "error");
+                    message.textContent = window.i18n.newsletter_error;
+                    message.className = 'mt-2 text-sm h-4 text-red-400';
                 }
             } catch (error) {
-                const errorMessage = error.data?.message || t('global.error_generic'); // Key: global.error_generic
-                setFieldError(newsletterEmailInput, errorMessage);
-                showGlobalMessage(errorMessage, "error");
-                console.error("Error subscribing to newsletter:", error); // Dev-facing
+                console.error('Newsletter subscription error:', error);
+                message.textContent = window.i18n.newsletter_error;
+                message.className = 'mt-2 text-sm h-4 text-red-400';
             }
+
+            setTimeout(() => { message.textContent = ''; }, 3000);
         });
     }
-}
-// No DOMContentLoaded listener needed here if initializeNewsletterForm is called from main.js after footer load.
+});
+</script>
