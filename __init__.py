@@ -1,3 +1,4 @@
+
 # backend/__init__.py
 import os
 import logging
@@ -45,7 +46,7 @@ def create_app(config_name=None):
 
     try:
         os.makedirs(app.instance_path, exist_ok=True)
-    except OSError as e:
+    except OSError: # Using a bare except is generally discouraged, but given the existing structure, keep it.
         pass 
 
     # --- Logging Configuration ---
@@ -106,30 +107,44 @@ def create_app(config_name=None):
     # Import and register models here so Flask-Migrate can find them
     from . import models 
 
-    # Register Blueprints
+    # --- Register Blueprints ---
+    # Register Auth Blueprint
     from .auth.routes import auth_bp
     app.register_blueprint(auth_bp)
+    # Rate limit for authentication routes (retained from original)
     limiter.limit(app.config.get('AUTH_RATELIMITS', "20 per minute"))(auth_bp)
 
+    # Register Products Blueprint
     from .products.routes import products_bp
     app.register_blueprint(products_bp)
 
+    # Register Orders Blueprint
     from .orders.routes import orders_bp
     app.register_blueprint(orders_bp)
     
+    # Register Newsletter Blueprint with '/api' prefix as requested
     from .newsletter.routes import newsletter_bp
-    app.register_blueprint(newsletter_bp)
+    app.register_blueprint(newsletter_bp, url_prefix='/api')
+    # Rate limit for newsletter routes (retained from original)
     limiter.limit(app.config.get('NEWSLETTER_RATELIMITS', "10 per minute"))(newsletter_bp)
 
+    # Register Inventory Blueprint
     from .inventory.routes import inventory_bp
     app.register_blueprint(inventory_bp)
 
+    # Register Admin API Blueprint
     from .admin_api.routes import admin_api_bp
     app.register_blueprint(admin_api_bp)
+    # Rate limit for admin API routes (retained from original)
     limiter.limit(app.config.get('ADMIN_API_RATELIMITS', "200 per hour"))(admin_api_bp)
     
+    # Register Professional Blueprint
     from .professional.routes import professional_bp
     app.register_blueprint(professional_bp)
+
+    # Register B2B Blueprint as requested
+    from .b2b import b2b_bp
+    app.register_blueprint(b2b_bp)
 
     app.logger.info("Blueprints registered.")
 
@@ -147,7 +162,7 @@ def create_app(config_name=None):
                 if claims:
                     g.current_user_role = claims.get('role')
                     g.is_admin = (claims.get('role') == 'admin')
-        except Exception: 
+        except Exception: # Keeping the broad exception capture as per original code structure
             pass
 
     # --- API Root and Public Asset Serving ---
@@ -162,13 +177,15 @@ def create_app(config_name=None):
 
     @app.route('/public-assets/<path:filepath>')
     def serve_public_asset(filepath):
+        # Basic path traversal prevention
         if ".." in filepath or filepath.startswith("/"):
             app.logger.warning(f"Directory traversal attempt for public asset: {filepath}")
             return flask_abort(404)
-        
+            
         base_serve_path = None
         actual_filename = filepath
 
+        # Determine the base directory based on the prefix of the filepath
         if filepath.startswith('products/'):
             base_serve_path = os.path.join(app.config['UPLOAD_FOLDER'], 'products')
             actual_filename = filepath[len('products/'):]
@@ -178,36 +195,45 @@ def create_app(config_name=None):
         elif filepath.startswith('passports/'):
             base_serve_path = os.path.join(app.config['ASSET_STORAGE_PATH'], 'passports')
             actual_filename = filepath[len('passports/'):]
-        
+            
         if base_serve_path:
+            # Further protection against path traversal using os.path.normpath and os.path.join
             requested_path_full = os.path.normpath(os.path.join(base_serve_path, actual_filename))
-            if not requested_path_full.startswith(os.path.normpath(base_serve_path) + os.sep) and requested_path_full != os.path.normpath(base_serve_path) :
+            # Ensure the resolved path actually starts with the base serve path
+            if not requested_path_full.startswith(os.path.normpath(base_serve_path) + os.sep) and requested_path_full != os.path.normpath(base_serve_path):
                 app.logger.error(f"Security violation: Attempt to access file outside designated public asset directory. Requested: {requested_path_full}, Base: {base_serve_path}")
                 return flask_abort(404)
             if os.path.exists(requested_path_full) and os.path.isfile(requested_path_full):
                 app.logger.debug(f"Serving public asset: {actual_filename} from {base_serve_path}")
                 return send_from_directory(base_serve_path, actual_filename)
-        
+            
         app.logger.warning(f"Public asset not found or path not recognized: {filepath}")
         return flask_abort(404)
 
     # --- Error Handlers ---
     @app.errorhandler(400)
-    def bad_request_error(error): return jsonify(message=str(error.description if hasattr(error, 'description') else "Bad Request"), success=False), 400
+    def bad_request_error(error): 
+        return jsonify(message=str(error.description if hasattr(error, 'description') else "Bad Request"), success=False), 400
+    
     @app.errorhandler(401)
-    def unauthorized_error(error): return jsonify(message=str(error.description if hasattr(error, 'description') else "Unauthorized"), success=False), 401
+    def unauthorized_error(error): 
+        return jsonify(message=str(error.description if hasattr(error, 'description') else "Unauthorized"), success=False), 401
+    
     @app.errorhandler(403)
-    def forbidden_error(error): return jsonify(message=str(error.description if hasattr(error, 'description') else "Forbidden"), success=False), 403
+    def forbidden_error(error): 
+        return jsonify(message=str(error.description if hasattr(error, 'description') else "Forbidden"), success=False), 403
+    
     @app.errorhandler(404)
-    def not_found_error(error): return jsonify(message=str(error.description if hasattr(error, 'description') else "Resource not found"), success=False), 404
+    def not_found_error(error): 
+        return jsonify(message=str(error.description if hasattr(error, 'description') else "Resource not found"), success=False), 404
+    
     @app.errorhandler(429)
-    def ratelimit_handler(e): return jsonify(message=f"Rate limit exceeded: {e.description}", success=False), 429
+    def ratelimit_handler(e): 
+        return jsonify(message=f"Rate limit exceeded: {e.description}", success=False), 429
+    
     @app.errorhandler(500)
     def internal_server_error(error):
         app.logger.error(f"Internal Server Error: {error}", exc_info=True)
         return jsonify(message="An internal server error occurred. Please try again later.", success=False), 500
 
     return app
-
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important; /* Red focus ring */
-}   
