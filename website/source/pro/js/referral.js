@@ -2,6 +2,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     const token = localStorage.getItem('proToken');
     if (!token) {
+        window.location.href = 'professionnels.html';<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('proToken');
+    if (!token) {
         window.location.href = 'professionnels.html';
         return;
     }
@@ -11,31 +15,36 @@ document.addEventListener('DOMContentLoaded', function() {
     const copyMessageEl = document.getElementById('copy-message');
     const historyListEl = document.getElementById('referral-history-list');
 
-    // Fetch referral data
     fetch('/api/b2b/referral', {
         headers: { 'Authorization': `Bearer ${token}` }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) throw new Error('Could not load referral data.');
+        return response.json();
+    })
     .then(data => {
         referralCodeEl.textContent = data.referral_code || 'N/A';
         displayHistory(data.referrals);
     })
     .catch(error => {
         console.error('Error fetching referral data:', error);
-        referralCodeEl.textContent = 'Error';
+        if(referralCodeEl) referralCodeEl.textContent = 'Error';
+        if(historyListEl) historyListEl.innerHTML = `<p class="text-red-500">${window.i18n.history_error}</p>`;
     });
 
-    // Copy to clipboard
-    copyBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(referralCodeEl.textContent).then(() => {
-            copyMessageEl.textContent = window.i18n.copy_success_message;
-            setTimeout(() => {
-                copyMessageEl.textContent = '';
-            }, 2000);
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(referralCodeEl.textContent).then(() => {
+                copyMessageEl.textContent = window.i18n.copy_success_message;
+                setTimeout(() => {
+                    copyMessageEl.textContent = '';
+                }, 2000);
+            });
         });
-    });
+    }
 
     function displayHistory(referrals) {
+        if (!historyListEl) return;
         if (!referrals || referrals.length === 0) {
             historyListEl.innerHTML = `<p>${window.i18n.history_no_entries}</p>`;
             return;
