@@ -393,17 +393,44 @@ def update_product_options_admin(product_id):
 @admin_required
 def delete_product_admin(product_id):
     product = Product.query.get_or_404(product_id)
+    current_admin_id = get_jwt_identity()
+    audit_logger = current_app.audit_log_service
+
     # Check for related orders before deleting
     if product.order_items.first():
         return jsonify(message="Cannot delete product as it is part of existing orders.", success=False), 409
     
-    # ... logic to delete images and other related assets ...
+    # Collect all image paths to delete from the filesystem
+    image_paths_to_delete = []
+    if product.main_image_url:
+        image_paths_to_delete.append(os.path.join(current_app.config['UPLOAD_FOLDER'], product.main_image_url))
     
+    for img in product.images:
+        if img.image_url:
+            image_paths_to_delete.append(os.path.join(current_app.config['UPLOAD_FOLDER'], img.image_url))
+
+    product_name_for_log = product.name
+
     try:
+        # The database relationships are set up with cascade="all, delete-orphan",
+        # so deleting the product will automatically delete related ProductImage,
+        # ProductWeightOption, and ProductLocalization records.
         db.session.delete(product)
         db.session.commit()
+
+        # After successful DB deletion, delete the physical files
+        for path in image_paths_to_delete:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except OSError as e:
+                current_app.logger.error(f"Error deleting product image file {path}: {e}", exc_info=True)
+        
+        audit_logger.log_action(user_id=current_admin_id, action='delete_product_success', target_type='product', target_id=product_id, details=f"Product '{product_name_for_log}' and its assets deleted.", status='success')
+        
         generate_static_json_files()
-        return jsonify(message=f"Product '{product.name}' deleted successfully.", success=True), 200
+        
+        return jsonify(message=f"Product '{product_name_for_log}' deleted successfully.", success=True), 200
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error deleting product {product_id}: {e}", exc_info=True)
