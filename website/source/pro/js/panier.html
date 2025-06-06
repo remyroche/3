@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Panier Pro - Le Marché des Pros</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Assuming you have a build step that processes this with your tailwind.config.js -->
+    <link href="/main/main.css" rel="stylesheet">
+    <link rel="stylesheet" href="/pro/css/pro_common.css">
+</head>
+<body class="bg-light-bg">
+
+    <div id="pro-header"></div>
+
+    <main class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold mb-6 text-primary">Mon Panier Professionnel</h1>
+        <div id="cart-container" class="bg-white p-6 rounded-lg shadow-md">
+            <!-- Cart items will be dynamically inserted here -->
+            <p>Chargement du panier...</p>
+        </div>
+
+        <div id="cart-summary" class="mt-6 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4 text-primary">Résumé</h2>
+            <div class="flex justify-between text-lg">
+                <span class="text-secondary">Total:</span>
+                <span id="cart-total" class="font-bold text-primary">0.00 €</span>
+            </div>
+            
+            <!-- B2B Actions -->
+            <div class="mt-4 border-t pt-4">
+                <button id="checkout-btn" class="w-full bg-primary text-white py-2 rounded-md hover:bg-accent transition-colors duration-300 mb-2 font-semibold">
+                    Payer par carte
+                </button>
+                
+                <div id="b2b-quote-section" class="mt-4">
+                    <h3 class="text-lg font-semibold text-accent">Ou soumettre une demande de devis</h3>
+                    <p class="text-sm text-gray-600 mb-2">Votre panier sera converti en demande de devis. Un administrateur vous répondra dans les plus brefs délais.</p>
+                    <textarea id="quote-comment" class="w-full p-2 border border-gray-300 rounded mt-2 focus:ring-1 focus:ring-primary focus:border-primary" placeholder="Ajoutez un commentaire ou une référence pour votre devis (optionnel). Nous recommandons le paiement direct par carte, plus rapide, sauf si votre commande requiert une modalité particulière de livraison."></textarea>
+                    <button id="request-quote-btn" class="mt-2 w-full bg-accent text-white py-2 rounded-md hover:bg-primary transition-colors duration-300 font-semibold">
+                        Demander un devis
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="pro-footer"></div>
+
+    <!-- Load main pro script first, then the specific page script -->
+    <script src="/pro/js/pro_main.js"></script>
+    <script src="/pro/js/panier.js"></script>
+</body>
+</html>
