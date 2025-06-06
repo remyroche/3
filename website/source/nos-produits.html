@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title data-translate-key="products_page.title">Nos Produits - Maison Trüvra</title>
     <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/nos-produits.css"> <!-- Specific styles for this page -->
+    <link rel="stylesheet" href="css/nos-produits.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
@@ -70,7 +71,7 @@
     <script src="js/cart.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/main.js"></script>
-    <script src="js/products.js"></script> <!-- Contains displayProductCard and other helpers -->
-    <script src="js/nos-produits.js"></script> <!-- Specific logic for this page -->
+    <script src="js/products.js"></script>
+    <script src="js/nos-produits.js"></script>
 </body>
 </html>
