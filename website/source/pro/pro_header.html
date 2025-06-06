@@ -1,25 +1,29 @@
-<!-- website/source/pro/pro_header.html -->
-<header class="pro-header">
-    <div class="container">
-        <div class="pro-header-logo">
-            <a href="marchedespros.html" title="Maison Trüvra - Espace Professionnel">
-                <!-- You can use your actual logo image here -->
-                <img src="../images/logo-maison-truvra-gold-on-black-small.png" alt="Maison Trüvra Pro Logo"
-                     onerror="this.onerror=null;this.src='https://placehold.co/150x40/11120D/F5EEDE?text=Maison+Trüvra+Pro';">
-            </a>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Professional Header</title>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+</head>
+<body>
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-2 flex justify-between items-center">
+            <a href="marchedespros.html" class="text-2xl font-bold text-gray-800">&lt;%= t('pro_header_title') %&gt;</a>
+            <nav>
+                <a href="marchedespros.html" class="text-gray-600 hover:text-gray-800 px-3 py-2">&lt;%= t('pro_header_home') %&gt;</a>
+                <a href="invoices-pro.html" class="text-gray-600 hover:text-gray-800 px-3 py-2">&lt;%= t('pro_header_invoices') %&gt;</a>
+                <a href="programme-fidelite.html" class="text-gray-600 hover:text-gray-800 px-3 py-2">&lt;%= t('pro_header_loyalty') %&gt;</a>
+                <a href="referral.html" class="text-gray-600 hover:text-gray-800 px-3 py-2">&lt;%= t('pro_header_referral') %&gt;</a>
+                <a href="profile.html" class="text-gray-600 hover:text-gray-800 px-3 py-2">&lt;%= t('pro_header_profile') %&gt;</a>
+                <a href="#" id="logout-pro" class="text-gray-600 hover:text-gray-800 px-3 py-2">&lt;%= t('pro_header_logout') %&gt;</a>
+            </nav>
+            <div>
+                 &lt;% if (lang === 'fr') { %&gt;
+                    <a href="/en/pro/&lt;%= pagePath.substring(4) %&gt;">EN</a>
+                &lt;% } else { %&gt;
+                    <a href="/fr/pro/&lt;%= pagePath.substring(4) %&gt;">FR</a>
+                &lt;% } %&gt;
+            </div>
         </div>
-        <nav class="pro-nav">
-            <ul>
-                <li><a href="marchedespros.html" class="nav-link-pro" data-nav-id="pro-catalog">{{public.nav.b2b_catalog | default: 'Catalogue Pro'}}</a></li>
-                <li><a href="invoices-pro.html" class="nav-link-pro" data-nav-id="pro-invoices">{{public.nav.b2b_invoices | default: 'Mes Factures'}}</a></li>
-                <!-- Add other B2B specific links here -->
-                <li><a href="compte.html?pro=true" class="nav-link-pro" data-nav-id="pro-account">{{public.nav.b2b_account | default: 'Mon Compte Pro'}}</a></li>
-                <li><a href="programme-fidelite.html?pro=true" class="nav-link-pro" data-nav-id="pro-account">{{public.nav.b2b_account | default: 'Partenariats & fidélité'}}</a></li>
-            </ul>
-        </nav>
-        <div class="pro-user-actions">
-            <span id="pro-user-greeting" class="user-greeting text-sm"></span>
-            <button id="pro-logout-button" class="btn-pro-secondary btn-sm">{{global.logout | default: 'Déconnexion'}}</button>
-        </div>
-    </div>
-</header>
+    </header>
+</body>
+</html>
