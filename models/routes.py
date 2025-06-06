@@ -1,0 +1,24 @@
+from flask import Blueprint
+
+# Import all the route blueprints
+from .auth_routes import auth_routes_blueprint
+from .dashboard_routes import dashboard_routes_blueprint
+from .user_routes import user_routes_blueprint
+from .product_routes import product_routes_blueprint
+from .order_routes import order_routes_blueprint
+from .b2b_management_routes import b2b_management_blueprint
+from .asset_routes import asset_routes_blueprint
+from .site_management_routes import site_management_blueprint
+
+# Create the main admin API blueprint
+admin_api_blueprint = Blueprint('admin_api', __name__)
+
+# Register all the individual route blueprints
+admin_api_blueprint.register_blueprint(auth_routes_blueprint)
+admin_api_blueprint.register_blueprint(dashboard_routes_blueprint)
+admin_api_blueprint.register_blueprint(user_routes_blueprint)
+admin_api_blueprint.register_blueprint(product_routes_blueprint)
+admin_api_blueprint.register_blueprint(order_routes_blueprint)
+admin_api_blueprint.register_blueprint(b2b_management_blueprint)
+admin_api_blueprint.register_blueprint(asset_routes_blueprint)
+admin_api_blueprint.register_blueprint(site_management_blueprint)
