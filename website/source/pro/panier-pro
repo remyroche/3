@@ -87,7 +87,7 @@
                                  <button type="submit" class="btn btn-outline text-sm py-2">Soumettre PO</button>
                              </form>
                         </div>
-                        <p class="text-xs text-center mt-3 text-mt-warm-taupe">Le paiement par carte est le moyen le plus rapide de traiter votre commande.</p>
+                        <p class="text-xs text-center mt-3 text-mt-warm-taupe">Le paiement par carte est le moyen le plus rapide de traiter votre commande. Privilégiez le PO dans le cas où une livraison spéciale est nécessaire.</p>
                     </div>
                 </div>
             </div>
