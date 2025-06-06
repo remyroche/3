@@ -6,26 +6,29 @@ document.addEventListener('DOMContentLoaded', () => {
     if (proLoginForm) {
         proLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            proLoginError.textContent = ''; // Clear previous errors
+            proLoginError.textContent = '';
             const email = document.getElementById('email-pro').value;
             const password = document.getElementById('password-pro').value;
 
             try {
                 const response = await fetch('/api/b2b/login', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
-                    // Login was successful, cookie is set by the server.
-                    // Redirect to the pros market.
                     window.location.href = 'pro/marchedespros.html';
                 } else {
-                    const data = await response.json();
-                    proLoginError.textContent = window.i18n.login_error || (data.message || 'Login failed');
+                    // --- NEW ---
+                    // Check for the specific "pending approval" status code.
+                    if (response.status === 403) {
+                        proLoginError.textContent = window.i18n.login_pending_approval || data.message;
+                    } else {
+                        proLoginError.textContent = window.i18n.login_error || data.message;
+                    }
                 }
             } catch (error) {
                 console.error('Login error:', error);
@@ -34,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-</script>
+
 
 
 document.addEventListener('DOMContentLoaded', () => {
