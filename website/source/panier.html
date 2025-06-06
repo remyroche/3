@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title data-translate-key="cart_page.title">Votre Panier - Maison Trüvra</title>
     <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/panier.css"> <!-- Specific styles for cart page -->
+    <link rel="stylesheet" href="css/panier.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
@@ -57,11 +58,6 @@
                             <span class="text-mt-earth-brown" data-translate-key="cart_page.summary_subtotal">Sous-total :</span>
                             <span id="cart-summary-subtotal" class="font-semibold text-mt-near-black">€0.00</span>
                         </div>
-                        <!-- Shipping can be added here if calculated -->
-                        <!-- <div class="flex justify-between items-center mb-4 pb-2 border-b border-mt-cream-dark">
-                            <span class="text-mt-earth-brown" data-translate-key="cart_page.summary_shipping">Livraison :</span>
-                            <span id="cart-summary-shipping" class="font-semibold text-mt-near-black">Calculé à la caisse</span>
-                        </div> -->
                         <div class="flex justify-between items-center mt-4 pt-4 border-t-2 border-mt-classic-gold">
                             <span class="text-xl font-bold text-mt-near-black" data-translate-key="cart_page.summary_total_label">Total :</span>
                             <span id="cart-summary-total" class="text-xl font-bold text-mt-truffle-burgundy">€0.00</span>
@@ -85,6 +81,5 @@
     <script src="js/cart.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/main.js"></script>
-    <!-- No specific page JS needed for panier.html if cart.js handles its display -->
 </body>
 </html>
