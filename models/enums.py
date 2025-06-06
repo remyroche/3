@@ -3,6 +3,17 @@
 import enum
 
 
+class PartnershipLevel(enum.Enum):
+    """
+    Defines the spend-based partnership tiers.
+    """
+    BRONZE = "Bronze" # Default
+    SILVER = "Argent"
+    GOLD = "Or"
+    PLATINUM = "Platine"
+    DIAMOND = "Diamant"
+    AMBASSADOR = "Ambassadeur"
+
 class B2BLoyaltyTier(enum.Enum):
     BRONZE = "Bronze"
     SILVER = "Silver"
