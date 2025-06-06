@@ -107,6 +107,33 @@ class B2BInvoiceService:
         return f"{prefix}-{current_year}-{next_id:05d}"
 
 
+def create_b2b_invoice_from_order(order):
+    """
+    Creates and saves a B2BInvoice record from a completed Order.
+    This is called when a B2B user pays by card.
+    """
+    if not order or not order.user_id:
+        return None
+
+    # Generate a unique invoice number
+    invoice_number = f"INV-B2B-{order.id}-{order.created_at.strftime('%Y%m%d')}"
+
+    # Create the new invoice
+    new_invoice = B2BInvoice(
+        invoice_number=invoice_number,
+        user_id=order.user_id,
+        order_id=order.id,
+        amount=order.total_amount,
+        status='PAID'  # Marked as PAID since it's from a card transaction
+    )
+
+    db.session.add(new_invoice)
+    # The commit will happen as part of the order creation process
+    
+    return new_invoice
+
+
+  
     def _generate_and_save_b2b_pdf(self, invoice: Invoice, user: User, order: Order = None):
         """Renders the B2B HTML template and converts it to a PDF."""
         company_info = current_app.config.get('DEFAULT_COMPANY_INFO', {})
