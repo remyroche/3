@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Facture Acquittée {{ invoice.invoice_number }}</title>
+    <style>
+        /* Branding Colors from b2b_invoice_template.html */
+        :root {
+            --primary: #4A90E2; /* A deep, professional blue */
+            --secondary: #50E3C2; /* A vibrant, modern teal/mint */
+            --accent: #F5A623; /* A warm, friendly orange */
+            --neutral: #4A4A4A; /* A standard dark gray for text */
+            --light-bg: #F8F9FA; /* A very light gray for backgrounds */
+        }
+        body { 
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+            color: var(--neutral);
+            background-color: var(--light-bg);
+            margin: 0;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: auto; 
+            padding: 30px; 
+            border: 1px solid #ddd; 
+            box-shadow: 0 0 10px rgba(0, 0, 0, .15); 
+            background: #fff;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--primary);
+        }
+        .header img { max-width: 150px; }
+        .header .company-details { text-align: right; font-size: 0.9em; }
+        .invoice-details { display: flex; justify-content: space-between; margin-bottom: 40px; }
+        .invoice-title { font-size: 45px; line-height: 1; color: var(--primary); text-align: right; }
+        .status { 
+            font-size: 1.2em; 
+            font-weight: bold; 
+            text-transform: uppercase;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: inline-block;
+            color: var(--secondary); 
+            border: 1px solid var(--secondary); 
+        }
+
+        table { width: 100%; text-align: left; border-collapse: collapse; }
+        table th { background: #f1f5f9; padding: 10px; border-bottom: 2px solid #e2e8f0; font-weight: bold; }
+        table td { padding: 10px; border-bottom: 1px solid #eee; }
+        
+        .total-section { margin-top: 20px; text-align: right; }
+        .total-section table { width: auto; margin-left: auto; border: none; }
+        .total-section td { padding: 5px 10px; border: none; }
+        .total-section .grand-total td { font-size: 1.2em; font-weight: bold; color: var(--primary); padding-top: 10px; }
+
+        .footer { text-align: center; color: #777; border-top: 1px solid #eee; padding-top: 20px; margin-top: 40px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="company-logo">
+                <!-- Replace with your actual logo path -->
+                <img src="https://path/to/your/logo.png" alt="Company Logo">
+            </div>
+            <div class="company-details">
+                <strong>Votre Entreprise SAS</strong><br>
+                123 Rue de la République<br>
+                75001 Paris, France<br>
+                contact@votreentreprise.fr
+            </div>
+        </div>
+        
+        <div class="invoice-details">
+            <div class="bill-to">
+                <strong>Facturé à :</strong><br>
+                {{ invoice.user.company_name }}<br>
+                {{ invoice.user.contact_name }}<br>
+                {{ invoice.user.address }}<br>
+                {{ invoice.user.email }}
+            </div>
+            <div style="text-align: right;">
+                <h1 class="invoice-title">FACTURE ACQUITTÉE</h1>
+                <div><strong>Facture #:</strong> {{ invoice.invoice_number }}</div>
+                <div><strong>Date:</strong> {{ invoice.created_at.strftime('%d/%m/%Y') }}</div>
+                <div><strong>Commande #:</strong> {{ invoice.order_id }}</div>
+                <div class="status">PAYÉE</div>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Produit</th>
+                    <th>Quantité</th>
+                    <th style="text-align: right;">Prix Unitaire</th>
+                    <th style="text-align: right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice.order.items %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td style="text-align: right;">{{ "%.2f"|format(item.price) }} €</td>
+                    <td style="text-align: right;">{{ "%.2f"|format(item.price * item.quantity) }} €</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="total-section">
+            <table>
+                <tr class="grand-total">
+                    <td>Total Payé:</td>
+                    <td>{{ "%.2f"|format(invoice.amount) }} €</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="footer">
+            Merci pour votre confiance.<br>
+            Votre Entreprise SAS - SIRET: 123 456 789 00010
+        </div>
+    </div>
+</body>
+</html>
