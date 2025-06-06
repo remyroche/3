@@ -43,6 +43,10 @@ class Config:
     # Backup directory will be PROJECT_ROOT/backend/backup/
     BACKUP_DIRECTORY = os.path.join(CONFIG_FILE_DIR, 'backup')
 
+        
+    # --- JWT Configuration ---
+    JWT_ACCESS_COOKIE_NAME = 'access_token_cookie'
+    JWT_COOKIE_CSRF_PROTECT = False 
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'change_this_default_jwt_secret_key_in_prod_sqlalchemy_totp')
     JWT_TOKEN_LOCATION = ['headers', 'cookies']
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
@@ -51,7 +55,6 @@ class Config:
     JWT_COOKIE_SAMESITE = 'Lax'
     JWT_REFRESH_COOKIE_PATH = '/api/auth/refresh' 
     JWT_ACCESS_COOKIE_PATH = '/api/' 
-    JWT_COOKIE_CSRF_PROTECT = True 
     JWT_CSRF_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE']
     JWT_CSRF_IN_COOKIES = True 
 
