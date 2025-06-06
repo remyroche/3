@@ -1,10 +1,21 @@
 from flask import Blueprint, render_template, jsonify, send_file
 from flask_login import login_required, current_user
-from models import B2BUser, B2BInvoice
+from models import B2BUser, B2BInvoice, Invoice
 from services.b2b_invoice_service import get_invoice_html
 from io import BytesIO
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from . import b2b_bp
+
 
 invoice_blueprint = Blueprint('b2b_invoice', __name__)
+
+@b2b_bp.route('/invoices', methods=['GET'])
+@jwt_required()
+def get_b2b_invoices():
+    user_id = get_jwt_identity()
+    invoices = Invoice.query.filter_by(b2b_user_id=user_id).order_by(Invoice.issue_date.desc()).all()
+    return jsonify([inv.to_dict() for inv in invoices])
+
 
 @invoice_blueprint.route('/invoices')
 @login_required
