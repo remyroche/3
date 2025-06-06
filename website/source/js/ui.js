@@ -27,7 +27,7 @@ function showGlobalMessage(message, type = 'success', duration = 4000) {
         return;
     }
 
-    textElement.textContent = message;
+    textElement.textContent = message; // XSS Safe
     toast.className = 'modal-message'; 
 
     if (type === 'error') {
