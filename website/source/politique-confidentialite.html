@@ -1,115 +1,56 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-translate-key="privacy_policy.title">Politique de Confidentialité - Maison Trüvra</title>
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        .policy-content h2 { /* Uses .section-title from main.css */
-            margin-top: var(--spacing-xl);
-            margin-bottom: var(--spacing-sm);
-        }
-        .policy-content h3 { /* Uses h3 from main.css */
-            font-size: 1.25rem; /* Raleway by default, if you want Baskervville, add .font-serif */
-            color: var(--mt-earth-brown);
-            margin-top: var(--spacing-lg);
-            margin-bottom: var(--spacing-xs);
-        }
-        .policy-content ul {
-            list-style: disc;
-            margin-left: var(--spacing-lg);
-            margin-bottom: var(--spacing-md);
-        }
-        .policy-content li {
-            margin-bottom: var(--spacing-xs);
-        }
-        .policy-content p {
-            margin-bottom: var(--spacing-md);
-            line-height: 1.7;
-        }
-    </style>
+    <title><%= t('privacy_page_title') %></title>
+    <link href="[https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css](https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css)" rel="stylesheet">
+    <link rel="stylesheet" href="main/main.css">
 </head>
-<body>
-    <div id="main-header-placeholder"></div>
+<body class="bg-gray-100">
 
-    <main class="container mx-auto px-4 py-8 mt-20 md:mt-24 lg:mt-28">
-        <header class="page-header text-center mb-10 md:mb-12">
-            <h1 class="page-title text-3xl md:text-4xl lg:text-5xl font-bold" data-translate-key="privacy_policy.main_title">Politique de Confidentialité</h1>
-        </header>
+    <%- include('header.html') %>
 
-        <section class="policy-content bg-white p-6 md:p-8 rounded-lg shadow-lg">
-            <p class="text-sm text-mt-warm-taupe" data-translate-key="privacy_policy.last_updated">Dernière mise à jour : 5 juin 2025</p>
+    <main class="container mx-auto py-12 px-6">
+        <div class="bg-white p-10 rounded-lg shadow-md">
+            <h1 class="text-3xl font-bold text-gray-800 mb-6"><%= t('privacy_main_title') %></h1>
+            <div class="prose max-w-full text-gray-700">
+                <p><em><%= t('privacy_last_updated') %>: 6 Juin 2025</em></p>
+                
+                <h2 class="mt-8"><%= t('privacy_section1_title') %></h2>
+                <p><%= t('privacy_section1_p1') %></p>
+                
+                <h2 class="mt-8"><%= t('privacy_section2_title') %></h2>
+                <p><%= t('privacy_section2_p1') %></p>
+                <ul>
+                    <li><%= t('privacy_section2_li1') %></li>
+                    <li><%= t('privacy_section2_li2') %></li>
+                    <li><%= t_('privacy_section2_li3') %></li>
+                </ul>
 
-            <h2 class="section-title" data-translate-key="privacy_policy.section1_title">1. Introduction</h2>
-            <p data-translate-key="privacy_policy.section1_text1">Bienvenue sur le site de Maison Trüvra. Nous nous engageons à protéger la vie privée de nos clients et visiteurs. Cette politique de confidentialité explique quelles informations nous collectons, comment nous les utilisons, les partageons et les protégeons.</p>
-
-            <h2 class="section-title" data-translate-key="privacy_policy.section2_title">2. Informations que nous collectons</h2>
-            <p data-translate-key="privacy_policy.section2_intro">Nous pouvons collecter les types d'informations suivants :</p>
-            <ul>
-                <li data-translate-key="privacy_policy.section2_item1"><strong>Informations personnelles d'identification :</strong> Nom, prénom, adresse e-mail, numéro de téléphone, adresse postale, informations de paiement lorsque vous effectuez un achat ou créez un compte.</li>
-                <li data-translate-key="privacy_policy.section2_item2"><strong>Informations de compte professionnel :</strong> Nom de l'entreprise, SIRET, numéro de TVA pour les comptes professionnels.</li>
-                <li data-translate-key="privacy_policy.section2_item3"><strong>Informations de navigation :</strong> Adresse IP, type de navigateur, pages visitées, temps passé sur le site, et autres données analytiques collectées via des cookies et technologies similaires.</li>
-                <li data-translate-key="privacy_policy.section2_item4"><strong>Communications :</strong> Si vous nous contactez, nous pouvons conserver une trace de cette correspondance.</li>
-            </ul>
-
-            <h2 class="section-title" data-translate-key="privacy_policy.section3_title">3. Comment nous utilisons vos informations</h2>
-            <p data-translate-key="privacy_policy.section3_intro">Vos informations sont utilisées pour :</p>
-            <ul>
-                <li data-translate-key="privacy_policy.section3_item1">Fournir, exploiter et améliorer notre site web et nos services.</li>
-                <li data-translate-key="privacy_policy.section3_item2">Traiter vos commandes et transactions.</li>
-                <li data-translate-key="privacy_policy.section3_item3">Gérer votre compte client ou professionnel.</li>
-                <li data-translate-key="privacy_policy.section3_item4">Communiquer avec vous, y compris pour le service client et les informations marketing (avec votre consentement).</li>
-                <li data-translate-key="privacy_policy.section3_item5">Personnaliser votre expérience sur notre site.</li>
-                <li data-translate-key="privacy_policy.section3_item6">Respecter nos obligations légales et réglementaires.</li>
-            </ul>
-
-            <h2 class="section-title" data-translate-key="privacy_policy.section4_title">4. Partage de vos informations</h2>
-            <p data-translate-key="privacy_policy.section4_intro">Nous ne vendons ni ne louons vos informations personnelles à des tiers. Nous pouvons partager vos informations avec :</p>
-            <ul>
-                <li data-translate-key="privacy_policy.section4_item1"><strong>Prestataires de services :</strong> Tels que les processeurs de paiement, les services de livraison, les hébergeurs web, qui nous aident à exploiter notre entreprise. Ces prestataires ont accès aux informations nécessaires pour remplir leurs fonctions mais ne sont pas autorisés à les utiliser à d'autres fins.</li>
-                <li data-translate-key="privacy_policy.section4_item2"><strong>Obligations légales :</strong> Si la loi l'exige ou si nous pensons de bonne foi qu'une telle action est nécessaire pour se conformer à une procédure légale, répondre à des réclamations, ou protéger les droits, la propriété ou la sécurité de Maison Trüvra, de nos employés, de nos clients ou du public.</li>
-            </ul>
-
-            <h2 class="section-title" data-translate-key="privacy_policy.section5_title">5. Sécurité de vos informations</h2>
-            <p data-translate-key="privacy_policy.section5_text1">Nous prenons des mesures de sécurité techniques et organisationnelles appropriées pour protéger vos informations personnelles contre la perte, l'utilisation abusive, l'accès non autorisé, la divulgation, l'altération et la destruction. Cependant, aucune transmission sur Internet ou méthode de stockage électronique n'est totalement sécurisée.</p>
-
-            <h2 class="section-title" data-translate-key="privacy_policy.section6_title">6. Vos droits</h2>
-            <p data-translate-key="privacy_policy.section6_intro">Conformément à la réglementation applicable (notamment le RGPD), vous disposez des droits suivants concernant vos informations personnelles :</p>
-            <ul>
-                <li data-translate-key="privacy_policy.section6_item1">Droit d'accès.</li>
-                <li data-translate-key="privacy_policy.section6_item2">Droit de rectification.</li>
-                <li data-translate-key="privacy_policy.section6_item3">Droit à l'effacement ("droit à l'oubli").</li>
-                <li data-translate-key="privacy_policy.section6_item4">Droit à la limitation du traitement.</li>
-                <li data-translate-key="privacy_policy.section6_item5">Droit à la portabilité des données.</li>
-                <li data-translate-key="privacy_policy.section6_item6">Droit d'opposition.</li>
-                <li data-translate-key="privacy_policy.section6_item7">Droit de retirer votre consentement à tout moment (pour les traitements basés sur le consentement).</li>
-            </ul>
-            <p data-translate-key="privacy_policy.section6_exercise_rights">Pour exercer ces droits, veuillez nous contacter à <a href="mailto:confidentialite@maisontruvra.com" class="text-mt-truffle-burgundy hover:underline">confidentialite@maisontruvra.com</a>.</p>
-
-            <h2 class="section-title" data-translate-key="privacy_policy.section7_title">7. Cookies</h2>
-            <p data-translate-key="privacy_policy.section7_text1">Notre site utilise des cookies pour améliorer votre expérience de navigation. Pour plus d'informations sur les cookies que nous utilisons et comment les gérer, veuillez consulter notre <a href="#cookie-policy-placeholder" class="text-mt-truffle-burgundy hover:underline">Politique en matière de Cookies</a> (lien à créer).</p>
-
-            <h2 class="section-title" data-translate-key="privacy_policy.section8_title">8. Modifications de cette politique</h2>
-            <p data-translate-key="privacy_policy.section8_text1">Nous pouvons mettre à jour cette politique de confidentialité de temps à autre. Nous vous notifierons de tout changement significatif en publiant la nouvelle politique sur notre site et en mettant à jour la date de "dernière mise à jour".</p>
-
-            <h2 class="section-title" data-translate-key="privacy_policy.section9_title">9. Nous contacter</h2>
-            <p data-translate-key="privacy_policy.section9_text1">Si vous avez des questions concernant cette politique de confidentialité ou nos pratiques en matière de données, veuillez nous contacter à :</p>
-            <p>Maison Trüvra<br>
-            <span data-translate-key="privacy_policy.contact_address">Adresse Postale Complète</span><br>
-            Email : <a href="mailto:confidentialite@maisontruvra.com" class="text-mt-truffle-burgundy hover:underline">confidentialite@maisontruvra.com</a></p>
-        </section>
+                <h2 class="mt-8"><%= t('privacy_section3_title') %></h2>
+                <p><%= t('privacy_section3_p1') %></p>
+            </div>
+        </div>
     </main>
 
-    <div id="main-footer-placeholder"></div>
-    <div id="cart-toast-placeholder" class="fixed bottom-5 right-5 z-50"></div>
-    <div id="global-message-container" class="fixed top-20 right-5 z-[1000] w-auto max-w-sm"></div>
-
+    <%- include('footer.html') %>
+    
+    <script>
+         window.i18n = {
+            nav_account: "<%= t('nav_account') %>",
+            nav_logout: "<%= t('nav_logout') %>",
+            nav_login: "<%= t('nav_login') %>",
+            newsletter_success: "<%= t('newsletter_success') %>",
+            newsletter_error: "<%= t('newsletter_error') %>",
+        }
+    </script>
+    <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/cart.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/newsletter.js"></script>
+
 </body>
 </html>
