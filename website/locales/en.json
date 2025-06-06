@@ -542,6 +542,7 @@
   "public.js.add_to_cart_error_missing_details": "Error: Cannot add product because details are missing.",
   "public.js.invalid_variant_selected": "Error: Selected variant is invalid or not found."
 
+  {
     "nav.accueil": "Home",
     "nav.nosProduits": "Our Products",
     "nav.notreHistoire": "Our Story",
@@ -658,4 +659,110 @@
   "admin.invoices.table.no_invoices_found": "No invoices found.",
   "admin.invoices.table.load_error": "Error loading invoices.",
   "admin.invoices.table.download_btn": "PDF"
+
+{
+  "global": {
+    "shop_now": "Shop",
+    "discover": "Discover",
+    "professionals": "Professionals",
+    "our_story": "Our Story",
+    "my_account": "My Account",
+    "cart": "Cart",
+    "logout": "Logout",
+    "cancel": "Cancel",
+    "submit": "Submit"
+  },
+  "footer": {
+    "contact_us": "Contact Us",
+    "newsletter": "Newsletter",
+    "newsletter_placeholder": "Your email address...",
+    "subscribe": "Subscribe",
+    "newsletter_consent_label": "I agree to receive communications from Maison Trüvra.",
+    "follow_us": "Follow Us",
+    "copyright": "Maison Trüvra. All rights reserved.",
+    "privacy_policy": "Privacy Policy",
+    "terms": "Terms and Conditions",
+    "delivery": "Delivery & Returns",
+    "accessibility": "Accessibility"
+  },
+  "home": {
+    "title": "Maison Trüvra - Home",
+    "hero_title": "Maison Trüvra",
+    "hero_subtitle": "Cultivated luxury. The future of the truffle, shaped with art and passion.",
+    "hero_cta": "Discover Our Treasures",
+    "featured_products_title": "Our Exceptional Products"
+  },
+  "products_page": {
+    "title": "Our Products - Maison Trüvra",
+    "main_title": "Discover Our Truffled Treasures",
+    "subtitle": "An exquisite selection of fresh truffles and fine products, cultivated with passion and expertise.",
+    "filter_category": "Filter by Category:",
+    "all_categories": "All categories",
+    "sort_by": "Sort by:",
+    "sort_default": "Default",
+    "sort_price_asc": "Price: Low to High",
+    "sort_price_desc": "Price: High to Low",
+    "sort_name_asc": "Name: A-Z",
+    "sort_name_desc": "Name: Z-A",
+    "search_label": "Search:",
+    "search_placeholder": "Product name...",
+    "loading": "Loading products..."
+  },
+  "cart_page": {
+    "title": "Your Cart - Maison Trüvra",
+    "main_title": "Your Exceptional Cart",
+    "empty_message": "Your cart is currently empty.",
+    "cta_shop_now": "Discover our products",
+    "table_product": "Product",
+    "table_price": "Price",
+    "table_quantity": "Quantity",
+    "table_total": "Total",
+    "table_actions": "Actions",
+    "clear_cart_btn": "Clear Cart",
+    "continue_shopping_btn": "Continue Shopping",
+    "summary_title": "Cart Summary",
+    "summary_subtotal": "Subtotal:",
+    "summary_total_label": "Total:",
+    "checkout_btn": "Proceed to Checkout",
+    "checkout_secure_note": "Secure payment. Taxes included. Shipping costs calculated at the next step."
+  },
+  "payment_page": {
+    "title": "Payment - Maison Trüvra",
+    "main_title": "Finalize Your Order",
+    "summary_title": "Order Summary",
+    "loading_summary": "Loading summary...",
+    "summary_shipping": "Shipping:",
+    "shipping_calculated_later": "Calculated at next step",
+    "pay_button_text": "Pay"
+  },
+  "b2b_shop": {
+    "page_title": "Professional Marketplace - Maison Trüvra",
+    "main_title": "Professional Marketplace",
+    "subtitle": "Access our exclusive catalog, place an order, or request a quote.",
+    "quote_modal_title": "Quote Request",
+    "quote_modal_intro": "Please provide additional details for your quote request. Our team will contact you shortly.",
+    "quote_modal_summary_title": "Items in the request:",
+    "quote_modal_loading_summary": "Loading summary...",
+    "quote_modal_notes_label": "Notes or Specific Instructions:",
+    "quote_modal_notes_placeholder": "e.g., Desired quantities if different from the cart, preferred delivery date, etc.",
+    "quote_modal_contact_label": "Contact Person (if different from account):",
+    "quote_modal_phone_label": "Direct Phone (optional):",
+    "quote_modal_submit_btn": "Send Quote Request"
+  },
+  "pro_cart_page": {
+    "page_title": "Professional Cart - Maison Trüvra",
+    "main_title": "Professional Cart",
+    "empty_message": "Your professional cart is empty.",
+    "cta_discover": "Explore the Pro Marketplace",
+    "unit_price_ht": "Unit Price (ex. VAT)",
+    "total_ht": "Total (ex. VAT)",
+    "summary_title": "Pro Cart Summary",
+    "subtotal_ht": "Subtotal (ex. VAT):",
+    "partnership_discount": "Partnership Discount:",
+    "estimated_vat": "Estimated VAT:",
+    "total_ttc": "Estimated Total (inc. VAT):",
+    "pay_by_card": "Pay by Card",
+    "request_quote": "Request a Quote",
+    "submit_po": "Submit PO"
+  }
 }
