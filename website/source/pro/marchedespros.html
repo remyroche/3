@@ -22,6 +22,40 @@
             </div>
         </header>
 
+
+        <!-- Status Overview Section -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                <h2 class="text-lg font-semibold text-accent">Niveau Partenaire</h2>
+                <p id="partnership-level" class="text-2xl font-bold text-primary">-</p>
+                <p id="partnership-discount" class="text-sm text-gray-500">-</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                <h2 class="text-lg font-semibold text-accent">Dépenses Annuelles</h2>
+                <p id="annual-spend" class="text-2xl font-bold text-primary">0.00 €</p>
+                <p class="text-sm text-gray-500">Sur les 365 derniers jours</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                <h2 class="text-lg font-semibold text-accent">Crédit de Parrainage</h2>
+                <p id="referral-credit" class="text-2xl font-bold text-primary">0.00 €</p>
+                <a href="/pro/referral.html" class="text-sm text-primary hover:underline">Voir mon code</a>
+            </div>
+        </div>
+
+        <!-- Devis et Commandes Section -->
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold text-primary mb-4">Mes Devis en Attente</h2>
+                <div id="quotes-list" class="space-y-3"></div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold text-primary mb-4">Mes Dernières Commandes</h2>
+                <div id="orders-list" class="space-y-3"></div>
+            </div>
+        </div>
+
+
+        
         <!-- Filters and Sorting Section (similar to nos-produits.html) -->
         <section id="b2b-filters-section" class="mb-8 p-4 md:p-6 bg-white shadow-md rounded-lg">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
