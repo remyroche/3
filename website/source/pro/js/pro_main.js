@@ -1,20 +1,20 @@
+<!--------------------------------------------------------------------------------
+-- File: website/source/pro/js/pro_main.js
+-- Change: Added client-side validation and sanitization for the profile form.
+--------------------------------------------------------------------------------->
 <script>
+// You must include the DOMPurify library in your HTML for this to work.
+// <script src="[https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js](https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js)"></script>
+
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Secure Fetch Wrapper ---
-    // This wrapper automatically includes credentials for every fetch call.
     const secureFetch = (url, options = {}) => {
         const defaultOptions = {
-            credentials: 'include', // This is the key change!
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json', ...options.headers },
         };
         return fetch(url, { ...options, ...defaultOptions });
     };
 
-
-    // --- Logout Logic ---
     const logoutButton = document.getElementById('logout-pro');
     if (logoutButton) {
         logoutButton.addEventListener('click', (e) => {
@@ -28,12 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Profile Page Logic ---
     if (document.getElementById('profile-form')) {
         const profileForm = document.getElementById('profile-form');
         const messageDiv = document.getElementById('profile-message');
 
-        // Fetch and populate profile data
         secureFetch('/api/b2b/profile')
             .then(response => response.json())
             .then(data => {
@@ -49,19 +47,22 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(error => console.error('Error fetching profile:', error));
 
-        // Handle profile update
         profileForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            // (Client-side validation will be added here in the next step)
+            if (!validateProfileForm()) {
+                return; // Stop submission if validation fails
+            }
+
             const formData = new FormData(this);
+            // Sanitize input with DOMPurify before sending to the backend
             const data = {
-                company_name: formData.get('companyName'),
-                email: formData.get('email'),
-                phone_number: formData.get('phone'),
+                company_name: DOMPurify.sanitize(formData.get('companyName')),
+                email: DOMPurify.sanitize(formData.get('email')),
+                phone_number: DOMPurify.sanitize(formData.get('phone')),
                 address: {
-                    street: formData.get('address'),
-                    city: formData.get('city'),
-                    postal_code: formData.get('zipCode'),
+                    street: DOMPurify.sanitize(formData.get('address')),
+                    city: DOMPurify.sanitize(formData.get('city')),
+                    postal_code: DOMPurify.sanitize(formData.get('zipCode')),
                     country: 'France'
                 }
             };
@@ -72,7 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(response => {
                 if (response.ok) return response.json();
-                throw new Error('Failed to update profile');
+                // Handle server-side validation errors
+                return response.json().then(err => { throw err; });
             })
             .then(() => {
                 messageDiv.textContent = window.i18n.profile_update_success;
@@ -80,13 +82,47 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(error => {
                 console.error('Error updating profile:', error);
-                messageDiv.textContent = window.i18n.profile_update_error;
+                // Display server-side error message if available
+                const errorMessage = error.message || window.i18n.profile_update_error;
+                messageDiv.textContent = errorMessage;
                 messageDiv.className = 'mt-4 text-center text-red-600';
             });
         });
+
+        function validateProfileForm() {
+            let isValid = true;
+            clearErrors();
+
+            const email = document.getElementById('email').value;
+            if (!/^\S+@\S+\.\S+$/.test(email)) {
+                showError('email', 'Invalid email format.');
+                isValid = false;
+            }
+
+            const companyName = document.getElementById('companyName').value;
+            if (companyName.trim() === '') {
+                showError('companyName', 'Company name is required.');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        function showError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            field.classList.add('border-red-500');
+            const errorElement = document.createElement('p');
+            errorElement.className = 'text-red-500 text-xs italic error-message';
+            errorElement.textContent = message;
+            field.parentNode.appendChild(errorElement);
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => el.remove());
+            document.querySelectorAll('.border-red-500').forEach(el => el.classList.remove('border-red-500'));
+        }
     }
-    
-    // --- B2B Newsletter Subscription ---
+
     const b2bNewsletterForm = document.getElementById('b2b-newsletter-form');
     if (b2bNewsletterForm) {
         b2bNewsletterForm.addEventListener('submit', async (e) => {
@@ -95,9 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const message = document.getElementById('b2b-newsletter-message');
             
             if (!emailInput || !message || !window.i18n) return;
-
+            
             try {
-                // Use secureFetch for this public endpoint as well for consistency.
                 const response = await secureFetch('/api/b2b/newsletter/subscribe', {
                     method: 'POST',
                     body: JSON.stringify({ email: emailInput.value })
@@ -123,6 +158,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
-</script>
-</body>
-</html>
