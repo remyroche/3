@@ -3,4 +3,6 @@ from flask import Blueprint
 
 orders_bp = Blueprint('orders_bp', __name__, url_prefix='/api/orders')
 
-from . import routes
+# Import the refactored route modules to register their routes with the blueprint
+from . import public_routes
+from . import b2c_routes
