@@ -1,3 +1,108 @@
+from flask import Blueprint, request, jsonify, redirect, url_for
+from flask_login import login_required, current_user
+import stripe
+from models import db, Order, OrderItem, Product, Cart, CartItem, Payment, User, B2BUser
+from models.enums import OrderStatus, PaymentStatus
+from config import Config
+from services.b2b_invoice_service import create_b2b_invoice_from_order
+
+order_blueprint = Blueprint('order', __name__)
+stripe.api_key = Config.SECRET_KEY # This should be your Stripe Secret Key
+
+
+
+@order_blueprint.route('/create_order', methods=['POST'])
+@login_required
+def create_order():
+    data = request.get_json()
+    
+    cart = Cart.query.filter_by(user_id=current_user.id).first()
+    if not cart or not cart.items:
+        return jsonify({'error': 'Your cart is empty'}), 400
+
+    total_amount = cart.get_total_price()
+
+    try:
+        # Create a new order in a PENDING state
+        new_order = Order(
+            user_id=current_user.id,
+            total_amount=total_amount,
+            status=OrderStatus.PENDING
+        )
+        db.session.add(new_order)
+        db.session.flush()
+
+        for item in cart.items:
+            order_item = OrderItem(
+                order_id=new_order.id,
+                product_id=item.product_id,
+                quantity=item.quantity,
+                price=item.product.price
+            )
+            db.session.add(order_item)
+
+        payment_intent = stripe.PaymentIntent.create(
+            amount=int(total_amount * 100),  # Amount in cents
+            currency='eur',
+            metadata={'order_id': new_order.id}
+        )
+        
+        new_payment = Payment(
+            order_id=new_order.id,
+            stripe_payment_intent_id=payment_intent.id,
+            amount=total_amount,
+            status=PaymentStatus.PENDING
+        )
+        db.session.add(new_payment)
+
+        # Clear the cart
+        CartItem.query.filter_by(cart_id=cart.id).delete()
+        
+        db.session.commit()
+
+        return jsonify({'clientSecret': payment_intent.client_secret})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(error=str(e)), 500
+
+
+@order_blueprint.route('/webhook/stripe', methods=['POST'])
+def stripe_webhook():
+    payload = request.get_data(as_text=True)
+    sig_header = request.headers.get('Stripe-Signature')
+    # This should be your Stripe Webhook Signing Secret
+    endpoint_secret = "whsec_..." 
+
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+    except ValueError as e:
+        return 'Invalid payload', 400
+    except stripe.error.SignatureVerificationError as e:
+        return 'Invalid signature', 400
+
+    if event['type'] == 'payment_intent.succeeded':
+        payment_intent = event['data']['object']
+        order_id = payment_intent['metadata']['order_id']
+        
+        order = Order.query.get(order_id)
+        payment = Payment.query.filter_by(stripe_payment_intent_id=payment_intent.id).first()
+        
+        if order and payment:
+            order.status = OrderStatus.COMPLETED
+            payment.status = PaymentStatus.COMPLETED
+            
+            # --- AUTOMATIC INVOICE GENERATION FOR B2B ---
+            # Check if the user associated with the order is a B2B user
+            if isinstance(order.user, B2BUser):
+                create_b2b_invoice_from_order(order)
+            # ---------------------------------------------
+                
+            db.session.commit()
+            
+    return 'Success', 200
+
+
 @orders_bp.route('/history', methods=['GET'])
 @jwt_required()
 def get_order_history():
