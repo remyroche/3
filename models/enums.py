@@ -2,6 +2,12 @@
 # Contains all Enum definitions for the models.
 import enum
 
+
+class B2BLoyaltyTier(enum.Enum):
+    BRONZE = "Bronze"
+    SILVER = "Silver"
+    GOLD = "Gold"
+
 class UserRoleEnum(enum.Enum):
     B2C_CUSTOMER = "b2c_customer"
     B2B_PROFESSIONAL = "b2b_professional"
