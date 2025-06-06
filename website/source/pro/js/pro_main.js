@@ -1,21 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Professional Main JS</title>
+</head>
+<body>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    // Handles the logout functionality for professional users.
     const logoutButton = document.getElementById('logout-pro');
     if (logoutButton) {
         logoutButton.addEventListener('click', (e) => {
             e.preventDefault();
             localStorage.removeItem('proToken');
-            window.location.href = 'professionnels.html';
+            // Redirect to the language-specific professionals login page.
+            const lang = document.documentElement.lang || 'fr';
+            window.location.href = `/${lang}/professionnels.html`;
         });
     }
 
-    // Profile Page Logic
+    // --- Profile Page Logic ---
     if (document.getElementById('profile-form')) {
         const profileForm = document.getElementById('profile-form');
         const messageDiv = document.getElementById('profile-message');
         const token = localStorage.getItem('proToken');
 
-        // Fetch and populate profile data
+        // Fetch and populate profile data on page load.
         fetch('/api/b2b/profile', {
             headers: { 'Authorization': `Bearer ${token}` }
         })
@@ -33,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(error => console.error('Error fetching profile:', error));
 
-        // Handle profile update
+        // Handle profile update form submission.
         profileForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
@@ -45,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     street: formData.get('address'),
                     city: formData.get('city'),
                     postal_code: formData.get('zipCode'),
-                    country: 'France' // Assuming country is fixed for now
+                    country: 'France' 
                 }
             };
 
@@ -74,5 +83,46 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+    
+    // --- B2B Newsletter subscription logic (in the footer) ---
+    const b2bNewsletterForm = document.getElementById('b2b-newsletter-form');
+    if (b2bNewsletterForm) {
+        b2bNewsletterForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const emailInput = document.getElementById('b2b-newsletter-email');
+            const message = document.getElementById('b2b-newsletter-message');
+            
+            // Check if all required elements are available.
+            if (!emailInput || !message || !window.i18n) return;
+
+            try {
+                // Call the B2B newsletter subscription endpoint.
+                const response = await fetch('/api/b2b/newsletter/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailInput.value })
+                });
+
+                if (response.ok) {
+                    message.textContent = window.i18n.b2b_newsletter_success;
+                    message.className = 'mt-2 text-sm h-4 text-green-400';
+                    emailInput.value = '';
+                } else {
+                    const errorData = await response.json();
+                    message.textContent = window.i18n.b2b_newsletter_error || errorData.message;
+                    message.className = 'mt-2 text-sm h-4 text-red-400';
+                }
+            } catch (error) {
+                console.error('B2B Newsletter subscription error:', error);
+                message.textContent = window.i18n.b2b_newsletter_error;
+                message.className = 'mt-2 text-sm h-4 text-red-400';
+            }
+
+            // Clear the message after a few seconds.
+            setTimeout(() => { message.textContent = ''; }, 3000);
+        });
+    }
 });
 </script>
+</body>
+</html>
