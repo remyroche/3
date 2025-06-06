@@ -1,10 +1,12 @@
 from .base import db, BaseModel
-from .enums import UserRoleEnum, ProfessionalStatusEnum, LoyaltyTier
+from .enums import UserRoleEnum, ProfessionalStatusEnum, PartnershipLevel
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone
 from flask_login import UserMixin
+import pyotp
+import re
 import uuid
-
+from flask import current_app
 
 class User(BaseModel, UserMixin):
     """
@@ -21,23 +23,12 @@ class User(BaseModel, UserMixin):
     is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
     is_verified = db.Column(db.Boolean, default=False, nullable=False, index=True)
 
-
     # --- REFERRAL FIELDS ---
     referral_code = db.Column(db.String(50), unique=True, nullable=True, index=True)
     referred_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     referral_credit_balance = db.Column(db.Float, default=0.0, nullable=False)
-    referrals = db.relationship('User', backref=db.backref('referrer', remote_side='User.id'))
     
-    # Relationships
-    b2b_profile = db.relationship('B2BUser', back_populates='user', uselist=False, cascade="all, delete-orphan")
-    referrer = db.relationship('User', remote_side=[id], backref='referrals')
-    
-    def generate_referral_code(self):
-        if not self.referral_code:
-            self.referral_code = f"TRV-{uuid.uuid4().hex[:8].upper()}"
-        return self.referral_code
-    
-    # Authentication & Security
+    # --- AUTHENTICATION & SECURITY ---
     reset_token = db.Column(db.String(100), index=True, nullable=True)
     reset_token_expires_at = db.Column(db.DateTime, nullable=True)
     verification_token = db.Column(db.String(100), index=True, nullable=True)
@@ -45,17 +36,20 @@ class User(BaseModel, UserMixin):
     totp_secret = db.Column(db.String(100), nullable=True)
     is_totp_enabled = db.Column(db.Boolean, default=False, nullable=False)
 
-    # Generic Info
+    # --- GENERIC INFO ---
     preferred_language = db.Column(db.String(5), default='fr')
     newsletter_opt_in = db.Column(db.Boolean, default=False)
     
-    # Relationships
+    # --- RELATIONSHIPS ---
     orders = db.relationship('Order', back_populates='user', lazy='dynamic')
     reviews = db.relationship('Review', back_populates='user', lazy='dynamic')
     cart = db.relationship('Cart', back_populates='user', uselist=False, lazy='joined')
     
-    # B2B-specific profile, linked via one-to-one relationship
+    # One-to-one relationship to the B2B-specific profile
     b2b_profile = db.relationship('B2BUser', back_populates='user', uselist=False, cascade="all, delete-orphan")
+    
+    # Relationship to get the list of users this user has referred
+    referrals = db.relationship('User', backref=db.backref('referrer', remote_side='User.id'))
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -73,47 +67,48 @@ class User(BaseModel, UserMixin):
 
     def generate_referral_code(self):
         if not self.referral_code:
-            for _ in range(5): 
-                potential_code = f"TRV-{'U' if not self.id else self.id}-{uuid.uuid4().hex[:6].upper()}"
-                if not User.query.filter_by(referral_code=potential_code).first():
-                    self.referral_code = potential_code
-                    return self.referral_code
-            self.referral_code = f"TRV-{uuid.uuid4().hex[:10].upper()}"
+            self.referral_code = f"TRV-{uuid.uuid4().hex[:8].upper()}"
         return self.referral_code
 
-    def generate_totp_secret(self): self.totp_secret = pyotp.random_base32(); return self.totp_secret
+    def generate_totp_secret(self): 
+        self.totp_secret = pyotp.random_base32()
+        return self.totp_secret
     
     def get_totp_uri(self, issuer_name=None):
-        if not self.totp_secret: self.generate_totp_secret() 
+        if not self.totp_secret: self.generate_totp_secret()
         issuer = issuer_name or current_app.config.get('TOTP_ISSUER_NAME', 'Maison Truvra')
-        if not self.totp_secret: raise ValueError("TOTP secret missing.")
         return pyotp.totp.TOTP(self.totp_secret).provisioning_uri(name=self.email, issuer_name=issuer)
     
-    def verify_totp(self, code, for_time=None, window=1): return pyotp.TOTP(self.totp_secret).verify(code, for_time=for_time, window=window) if self.totp_secret else False
+    def verify_totp(self, code, for_time=None, window=1): 
+        return pyotp.TOTP(self.totp_secret).verify(code, for_time=for_time, window=window) if self.totp_secret else False
     
     def to_dict(self):
-        return {
-            "id": self.id, "email": self.email, "first_name": self.first_name, 
-            "last_name": self.last_name, "role": self.role.value if self.role else None, 
-            "is_active": self.is_active, "is_verified": self.is_verified, 
-            "company_name": self.company_name, "vat_number": self.vat_number, "siret_number": self.siret_number,
-            "professional_status": self.professional_status.value if self.professional_status else None, 
-            "b2b_tier": self.b2b_tier.value if self.b2b_tier else None,
-            "is_totp_enabled": self.is_totp_enabled, 
-            "is_admin": self.role == UserRoleEnum.ADMIN,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "shipping_address_line1": self.shipping_address_line1,
-            "currency": self.currency,
-            "newsletter_b2c_opt_in": self.newsletter_b2c_opt_in,
-            "newsletter_b2b_opt_in": self.newsletter_b2b_opt_in,
+        """
+        Consolidated method to serialize user data.
+        Includes B2B profile information if it exists.
+        """
+        data = {
+            "id": self.id,
+            "email": self.email,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "role": self.role.value if self.role else None,
+            "is_active": self.is_active,
+            "is_verified": self.is_verified,
+            "is_totp_enabled": self.is_totp_enabled,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
             "preferred_language": self.preferred_language,
+            "newsletter_opt_in": self.newsletter_opt_in,
             "referral_code": self.referral_code,
-            "referred_by_code": self.referred_by_code,
             "referral_credit_balance": self.referral_credit_balance,
-            "is_restaurant_branding_partner": self.is_restaurant_branding_partner
         }
-    def __repr__(self): return f'<User {self.email}>'
+        if self.role == UserRoleEnum.B2B_CUSTOMER and self.b2b_profile:
+            data.update(self.b2b_profile.to_dict())
+        return data
+
+    def __repr__(self):
+        return f'<User {self.email}>'
 
 
 class B2BUser(BaseModel):
@@ -132,23 +127,16 @@ class B2BUser(BaseModel):
     phone_number = db.Column(db.String(50))
     status = db.Column(db.Enum(ProfessionalStatusEnum), default=ProfessionalStatusEnum.PENDING_REVIEW)
     
-    # Loyalty Program Fields
-    loyalty_tier = db.Column(db.Enum(LoyaltyTier), default=LoyaltyTier.BRONZE, nullable=False)
-    
-    # --- RESTAURANT BRANDING INCENTIVE ---
-    is_restaurant_branding_partner = db.Column(db.Boolean, default=False, nullable=False)
-
-    # --- UPDATED PARTNERSHIP FIELD ---
+    # Partnership Program Field
     partnership_level = db.Column(db.Enum(PartnershipLevel), default=PartnershipLevel.BRONZE, nullable=False)
+    
+    # Restaurant Branding Incentive Field
     is_restaurant_branding_partner = db.Column(db.Boolean, default=False, nullable=False)
-    user = db.relationship('User', back_populates='b2b_profile')
 
     # Relationships
     user = db.relationship('User', back_populates='b2b_profile')
     invoices = db.relationship('B2BInvoice', back_populates='user', lazy='dynamic')
-
-
- 
+    
     def to_dict(self):
         """
         Returns a dictionary of B2B-specific fields.
