@@ -1,6 +1,9 @@
-from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
-from flask_login import login_required, current_user
-from models import db, B2BUser
+# backend/b2b/profile_routes.py
+from flask import request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from . import b2b_bp
+from .. import db
+from ..models import User
 
 profile_blueprint = Blueprint('b2b_profile', __name__)
 
@@ -15,6 +18,30 @@ def profile():
     return render_template('pro/profile.html', user=current_user)
 
 
+
+@b2b_bp.route('/profile', methods=['GET'])
+@jwt_required()
+def get_b2b_profile():
+    user_id = get_jwt_identity()
+    user = User.query.get_or_404(user_id)
+    return jsonify(user.to_dict())
+
+@b2b_bp.route('/profile', methods=['PUT'])
+@jwt_required()
+def update_b2b_profile():
+    user_id = get_jwt_identity()
+    user = User.query.get_or_404(user_id)
+    data = request.json
+
+    user.company_name = data.get('company_name', user.company_name)
+    user.phone_number = data.get('phone_number', user.phone_number)
+    user.address_line1 = data.get('address', {}).get('street', user.address_line1)
+    user.city = data.get('address', {}).get('city', user.city)
+    user.postal_code = data.get('address', {}).get('postal_code', user.postal_code)
+    
+    db.session.commit()
+    return jsonify(message="Profile updated successfully.", success=True, user=user.to_dict())
+    
 @profile_blueprint.route('/dashboard_info')
 @login_required
 def b2b_dashboard_info():
