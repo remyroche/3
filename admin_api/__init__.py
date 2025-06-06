@@ -1,29 +1,36 @@
-# backend/admin_api/__init__.py
-from flask import Blueprint, current_app
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+# backend/models/__init__.py
+# This file makes the 'models' directory a Python package and imports all model classes
+# into the package's namespace, so they can be easily imported elsewhere.
+# e.g., from ..models import User, Product, Order
 
-admin_api_bp = Blueprint('admin_api_bp', __name__, url_prefix='/api/admin')
+from .base import db
+from .enums import (
+    UserRoleEnum, ProfessionalStatusEnum, B2BPricingTierEnum, ProductTypeEnum, 
+    PreservationTypeEnum, SerializedInventoryItemStatusEnum, StockMovementTypeEnum, 
+    OrderStatusEnum, InvoiceStatusEnum, AuditLogStatusEnum, AssetTypeEnum, 
+    NewsletterTypeEnum, QuoteRequestStatusEnum
+)
+from .user_models import User, ProfessionalDocument, TokenBlocklist, ReferralAwardLog
+from .product_models import (
+    Category, Product, ProductImage, ProductWeightOption, 
+    ProductB2BTierPrice, ProductLocalization, CategoryLocalization
+)
+from .order_models import Order, OrderItem, QuoteRequest, QuoteRequestItem, Invoice, InvoiceItem
+from .inventory_models import SerializedInventoryItem, StockMovement
+from .utility_models import Review, Cart, CartItem, NewsletterSubscription, Setting, GeneratedAsset, AuditLog
 
-# This hook will apply the default admin rate limit to all routes in this blueprint.
-# Specific routes can have their own more restrictive limits.
-@admin_api_bp.before_request
-def before_request_hook():
-    # It's good practice to ensure the limiter is available on the app context.
-    # This assumes the limiter instance is attached as `current_app.limiter` in create_app.
-    if hasattr(current_app, 'limiter'):
-        limiter = current_app.limiter
-        limiter.limit(current_app.config.get('ADMIN_API_RATELIMITS', "200 per hour"))(lambda: True)()
-    else:
-        current_app.logger.warning("Flask-Limiter instance not found on current_app. Admin API rate limiting may not be active.")
 
-
-# Import all the route modules to register their routes with the blueprint
-from . import auth_routes
-from . import dashboard_routes
-from . import product_management_routes
-from . import user_management_routes
-from . import order_management_routes
-from . import b2b_management_routes
-from . import site_management_routes
-from . import asset_routes
+# You can optionally create an __all__ variable to define the public API of this package
+__all__ = [
+    'db', 
+    'User', 'ProfessionalDocument', 'TokenBlocklist', 'ReferralAwardLog',
+    'Category', 'Product', 'ProductImage', 'ProductWeightOption', 'ProductB2BTierPrice',
+    'ProductLocalization', 'CategoryLocalization',
+    'Order', 'OrderItem', 'QuoteRequest', 'QuoteRequestItem', 'Invoice', 'InvoiceItem',
+    'SerializedInventoryItem', 'StockMovement',
+    'Review', 'Cart', 'CartItem', 'NewsletterSubscription', 'Setting', 'GeneratedAsset', 'AuditLog',
+    'UserRoleEnum', 'ProfessionalStatusEnum', 'B2BPricingTierEnum', 'ProductTypeEnum',
+    'PreservationTypeEnum', 'SerializedInventoryItemStatusEnum', 'StockMovementTypeEnum',
+    'OrderStatusEnum', 'InvoiceStatusEnum', 'AuditLogStatusEnum', 'AssetTypeEnum',
+    'NewsletterTypeEnum', 'QuoteRequestStatusEnum'
+]
