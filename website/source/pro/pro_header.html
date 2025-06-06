@@ -2,28 +2,77 @@
 <html>
 <head>
     <title>Professional Header</title>
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
-    <header class="bg-white shadow-md">
-        <div class="container mx-auto px-4 py-2 flex justify-between items-center">
-            <a href="marchedespros.html" class="text-2xl font-bold text-gray-800">&lt;%= t('pro_header_title') %&gt;</a>
-            <nav>
-                <a href="marchedespros.html" class="text-gray-600 hover:text-gray-800 px-3 py-2">&lt;%= t('pro_header_home') %&gt;</a>
-                <a href="invoices-pro.html" class="text-gray-600 hover:text-gray-800 px-3 py-2">&lt;%= t('pro_header_invoices') %&gt;</a>
-                <a href="programme-fidelite.html" class="text-gray-600 hover:text-gray-800 px-3 py-2">&lt;%= t('pro_header_loyalty') %&gt;</a>
-                <a href="referral.html" class="text-gray-600 hover:text-gray-800 px-3 py-2">&lt;%= t('pro_header_referral') %&gt;</a>
-                <a href="profile.html" class="text-gray-600 hover:text-gray-800 px-3 py-2">&lt;%= t('pro_header_profile') %&gt;</a>
-                <a href="#" id="logout-pro" class="text-gray-600 hover:text-gray-800 px-3 py-2">&lt;%= t('pro_header_logout') %&gt;</a>
+    <header class="bg-white shadow-md sticky top-0 z-40">
+        <div class="container mx-auto px-4 py-2 flex justify-between items-center h-24">
+            <div class="flex-shrink-0">
+                <a href="marchedespros.html" title="Maison Trüvra Pro Homepage" class="text-2xl font-bold text-gray-800">
+                    <%= t('pro_header_title') %>
+                </a>
+            </div>
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="marchedespros.html" class="text-gray-600 hover:text-gray-800 px-3 py-2 text-base font-medium"><%= t('pro_header_home') %></a>
+                <a href="invoices-pro.html" class="text-gray-600 hover:text-gray-800 px-3 py-2 text-base font-medium"><%= t('pro_header_invoices') %></a>
+                <a href="programme-fidelite.html" class="text-gray-600 hover:text-gray-800 px-3 py-2 text-base font-medium"><%= t('pro_header_loyalty') %></a>
+                <a href="referral.html" class="text-gray-600 hover:text-gray-800 px-3 py-2 text-base font-medium"><%= t('pro_header_referral') %></a>
+                <a href="profile.html" class="text-gray-600 hover:text-gray-800 px-3 py-2 text-base font-medium"><%= t('pro_header_profile') %></a>
+                <a href="#" id="logout-pro" class="text-gray-600 hover:text-gray-800 px-3 py-2 text-base font-medium"><%= t('pro_header_logout') %></a>
             </nav>
-            <div>
-                 &lt;% if (lang === 'fr') { %&gt;
-                    <a href="/en/pro/&lt;%= pagePath.substring(4) %&gt;">EN</a>
-                &lt;% } else { %&gt;
-                    <a href="/fr/pro/&lt;%= pagePath.substring(4) %&gt;">FR</a>
-                &lt;% } %&gt;
+            <div class="hidden md:flex items-center space-x-5">
+                <div class="lang-switcher-desktop flex items-center space-x-2">
+                    <a href="<%= lang === 'fr' ? pagePath.replace('/fr/', '/en/') : '/en/pro/' + pagePath.substring(pagePath.indexOf('/pro/') + 5) %>" data-lang="en" class="lang-link text-xs font-semibold text-gray-600 hover:text-gray-800 <%= lang === 'en' ? 'text-gray-800' : '' %>">EN</a>
+                    <span class="text-gray-400">|</span>
+                    <a href="<%= lang === 'en' ? pagePath.replace('/en/', '/fr/') : '/fr/pro/' + pagePath.substring(pagePath.indexOf('/pro/') + 5) %>" data-lang="fr" class="lang-link text-xs font-semibold text-gray-600 hover:text-gray-800 <%= lang === 'fr' ? 'text-gray-800' : '' %>">FR</a>
+                </div>
+            </div>
+            <div class="md:hidden flex items-center">
+                <button type="button" id="mobile-menu-button-pro" class="text-gray-600 hover:text-gray-800 focus:outline-none">
+                    <span class="sr-only">Open main menu</span>
+                    <svg class="h-7 w-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
+                </button>
+            </div>
+        </div>
+        <div class="md:hidden hidden" id="mobile-menu-dropdown-pro">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="marchedespros.html" class="text-gray-600 hover:bg-gray-100 hover:text-gray-800 block px-3 py-2 rounded-md text-base font-medium"><%= t('pro_header_home') %></a>
+                <a href="invoices-pro.html" class="text-gray-600 hover:bg-gray-100 hover:text-gray-800 block px-3 py-2 rounded-md text-base font-medium"><%= t('pro_header_invoices') %></a>
+                <a href="programme-fidelite.html" class="text-gray-600 hover:bg-gray-100 hover:text-gray-800 block px-3 py-2 rounded-md text-base font-medium"><%= t('pro_header_loyalty') %></a>
+                <a href="referral.html" class="text-gray-600 hover:bg-gray-100 hover:text-gray-800 block px-3 py-2 rounded-md text-base font-medium"><%= t('pro_header_referral') %></a>
+                <a href="profile.html" class="text-gray-600 hover:bg-gray-100 hover:text-gray-800 block px-3 py-2 rounded-md text-base font-medium"><%= t('pro_header_profile') %></a>
+                <a href="#" id="logout-pro-mobile" class="text-gray-600 hover:bg-gray-100 hover:text-gray-800 block px-3 py-2 rounded-md text-base font-medium"><%= t('pro_header_logout') %></a>
+                <div class="lang-switcher-mobile px-3 py-2 flex items-center space-x-2">
+                    <a href="<%= lang === 'fr' ? pagePath.replace('/fr/', '/en/') : '/en/pro/' + pagePath.substring(pagePath.indexOf('/pro/') + 5) %>" data-lang="en" class="lang-link text-xs font-semibold text-gray-600 hover:text-gray-800 <%= lang === 'en' ? 'text-gray-800' : '' %>">EN</a>
+                    <span class="text-gray-400">|</span>
+                    <a href="<%= lang === 'en' ? pagePath.replace('/en/', '/fr/') : '/fr/pro/' + pagePath.substring(pagePath.indexOf('/pro/') + 5) %>" data-lang="fr" class="lang-link text-xs font-semibold text-gray-600 hover:text-gray-800 <%= lang === 'fr' ? 'text-gray-800' : '' %>">FR</a>
+                </div>
             </div>
         </div>
     </header>
+
+    <script>
+        // Basic mobile menu toggle functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileMenuButton = document.getElementById('mobile-menu-button-pro');
+            const mobileMenuDropdown = document.getElementById('mobile-menu-dropdown-pro');
+
+            if (mobileMenuButton && mobileMenuDropdown) {
+                mobileMenuButton.addEventListener('click', () => {
+                    mobileMenuDropdown.classList.toggle('hidden');
+                });
+            }
+
+            // Optional: Close mobile menu when a link is clicked (if it's a single-page app or for smooth UX)
+            const mobileNavLinks = mobileMenuDropdown ? mobileMenuDropdown.querySelectorAll('.text-base.font-medium') : [];
+            mobileNavLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (!mobileMenuDropdown.classList.contains('hidden')) {
+                        mobileMenuDropdown.classList.add('hidden');
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
