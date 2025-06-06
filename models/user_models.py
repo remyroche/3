@@ -115,28 +115,6 @@ class User(BaseModel, UserMixin):
         }
     def __repr__(self): return f'<User {self.email}>'
 
-    def to_dict(self):
-        data = {
-            "id": self.id,
-            "email": self.email,
-            "first_name": self.first_name,
-            "last_name": self.last_name,
-            "role": self.role.value if self.role else None,
-            "is_active": self.is_active,
-            "is_verified": self.is_verified,
-            "is_totp_enabled": self.is_totp_enabled,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
-            "preferred_language": self.preferred_language,
-        }
-        
-    def to_dict(self):
-        data = super().to_dict()
-        data.update({
-            'referral_code': self.referral_code,
-            'referral_credit_balance': self.referral_credit_balance
-        })
-        return data
 
 class B2BUser(BaseModel):
     """
@@ -173,31 +151,20 @@ class B2BUser(BaseModel):
  
     def to_dict(self):
         """
-        Consolidated method to serialize user data.
-        Includes B2B profile information if it exists.
+        Returns a dictionary of B2B-specific fields.
+        This is intended to be merged into the main User's to_dict().
         """
-        data = {
-            "id": self.id,
-            "email": self.email,
-            "first_name": self.first_name,
-            "last_name": self.last_name,
-            "role": self.role.value if self.role else None,
-            "is_active": self.is_active,
-            "is_verified": self.is_verified,
-            "is_totp_enabled": self.is_totp_enabled,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
-            "preferred_language": self.preferred_language,
-            "newsletter_opt_in": self.newsletter_opt_in,
-            "referral_code": self.referral_code,
-            "referral_credit_balance": self.referral_credit_balance,
+        return {
+            'b2b_id': self.id,
+            'company_name': self.company_name,
+            'siret_number': self.siret_number,
+            'vat_number': self.vat_number,
+            'contact_name': self.contact_name,
+            'b2b_status': self.status.value,
+            'partnership_level': self.partnership_level.value,
+            'is_restaurant_branding_partner': self.is_restaurant_branding_partner
         }
-        if self.role == UserRoleEnum.B2B_CUSTOMER and self.b2b_profile:
-            data.update(self.b2b_profile.to_dict())
-        return data
 
-    def __repr__(self):
-        return f'<User {self.email}>'
 
 class TokenBlocklist(db.Model):
     """
