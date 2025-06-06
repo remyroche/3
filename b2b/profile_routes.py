@@ -15,6 +15,23 @@ def profile():
     return render_template('pro/profile.html', user=current_user)
 
 
+@profile_blueprint.route('/dashboard_info')
+@login_required
+def b2b_dashboard_info():
+    """
+    Provides a consolidated JSON object with all info needed for the B2B dashboard.
+    """
+    if not isinstance(current_user.b2b_profile, B2BUser):
+        return jsonify({"error": "Not a B2B user"}), 403
+    
+    dashboard_info = get_user_dashboard_info(current_user.id)
+    if dashboard_info:
+        return jsonify(dashboard_info)
+    
+    return jsonify({"error": "Could not retrieve dashboard information"}), 500
+
+
+
 @profile_blueprint.route('/update_profile', methods=['POST'])
 @login_required
 def update_profile():
