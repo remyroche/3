@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Panier Professionnel - Maison Trüvra</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/panier.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body id="page-panier-pro">
+    <div id="main-header-placeholder"></div>
+
+    <main class="container mx-auto px-4 py-8 mt-20 md:mt-24 lg:mt-28">
+        <header class="page-header text-center mb-8 md:mb-10">
+            <h1 class="page-title text-3xl md:text-4xl font-bold">Panier Professionnel</h1>
+        </header>
+
+        <div id="cart-content-area">
+            <div id="empty-cart-message" class="text-center py-10 hidden">
+                <i class="fas fa-shopping-bag fa-4x text-mt-warm-taupe mb-4"></i>
+                <p class="text-xl text-mt-earth-brown mb-4">Votre panier professionnel est vide.</p>
+                <a href="marchedespros.html" class="btn btn-primary">Explorer le Marché des Pros</a>
+            </div>
+
+            <div id="cart-table-and-summary" class="hidden">
+                <div class="cart-table-container overflow-x-auto bg-white shadow-lg rounded-lg p-4 md:p-6 mb-8">
+                    <table class="cart-table w-full">
+                        <thead class="border-b-2 border-mt-classic-gold">
+                            <tr>
+                                <th class="py-3 px-2 md:px-4 text-left text-sm font-semibold uppercase text-mt-earth-brown tracking-wider">Produit</th>
+                                <th class="py-3 px-2 md:px-4 text-center text-sm font-semibold uppercase text-mt-earth-brown tracking-wider">Prix Unitaire (HT)</th>
+                                <th class="py-3 px-2 md:px-4 text-center text-sm font-semibold uppercase text-mt-earth-brown tracking-wider">Quantité</th>
+                                <th class="py-3 px-2 md:px-4 text-right text-sm font-semibold uppercase text-mt-earth-brown tracking-wider">Total (HT)</th>
+                                <th class="py-3 px-2 md:px-4 text-right text-sm font-semibold uppercase text-mt-earth-brown tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-items-container">
+                            <!-- Cart items for B2B -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="cart-summary-section grid md:grid-cols-2 gap-8">
+                    <div class="additional-actions">
+                        <button id="clear-cart-btn" class="btn btn-outline text-mt-truffle-burgundy border-mt-truffle-burgundy hover:bg-mt-truffle-burgundy hover:text-mt-cream mb-4 md:mb-0">
+                            <i class="fas fa-times-circle mr-2"></i>Vider le Panier
+                        </button>
+                        <a href="marchedespros.html" class="btn btn-secondary ml-0 md:ml-4">
+                           <i class="fas fa-arrow-left mr-2"></i>Continuer les Achats
+                        </a>
+                    </div>
+
+                    <div class="cart-totals bg-white shadow-lg rounded-lg p-6">
+                        <h2 class="section-title text-xl font-semibold mb-4">Résumé du Panier Pro</h2>
+                        <div id="b2b-totals-breakdown" class="space-y-2">
+                             <div class="flex justify-between items-center pb-2 border-b border-mt-cream-dark">
+                                <span class="text-mt-earth-brown">Sous-total (HT) :</span>
+                                <span id="cart-summary-subtotal-ht" class="font-semibold text-mt-near-black">€0.00</span>
+                            </div>
+                            <div id="partnership-discount-display" class="flex justify-between items-center text-mt-deep-sage-green hidden">
+                                <span id="partnership-discount-label">Remise Partenaire :</span>
+                                <span id="partnership-discount-amount" class="font-semibold">-€0.00</span>
+                            </div>
+                             <div class="flex justify-between items-center">
+                                <span class="text-mt-earth-brown">TVA estimée :</span>
+                                <span id="cart-summary-vat" class="font-semibold text-mt-near-black">€0.00</span>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center mt-4 pt-4 border-t-2 border-mt-classic-gold">
+                            <span class="text-xl font-bold text-mt-near-black">Total Estimé (TTC) :</span>
+                            <span id="cart-summary-total-ttc" class="text-xl font-bold text-mt-truffle-burgundy">€0.00</span>
+                        </div>
+                        
+                        <div class="mt-6 border-t pt-4 space-y-3">
+                             <a href="payment-pro.html" id="checkout-cc-button" class="btn btn-primary w-full py-3 text-center">
+                                Payer par Carte <i class="fas fa-credit-card ml-2"></i>
+                            </a>
+                            <button id="request-quote-button" class="btn btn-secondary w-full py-2.5 text-center">
+                                Demander un Devis
+                            </button>
+                             <form id="po-upload-form-cart" class="flex items-center gap-2">
+                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                 <input type="file" id="po-file-input-cart" name="purchase_order_file" class="form-input text-xs flex-grow" required>
+                                 <button type="submit" class="btn btn-outline text-sm py-2">Soumettre PO</button>
+                             </form>
+                        </div>
+                        <p class="text-xs text-center mt-3 text-mt-warm-taupe">Le paiement par carte est le moyen le plus rapide de traiter votre commande.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="main-footer-placeholder"></div>
+    <div id="global-message-container" class="fixed top-20 right-5 z-[1000] w-auto max-w-sm"></div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="../js/main.js"></script>
+    <script src="js/panier-pro.js"></script> 
+</body>
+</html>
