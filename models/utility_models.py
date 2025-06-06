@@ -3,6 +3,38 @@ from .base import db
 from .enums import AuditLogStatusEnum, AssetTypeEnum, NewsletterTypeEnum
 from datetime import datetime, timezone
 
+class NewsletterSubscription(BaseModel):
+    __tablename__ = 'newsletter_subscriptions'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    user_type = db.Column(db.String(50)) # 'b2c' or 'b2b'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'email': self.email,
+            'is_active': self.is_active,
+            'user_type': self.user_type
+        }
+
+class SiteConfiguration(BaseModel):
+    """
+    Model for storing site-wide configuration settings.
+    """
+    __tablename__ = 'site_configuration'
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(50), unique=True, nullable=False)
+    value = db.Column(db.Text, nullable=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'key': self.key,
+            'value': self.value
+        }
+
+
 class Review(db.Model):
     __tablename__ = 'reviews'
     id = db.Column(db.Integer, primary_key=True)
