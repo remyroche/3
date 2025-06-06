@@ -1,3 +1,10 @@
+from .base import db, BaseModel
+from .enums import UserRoleEnum, ProfessionalStatusEnum, LoyaltyTier
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timezone
+from flask_login import UserMixin
+import uuid
+
 
 class User(BaseModel, UserMixin):
     """
@@ -13,6 +20,22 @@ class User(BaseModel, UserMixin):
     role = db.Column(db.Enum(UserRoleEnum), nullable=False, default=UserRoleEnum.B2C_CUSTOMER, index=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
     is_verified = db.Column(db.Boolean, default=False, nullable=False, index=True)
+
+
+    # --- REFERRAL FIELDS ---
+    referral_code = db.Column(db.String(50), unique=True, nullable=True, index=True)
+    referred_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    referral_credit_balance = db.Column(db.Float, default=0.0, nullable=False)
+    # -----------------------
+    
+    # Relationships
+    b2b_profile = db.relationship('B2BUser', back_populates='user', uselist=False, cascade="all, delete-orphan")
+    referrer = db.relationship('User', remote_side=[id], backref='referrals')
+    
+    def generate_referral_code(self):
+        if not self.referral_code:
+            self.referral_code = f"TRV-{uuid.uuid4().hex[:8].upper()}"
+        return self.referral_code
     
     # Authentication & Security
     reset_token = db.Column(db.String(100), index=True, nullable=True)
@@ -106,10 +129,14 @@ class User(BaseModel, UserMixin):
             "updated_at": self.updated_at.isoformat(),
             "preferred_language": self.preferred_language,
         }
-        if self.role == UserRoleEnum.B2B_CUSTOMER and self.b2b_profile:
-            data.update(self.b2b_profile.to_dict())
+        
+    def to_dict(self):
+        data = super().to_dict()
+        data.update({
+            'referral_code': self.referral_code,
+            'referral_credit_balance': self.referral_credit_balance
+        })
         return data
-
 
 class B2BUser(BaseModel):
     """
@@ -130,21 +157,26 @@ class B2BUser(BaseModel):
     # Loyalty Program Fields
     loyalty_tier = db.Column(db.Enum(LoyaltyTier), default=LoyaltyTier.BRONZE, nullable=False)
     
+    # --- RESTAURANT BRANDING INCENTIVE ---
+    is_restaurant_branding_partner = db.Column(db.Boolean, default=False, nullable=False)
+    # ------------------------------------
+
+    user = db.relationship('User', back_populates='b2b_profile')
+
+    
     # Relationships
     user = db.relationship('User', back_populates='b2b_profile')
     invoices = db.relationship('B2BInvoice', back_populates='user', lazy='dynamic')
+
+
     
     def to_dict(self):
-        return {
-            'b2b_id': self.id,
-            'company_name': self.company_name,
-            'siret_number': self.siret_number,
-            'vat_number': self.vat_number,
-            'contact_name': self.contact_name,
-            'b2b_status': self.status.value,
-            'loyalty_tier': self.loyalty_tier.value
-        }
-
+        data = super().to_dict()
+        data.update({
+            'is_restaurant_branding_partner': self.is_restaurant_branding_partner
+        })
+        return data
+    
 
 class TokenBlocklist(db.Model):
     """
