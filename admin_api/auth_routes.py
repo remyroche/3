@@ -13,6 +13,15 @@ from .. import db, limiter
 from ..models import User, TokenBlocklist, UserRoleEnum
 from ..utils import admin_required
 
+
+from flask import Blueprint, request, jsonify
+from flask_jwt_extended import create_access_token, unset_jwt_cookies
+from models.user_models import ProfessionalUser
+from database import db
+# Assuming you have a password hashing utility
+from utils import check_password_hash 
+
+
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """
