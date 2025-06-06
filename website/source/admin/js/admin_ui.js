@@ -89,16 +89,17 @@ function showAdminConfirm(title, message, onConfirmCallback, confirmText = 'Conf
 
     const confirmButton = document.createElement('button');
     confirmButton.id = 'adminModalConfirm';
-    confirmButton.className = 'btn btn-admin-danger'; // Use danger for confirm, or primary if preferred
-    confirmButton.textContent = confirmText; // XSS: Button text, assumed safe
+    confirmButton.className = 'btn btn-admin-danger';
+    confirmButton.textContent = confirmText; // XSS Safe
     
     const cancelButton = document.createElement('button');
     cancelButton.id = 'adminModalCancel';
     cancelButton.className = 'btn btn-admin-secondary'; 
-    cancelButton.textContent = cancelText; // XSS: Button text, assumed safe
+    cancelButton.textContent = cancelText; // XSS Safe
 
     modalActions.appendChild(cancelButton); 
     modalActions.appendChild(confirmButton); 
+
     
     function closeModal() {
         modalOverlay.remove();
