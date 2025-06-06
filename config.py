@@ -19,14 +19,21 @@ else:
 
 class Config:
     """Base configuration."""
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'change_this_default_secret_key_in_prod_sqlalchemy_totp')
     DEBUG = False
     TESTING = False
     APP_BASE_URL = os.environ.get('APP_BASE_URL', 'http://localhost:8000')
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
+    
+    # Define the upload folder for assets
+    UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'website/dist/uploads')
+    
+    # Ensure the upload folder exists
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
+
 
     # SQLALCHEMY_DATABASE_URI adjusted to use PROJECT_ROOT for clarity
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(PROJECT_ROOT, 'instance', 'maison_truvra_orm.sqlite3')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///app.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False # Default to False, can be overridden in DevelopmentConfig
 
